@@ -12,7 +12,7 @@ import { formatDate } from '../../lib/dates';
 import { getRecord, useLocal } from '../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { useTheme } from '../../ui/theme';
+import { radius, useTheme } from '../../ui/theme';
 
 export default function ExpenseScreen() {
   const t = useTheme();
@@ -77,7 +77,7 @@ export default function ExpenseScreen() {
         {e.payment_method ? ` · ${METHOD_LABELS[e.payment_method]}` : ''}
       </Text>
       {e.notes ? <Text style={{ color: t.text, fontSize: 16 }}>{e.notes}</Text> : null}
-      {photo ? <Image source={photo} style={{ width: '100%', aspectRatio: 3 / 4, borderRadius: 8 }} contentFit="contain" accessibilityLabel="Receipt photo" cachePolicy="disk" /> : null}
+      {photo ? <Image source={photo} style={{ width: '100%', aspectRatio: 3 / 4, borderRadius: radius.card }} contentFit="contain" accessibilityLabel="Receipt photo" cachePolicy="disk" /> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
       {e.status === 'active' && mode === 'view' ? (
         <>

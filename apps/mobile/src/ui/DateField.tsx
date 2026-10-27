@@ -2,7 +2,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { useState } from 'react';
 import { Modal, Platform, Pressable, Text, View } from 'react-native';
 import { Button, FieldError } from './form';
-import { minTouch, spacing, useTheme } from './theme';
+import { minTouch, radius, spacing, useTheme } from './theme';
 import { formatDate, formatDateTime, fromDateString, toDateString } from '../lib/dates';
 
 export { formatDate, formatDateTime, fromDateString, toDateString };
@@ -57,7 +57,7 @@ export function DateField({
             minHeight: minTouch,
             justifyContent: 'center',
             paddingHorizontal: spacing.md,
-            borderRadius: 8,
+            borderRadius: radius.control,
             borderWidth: error ? 2 : 1,
             borderColor: error ? t.danger : t.border,
             backgroundColor: t.surface,
@@ -148,7 +148,7 @@ export function DateTimeField({
             minHeight: minTouch,
             justifyContent: 'center',
             paddingHorizontal: spacing.md,
-            borderRadius: 8,
+            borderRadius: radius.control,
             borderWidth: error ? 2 : 1,
             borderColor: error ? t.danger : t.border,
             backgroundColor: t.surface,

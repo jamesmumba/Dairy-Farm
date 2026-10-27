@@ -26,14 +26,15 @@ import { BarChart } from '../ui/BarChart';
 import { Chips } from '../ui/Chips';
 import { DateField, toDateString } from '../ui/DateField';
 import { Notice } from '../ui/form';
-import { minTouch, spacing, useTheme } from '../ui/theme';
+import { minTouch, radius, spacing, useTheme, useCardBasis } from '../ui/theme';
 
 type Choice = Period | 'custom';
 
 function Tile({ label, value, note }: { label: string; value: string; note?: string }) {
   const t = useTheme();
+  const basis = useCardBasis();
   return (
-    <View style={{ flexBasis: '47%', flexGrow: 1, backgroundColor: t.surface, borderRadius: 8, padding: spacing.md, gap: 2 }} accessible accessibilityLabel={`${label}: ${value}${note ? `. ${note}` : ''}`}>
+    <View style={{ flexBasis: basis, flexGrow: 1, backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md, gap: 2 }} accessible accessibilityLabel={`${label}: ${value}${note ? `. ${note}` : ''}`}>
       <Text style={{ color: t.textMuted, fontSize: 14 }}>{label}</Text>
       <Text style={{ color: t.text, fontSize: 22, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{value}</Text>
       {note ? <Text style={{ color: t.textMuted, fontSize: 13 }}>{note}</Text> : null}

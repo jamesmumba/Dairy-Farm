@@ -17,7 +17,7 @@ import { hasLocalChanges, useLocal } from '../../../sync/store';
 import { formatDate } from '../../../ui/DateField';
 import { Button, Notice } from '../../../ui/form';
 import { SyncBadge } from '../../../ui/SyncBadge';
-import { spacing, useTheme } from '../../../ui/theme';
+import { radius, spacing, useTheme } from '../../../ui/theme';
 
 interface TimelineEvent {
   at: string;
@@ -123,7 +123,7 @@ export default function AnimalProfile() {
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>
       {photo ? (
-        <Image source={photo} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: 8 }} contentFit="cover" accessibilityLabel={`Photo of ${displayName(a)}`} cachePolicy="disk" />
+        <Image source={photo} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.card }} contentFit="cover" accessibilityLabel={`Photo of ${displayName(a)}`} cachePolicy="disk" />
       ) : null}
       {uploading ? <Text style={{ color: t.textMuted }}>Uploading photo {Math.round(sync.photo!.fraction * 100)}%</Text> : null}
 

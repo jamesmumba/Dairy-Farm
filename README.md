@@ -4,7 +4,7 @@ A mobile app for one farmer to keep records for a dairy farm in Zambia: herd, mi
 animal health, breeding, vaccination, sales, stock, expenses and reports. It works offline and
 syncs when there is a connection.
 
-**Status:** All 8 stages are built and tested (182 API and 81 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
+**Status:** All 8 stages are built and tested (182 API and 117 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
 
 ## Repository layout
 
@@ -14,7 +14,7 @@ syncs when there is a connection.
 | `apps/api` | Hono TypeScript REST API: auth, owner scoping, business rules. Runs as a Supabase Edge Function (or on Node locally) |
 | `supabase/functions/api` | The built Edge Function (`npm run build:edge`, generated; do not edit) |
 | `supabase/migrations` | PostgreSQL schema (applied to the hosted project) |
-| `docs/` | [API contract](docs/api-contract.md), [data model](docs/data-model.md), [testing record](docs/testing.md), [operations](docs/operations.md) (deploy, builds, backup/restore, monitoring, deletion, support), [privacy](docs/privacy.md), [farmer guide](docs/farmer-guide.md) |
+| `docs/` | [design](docs/design.md), [API contract](docs/api-contract.md), [data model](docs/data-model.md), [testing record](docs/testing.md), [operations](docs/operations.md) (deploy, builds, backup/restore, monitoring, deletion, support), [privacy](docs/privacy.md), [farmer guide](docs/farmer-guide.md) |
 | `.github/workflows/ci.yml` | Typecheck, tests, bundle check; manual EAS build |
 
 ## Architecture decisions

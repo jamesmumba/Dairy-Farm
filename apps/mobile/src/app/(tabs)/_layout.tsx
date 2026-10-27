@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router/js-tabs';
 import type { ComponentProps } from 'react';
+import { SyncHeader } from '../../ui/SyncHeader';
 import { minTouch, useTheme } from '../../ui/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -24,6 +25,7 @@ export default function TabLayout() {
         tabBarLabelStyle: { fontSize: 12 },
         headerStyle: { backgroundColor: t.background },
         headerTintColor: t.text,
+        headerRight: () => <SyncHeader />,
       }}
     >
       {TABS.map(({ name, title, icon, hint }) => (

@@ -11,7 +11,7 @@ import { runSync } from '../sync/engine';
 import { applyServerRow, discardChanges, failedOps, getRecord, type Op, removeRecord, requeue, useLocal } from '../sync/store';
 import type { Customer } from '../finance/model';
 import { Button, Notice } from '../ui/form';
-import { spacing, useTheme } from '../ui/theme';
+import { radius, spacing, useTheme } from '../ui/theme';
 
 const KIND_LABELS: Record<Op['kind'], string> = {
   create: 'New record',
@@ -120,7 +120,7 @@ function Issue({ op }: { op: Op }) {
   }
 
   return (
-    <View style={{ backgroundColor: t.surface, borderRadius: 8, padding: spacing.md, gap: spacing.sm }}>
+    <View style={{ backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md, gap: spacing.sm }}>
       <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }}>
         {KIND_LABELS[op.kind]}: {recordName(op)}
       </Text>

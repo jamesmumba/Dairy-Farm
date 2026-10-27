@@ -44,7 +44,7 @@ export async function api<T>(path: string, { method = 'GET', body, ifMatch, idem
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new NetworkError('No connection to the server.');
+    throw new NetworkError('Can’t connect right now. Your changes are kept on this phone.');
   } finally {
     clearTimeout(timer);
   }

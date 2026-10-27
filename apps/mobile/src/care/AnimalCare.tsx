@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import type { Cattle } from '../animals/model';
 import { formatDate, formatDateTime, toDateString } from '../lib/dates';
 import { Button, Notice } from '../ui/form';
-import { minTouch, spacing, useTheme } from '../ui/theme';
+import { minTouch, spacing, useTheme, useCardBasis } from '../ui/theme';
 import { CARE_FORMS } from './forms';
 import { activeWithdrawal, CARE_KINDS, type CareData, type CareKind, RESULT_LABELS, underTreatment } from './model';
 
@@ -33,6 +33,7 @@ const dateOf = (kind: CareKind, r: Record<string, any>): string =>
 
 export function AnimalCare({ animal, care }: { animal: Cattle; care: CareData }) {
   const t = useTheme();
+  const basis = useCardBasis();
   const id = animal.id;
   const today = toDateString(new Date());
   const female = animal.sex === 'female';
@@ -66,7 +67,7 @@ export function AnimalCare({ animal, care }: { animal: Cattle; care: CareData })
     .slice(0, 12);
 
   const add = (kind: CareKind, label: string) => (
-    <View style={{ flexBasis: '47%', flexGrow: 1 }} key={kind}>
+    <View style={{ flexBasis: basis, flexGrow: 1 }} key={kind}>
       <Button label={label} variant="secondary" onPress={() => router.push({ pathname: '/care/[kind]/new', params: { kind, cattle_id: id } } as Href)} />
     </View>
   );

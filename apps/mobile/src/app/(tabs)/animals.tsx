@@ -10,8 +10,7 @@ import { toDateString } from '../../lib/dates';
 import { Chips } from '../../ui/Chips';
 import { Button, TextField } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { SyncStatus } from '../../ui/SyncStatus';
-import { minTouch, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, spacing, useTheme } from '../../ui/theme';
 
 export default function Animals() {
   const t = useTheme();
@@ -54,7 +53,6 @@ export default function Animals() {
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View style={{ gap: spacing.sm, marginBottom: spacing.sm }}>
-            <SyncStatus />
             <Button label="Register an animal" onPress={() => router.push('/animal/new')} />
             <TextField label="Search" value={filter.query} onChangeText={(query) => set({ query })} placeholder="Ear tag, name or ID" autoCorrect={false} autoCapitalize="none" />
             <Button
@@ -112,7 +110,7 @@ export default function Animals() {
             accessibilityRole="button"
             accessibilityLabel={`${displayName(a)}, ${a.sex}, ${breedName.get(a.breed_id ?? '') ?? 'breed not set'}, ${STATUS_LABELS[a.status]}`}
             onPress={() => router.push({ pathname: '/animal/[id]', params: { id: a.id } })}
-            style={{ minHeight: minTouch + 16, padding: spacing.md, borderRadius: 8, backgroundColor: t.surface, gap: 2 }}
+            style={{ minHeight: minTouch + 16, padding: spacing.md, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, gap: 2 }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm }}>
               <Text style={{ color: t.text, fontSize: 17, fontWeight: '600', flexShrink: 1 }}>{displayName(a)}</Text>

@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { minTouch, spacing, useTheme } from './theme';
+import { minTouch, radius, spacing, type, useTheme } from './theme';
 
 export function FormScreen({ title, intro, children }: { title: string; intro?: string; children: ReactNode }) {
   const t = useTheme();
@@ -20,7 +20,7 @@ export function FormScreen({ title, intro, children }: { title: string; intro?: 
     <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.md }} keyboardShouldPersistTaps="handled">
-          <Text accessibilityRole="header" style={{ color: t.text, fontSize: 26, fontWeight: '700' }}>
+          <Text accessibilityRole="header" style={{ color: t.text, ...type.screenTitle }}>
             {title}
           </Text>
           {intro ? <Text style={{ color: t.textMuted, fontSize: 16 }}>{intro}</Text> : null}
@@ -50,7 +50,7 @@ export function TextField({
           minHeight: minTouch,
           borderWidth: error ? 2 : 1,
           borderColor: error ? t.danger : t.border,
-          borderRadius: 8,
+          borderRadius: radius.control,
           paddingHorizontal: spacing.md,
           fontSize: 17,
           color: t.text,
@@ -72,21 +72,30 @@ export function FieldError({ message }: { message: string }) {
   );
 }
 
-export function Notice({ tone = 'info', children }: { tone?: 'info' | 'error'; children: ReactNode }) {
+const NOTICE = {
+  info: { icon: 'ℹ', fg: 'info', bg: 'infoSoft' },
+  success: { icon: '✓', fg: 'primary', bg: 'primarySoft' },
+  attention: { icon: '!', fg: 'attention', bg: 'attentionSoft' },
+  error: { icon: '⚠', fg: 'danger', bg: 'dangerSoft' },
+} as const;
+
+/** Inline message with an icon, a coloured edge and soft background; the words carry the meaning. */
+export function Notice({ tone = 'info', title, children }: { tone?: keyof typeof NOTICE; title?: string; children: ReactNode }) {
   const t = useTheme();
+  const n = NOTICE[tone];
   return (
     <View
       accessibilityRole={tone === 'error' ? 'alert' : undefined}
       accessibilityLiveRegion="polite"
-      style={{
-        borderLeftWidth: 4,
-        borderLeftColor: tone === 'error' ? t.danger : t.primary,
-        backgroundColor: t.surface,
-        padding: spacing.md,
-        borderRadius: 8,
-      }}
+      style={{ flexDirection: 'row', gap: spacing.sm, borderLeftWidth: 4, borderLeftColor: t[n.fg], backgroundColor: t[n.bg], padding: spacing.md, borderRadius: radius.control }}
     >
-      <Text style={{ color: t.text, fontSize: 15 }}>{children}</Text>
+      <Text style={{ color: t[n.fg], fontSize: 16, fontWeight: '600' }} importantForAccessibility="no" accessibilityElementsHidden>
+        {n.icon}
+      </Text>
+      <View style={{ flex: 1, gap: 2 }}>
+        {title ? <Text style={{ color: t.text, ...type.cardTitle }}>{title}</Text> : null}
+        <Text style={{ color: t.text, fontSize: 15 }}>{children}</Text>
+      </View>
     </View>
   );
 }
@@ -121,7 +130,7 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => ({
         minHeight: minTouch,
-        borderRadius: 8,
+        borderRadius: radius.control,
         paddingHorizontal: spacing.md,
         alignItems: 'center',
         justifyContent: 'center',
@@ -173,9 +182,10 @@ export function Choice<V extends string>({
               alignItems: 'center',
               gap: spacing.sm,
               paddingHorizontal: spacing.md,
-              borderRadius: 8,
+              borderRadius: radius.control,
               borderWidth: selected ? 2 : 1,
               borderColor: selected ? t.primary : t.border,
+              backgroundColor: selected ? t.primarySoft : t.surface,
             }}
           >
             <Text style={{ color: selected ? t.primary : t.textMuted, fontSize: 18 }}>{selected ? '◉' : '○'}</Text>

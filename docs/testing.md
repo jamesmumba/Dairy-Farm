@@ -8,7 +8,7 @@ Recorded on **27 Oct 2026** (Stage 8). Automated tests run with `npm test` in `a
 |---|---|---|---|
 | API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **182** | **182 passed, 0 failed** |
 | API through postgres.js (`npm run test:postgres`) | The same tests, with PGlite reached over a Postgres socket by postgres.js, the driver the Edge Function uses | **182** | **182 passed, 0 failed** |
-| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **81** | **81 passed, 0 failed** |
+| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **117** | **117 passed, 0 failed** |
 
 Mutation checks: for each critical rule, the code was broken on purpose to confirm a test fails. All were caught, and the code was then restored.
 * Breeding counted as pregnancy.
@@ -35,6 +35,7 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 
 | Mobile file | Tests | Covers |
 |---|---|---|
+| `palette.test.ts` | 36 | WCAG AA contrast of every text/background pair in the light and dark palettes, and 3:1 for chart marks |
 | `sync.test.ts` | 15 | Offline save, then one sync with no duplicates. A lost response plus an app restart. Resending an in-flight op. Folding edits. Version chaining. Rejections blocking only their own record. Conflicts (keep mine / use saved). Pull never overwriting unsent edits. Remote deletions |
 | `calc.test.ts` | 14 | Exact litres, periods, totals, averages, breeds, high/low, decline rule |
 | `finance.test.ts` | 13 | Sale totals, price lookup, balances, unsynced payments, stock ledger and oversell, reconciliation, duplicate customers, money summary |

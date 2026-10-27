@@ -6,8 +6,7 @@ import { listMilk } from '../../production/repo';
 import { useLocal } from '../../sync/store';
 import { toDateString } from '../../ui/DateField';
 import { Button } from '../../ui/form';
-import { SyncStatus } from '../../ui/SyncStatus';
-import { minTouch, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, spacing, useTheme } from '../../ui/theme';
 
 const CARE_LINKS: { label: string; hint: string; href: Href }[] = [
   { label: 'Health concern', hint: 'Symptoms, suspected or confirmed condition, follow-up', href: { pathname: '/care/[kind]/new', params: { kind: 'health' } } },
@@ -40,7 +39,7 @@ export default function Records() {
       accessibilityLabel={label}
       accessibilityHint={hint}
       onPress={() => router.push(href)}
-      style={{ minHeight: minTouch + 8, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: 8, backgroundColor: t.surface }}
+      style={{ minHeight: minTouch + 8, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface }}
     >
       <Text style={{ color: t.text, fontSize: 17 }}>{label}</Text>
       <Text style={{ color: t.textMuted, fontSize: 14 }}>{hint}</Text>
@@ -49,7 +48,6 @@ export default function Records() {
 
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
-      <SyncStatus />
       <Text accessibilityRole="header" style={{ color: t.text, fontSize: 20, fontWeight: '700', marginTop: spacing.sm }}>
         Milk
       </Text>

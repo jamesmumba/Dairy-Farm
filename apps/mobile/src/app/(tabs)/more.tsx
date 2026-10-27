@@ -1,7 +1,6 @@
 import { type Href, router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useAuth } from '../../state/auth';
-import { SyncStatus } from '../../ui/SyncStatus';
 import { minTouch, spacing, useTheme } from '../../ui/theme';
 
 const ITEMS: { label: string; hint: string; href?: Href }[] = [
@@ -23,7 +22,6 @@ export default function More() {
       <Text accessibilityRole="header" style={{ color: t.text, fontSize: 24, fontWeight: '700' }}>
         {account?.farm_name || 'More'}
       </Text>
-      <SyncStatus />
       {ITEMS.map(({ label, hint, href }) => (
         <Pressable
           key={label}

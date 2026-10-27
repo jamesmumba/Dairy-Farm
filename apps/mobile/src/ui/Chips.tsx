@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { minTouch, spacing, useTheme } from './theme';
+import { minTouch, radius, spacing, useTheme } from './theme';
 
 /** A labelled row of single-choice chips. Selecting the active chip again clears it. */
 export function Chips<V extends string>({
@@ -33,10 +33,10 @@ export function Chips<V extends string>({
                 minHeight: minTouch - 8,
                 paddingHorizontal: spacing.md,
                 justifyContent: 'center',
-                borderRadius: 20,
+                borderRadius: radius.chip,
                 borderWidth: 1,
                 borderColor: selected ? t.primary : t.border,
-                backgroundColor: selected ? t.primary : t.background,
+                backgroundColor: selected ? t.primary : t.surface,
               }}
             >
               <Text style={{ color: selected ? t.onPrimary : t.text, fontSize: 15 }}>

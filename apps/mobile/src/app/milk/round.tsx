@@ -14,7 +14,7 @@ import { formatDateTime } from '../../lib/dates';
 import { Chips } from '../../ui/Chips';
 import { DateField, toDateString } from '../../ui/DateField';
 import { Button, FieldError, FormScreen, Notice, Toggle } from '../../ui/form';
-import { minTouch, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, spacing, useTheme } from '../../ui/theme';
 
 export default function MilkingRound() {
   const [date, setDate] = useState(toDateString(new Date()));
@@ -117,7 +117,7 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
                     minHeight: minTouch,
                     borderWidth: errors[c.id] ? 2 : 1,
                     borderColor: errors[c.id] ? t.danger : t.border,
-                    borderRadius: 8,
+                    borderRadius: radius.control,
                     paddingHorizontal: spacing.md,
                     fontSize: 18,
                     color: t.text,

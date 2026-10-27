@@ -4,7 +4,7 @@ import type { Reminder, Urgency } from '../care/reminders';
 import { useNotificationStatus, useReminders } from '../care/useReminders';
 import { formatDate, formatDateTime } from '../lib/dates';
 import { Notice } from '../ui/form';
-import { minTouch, spacing, useTheme } from '../ui/theme';
+import { minTouch, radius, spacing, useTheme } from '../ui/theme';
 
 const SECTIONS: { urgency: Urgency; title: string }[] = [
   { urgency: 'active', title: 'Milk withdrawal in force' },
@@ -36,7 +36,7 @@ export default function Reminders() {
       style={{
         minHeight: minTouch,
         padding: spacing.md,
-        borderRadius: 8,
+        borderRadius: radius.control,
         backgroundColor: t.surface,
         borderLeftWidth: 4,
         borderLeftColor: r.urgency === 'active' || r.urgency === 'overdue' ? t.danger : t.primary,

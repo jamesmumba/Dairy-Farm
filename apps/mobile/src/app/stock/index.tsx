@@ -11,12 +11,13 @@ import { listMilk } from '../../production/repo';
 import { useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { Button, Notice, TextField } from '../../ui/form';
-import { spacing, useTheme } from '../../ui/theme';
+import { radius, spacing, useTheme, useCardBasis } from '../../ui/theme';
 
 const REVERSIBLE = ['farm_consumption', 'calf_feeding', 'spoilage', 'gift', 'other_use', 'adjustment', 'opening_balance'];
 
 export default function Stock() {
   const t = useTheme();
+  const basis = useCardBasis();
   const f = useFinance();
   const milk = useLocal(() => listMilk().map((m) => m.data));
   const [period, setPeriod] = useState<Exclude<Period, 'year'>>('week');
@@ -58,7 +59,7 @@ export default function Stock() {
 
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
-      <View style={{ backgroundColor: t.surface, borderRadius: 8, padding: spacing.md }} accessible>
+      <View style={{ backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md }} accessible>
         <Text style={{ color: t.textMuted, fontSize: 14 }}>Saleable milk in stock now</Text>
         <Text style={{ color: t.text, fontSize: 26, fontWeight: '700' }}>{litres(f.available(f.today))} L</Text>
         <Text style={{ color: t.textMuted, fontSize: 13 }}>Milk under withdrawal is never counted. {f.unsyncedStockItems ? `Includes ${f.unsyncedStockItems} records not yet synced.` : ''}</Text>
@@ -76,7 +77,7 @@ export default function Stock() {
           ['Adjustment', { pathname: '/stock/new', params: { kind: 'adjustment' } }],
           ['Opening balance', { pathname: '/stock/new', params: { kind: 'opening_balance' } }],
         ].map(([label, href]) => (
-          <View key={label as string} style={{ flexBasis: '47%', flexGrow: 1 }}>
+          <View key={label as string} style={{ flexBasis: basis, flexGrow: 1 }}>
             <Button label={label as string} variant="secondary" onPress={() => router.push(href as Href)} />
           </View>
         ))}

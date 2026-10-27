@@ -5,8 +5,7 @@ import { listPrice, money } from '../../finance/calc';
 import { useFinance } from '../../finance/useFinance';
 import { litres } from '../../production/calc';
 import { Button, TextField } from '../../ui/form';
-import { SyncStatus } from '../../ui/SyncStatus';
-import { minTouch, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, spacing, useTheme } from '../../ui/theme';
 
 const LINKS: { label: string; hint: string; href: Href }[] = [
   { label: 'Record a payment', hint: 'Later payments, refunds and adjustments', href: '/payment/new' },
@@ -33,14 +32,13 @@ export default function Sales() {
       keyExtractor={(c) => c.id}
       ListHeaderComponent={
         <View style={{ gap: spacing.sm, marginBottom: spacing.sm }}>
-          <SyncStatus />
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <View style={{ flex: 1, backgroundColor: t.surface, borderRadius: 8, padding: spacing.md }} accessible>
+            <View style={{ flex: 1, backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md }} accessible>
               <Text style={{ color: t.textMuted, fontSize: 14 }}>Milk for sale today</Text>
               <Text style={{ color: t.text, fontSize: 22, fontWeight: '700' }}>{litres(f.available(f.today))} L</Text>
               {f.unsyncedStockItems ? <Text style={{ color: t.textMuted, fontSize: 12 }}>Includes {f.unsyncedStockItems} not yet synced</Text> : null}
             </View>
-            <View style={{ flex: 1, backgroundColor: t.surface, borderRadius: 8, padding: spacing.md }} accessible>
+            <View style={{ flex: 1, backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md }} accessible>
               <Text style={{ color: t.textMuted, fontSize: 14 }}>Price per litre</Text>
               <Text style={{ color: t.text, fontSize: 22, fontWeight: '700' }}>{price ? `${f.currency} ${price.price_per_litre}` : 'Not set'}</Text>
             </View>
@@ -53,7 +51,7 @@ export default function Sales() {
               accessibilityRole="button"
               accessibilityHint={l.hint}
               onPress={() => router.push(l.href)}
-              style={{ minHeight: minTouch, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: 8, backgroundColor: t.surface }}
+              style={{ minHeight: minTouch, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface }}
             >
               <Text style={{ color: t.text, fontSize: 16 }}>{l.label}</Text>
               <Text style={{ color: t.textMuted, fontSize: 13 }}>{l.hint}</Text>

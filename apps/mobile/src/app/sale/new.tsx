@@ -10,7 +10,7 @@ import { litres } from '../../production/calc';
 import { Chips } from '../../ui/Chips';
 import { DateTimeField } from '../../ui/DateField';
 import { Button, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
-import { spacing, useTheme } from '../../ui/theme';
+import { radius, spacing, useTheme } from '../../ui/theme';
 
 const QUICK = ['1', '2', '5', '10', '20'];
 const decimal = (s: string, digits: number) => new RegExp(`^\\d{1,${digits}}([.,]\\d{1,2})?$`).test(s.trim());
@@ -61,37 +61,41 @@ export default function NewSale() {
     // Not silently: an oversell needs a justified stock adjustment first.
     if (quantityCl > stockCl) return setError(`Only ${litres(stockCl)} L of saleable milk is in stock for this date. Record the production or make a stock adjustment with a reason first.`);
 
-    Alert.alert(
-      'Confirm sale',
-      [
-        `${customer.name}`,
-        `${quantity} L × ${currency} ${unitPrice}${override ? ' (special price)' : ''}`,
-        `Total: ${money(totalCents, currency)}`,
-        `Paid now: ${money(paidCents, currency)}${paidCents > 0 ? ` by ${METHOD_LABELS[method!]}` : ''}`,
-        `Balance after: ${balanceAfter > 0 ? `owes ${money(balanceAfter, currency)}` : balanceAfter < 0 ? `in credit ${money(-balanceAfter, currency)}` : 'settled'}`,
-        `Stock: ${litres(stockCl)} L → ${litres(stockCl - quantityCl)} L`,
-      ].join('\n'),
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Save sale',
-          onPress: () => {
-            recordSale({
-              customer_id: customer.id,
-              sale_at: saleAt,
-              quantity: norm(quantity),
-              currency,
-              price_per_litre: unitPrice,
-              override,
-              amount_paid: fromCents(paidCents),
-              payment_method: paidCents > 0 ? method : 'credit',
-              notes: notes.trim() || null,
-            });
-            router.replace({ pathname: '/customers/[id]', params: { id: customer.id } });
-          },
-        },
-      ],
-    );
+    const summary = [
+      `${customer.name}`,
+      `${quantity} L × ${currency} ${unitPrice}${override ? ' (special price)' : ''}`,
+      `Total: ${money(totalCents, currency)}`,
+      `Paid now: ${money(paidCents, currency)}${paidCents > 0 ? ` by ${METHOD_LABELS[method!]}` : ''}`,
+      `Balance after: ${balanceAfter > 0 ? `owes ${money(balanceAfter, currency)}` : balanceAfter < 0 ? `in credit ${money(-balanceAfter, currency)}` : 'settled'}`,
+      `Stock: ${litres(stockCl)} L → ${litres(stockCl - quantityCl)} L`,
+    ];
+    const finish = () => {
+      recordSale({
+        customer_id: customer.id,
+        sale_at: saleAt,
+        quantity: norm(quantity),
+        currency,
+        price_per_litre: unitPrice,
+        override,
+        amount_paid: fromCents(paidCents),
+        payment_method: paidCents > 0 ? method : 'credit',
+        notes: notes.trim() || null,
+      });
+      router.replace({ pathname: '/customers/[id]', params: { id: customer.id, saved: `${quantity} L, ${money(totalCents, currency)}` } });
+    };
+
+    // An ordinary sale saves at once; only an unusual one is shown for a second look.
+    const unusual = [
+      override && 'a special price',
+      paidCents < totalCents && (paidCents === 0 ? 'nothing paid now' : 'part payment'),
+      currency !== f.currency && `${currency}, not your usual currency`,
+      quantityCl * 2 > stockCl && 'more than half the milk in stock',
+    ].filter(Boolean);
+    if (!unusual.length) return finish();
+    Alert.alert('Check this sale', [`This sale has ${unusual.join(', ')}.`, '', ...summary].join('\n'), [
+      { text: 'Go back', style: 'cancel' },
+      { text: 'Save sale', onPress: finish },
+    ]);
   }
 
   return (
@@ -138,7 +142,7 @@ export default function NewSale() {
       ) : null}
       <TextField label="Notes (optional)" value={notes} onChangeText={setNotes} />
 
-      <View style={{ backgroundColor: t.surface, borderRadius: 8, padding: spacing.md, gap: 4 }} accessibilityLiveRegion="polite" accessible>
+      <View style={{ backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md, gap: 4 }} accessibilityLiveRegion="polite" accessible>
         <Text style={{ color: t.text, fontSize: 22, fontWeight: '700' }}>Total {valid ? money(totalCents, currency) : '—'}</Text>
         {customer && valid ? (
           <Text style={{ color: t.text, fontSize: 15 }}>
@@ -151,7 +155,7 @@ export default function NewSale() {
         <Text style={{ color: t.textMuted, fontSize: 13 }}>The total is checked again by your account when this syncs.</Text>
       </View>
       {quantityCl > stockCl ? <Button label="Make a stock adjustment" variant="secondary" onPress={() => router.push({ pathname: '/stock/new', params: { kind: 'adjustment', date } })} /> : null}
-      <Button label="Review and save" onPress={save} />
+      <Button label="Save sale" onPress={save} />
     </FormScreen>
   );
 }

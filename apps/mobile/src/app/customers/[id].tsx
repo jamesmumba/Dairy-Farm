@@ -11,11 +11,11 @@ import { getRecord, useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { Button, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { minTouch, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, spacing, useTheme } from '../../ui/theme';
 
 export default function CustomerStatement() {
   const t = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, saved } = useLocalSearchParams<{ id: string; saved?: string }>();
   const f = useFinance();
   const stored = useLocal(() => getRecord<Customer>('customers', id), id);
   const [editing, setEditing] = useState(false);
@@ -43,9 +43,14 @@ export default function CustomerStatement() {
   return (
     <FormScreen title={c.name} intro={[c.phone, c.address, CUSTOMER_TYPES[c.customer_type]].filter(Boolean).join(' · ')}>
       <SyncBadge state={stored.sync_state} />
+      {saved ? (
+        <Notice tone="success" title="Sale saved">
+          {saved}. Saved on this phone; your account confirms the price, payment and stock when it syncs. To change it, open the sale below.
+        </Notice>
+      ) : null}
       {!c.active ? <Notice>This customer is marked inactive.</Notice> : null}
 
-      <View style={{ backgroundColor: t.surface, borderRadius: 8, padding: spacing.md, gap: 4 }} accessible>
+      <View style={{ backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md, gap: 4 }} accessible>
         <Text style={{ color: t.textMuted, fontSize: 14 }}>Balance</Text>
         {bal.length === 0 ? <Text style={{ color: t.text, fontSize: 20, fontWeight: '700' }}>Nothing owed</Text> : null}
         {bal.map(([cur, v]) => (

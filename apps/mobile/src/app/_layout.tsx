@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { AppLockProvider } from '../state/appLock';
 import { AuthProvider, useAuth } from '../state/auth';
+import { SyncHeader } from '../ui/SyncHeader';
 import { useTheme } from '../ui/theme';
 import { useNotificationScheduler } from '../care/useReminders';
 
@@ -34,7 +35,7 @@ function Gate() {
 
   const signedIn = status === 'signedIn';
   const onboarded = !!account?.onboarding_completed_at;
-  const header = { headerShown: true, headerStyle: { backgroundColor: t.background }, headerTintColor: t.text };
+  const header = { headerShown: true, headerStyle: { backgroundColor: t.background }, headerTintColor: t.text, headerRight: () => <SyncHeader /> };
 
   return (
     <AppLockProvider key={signedIn ? 'in' : 'out'} active={signedIn} onSignOut={() => signOut()}>
