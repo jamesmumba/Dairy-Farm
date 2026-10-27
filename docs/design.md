@@ -202,12 +202,30 @@ Building blocks in `src/ui/kit.tsx`: `IconBadge`, `SectionHeader` (title with a 
 and `ListRow` (iOS-style grouped rows with icon, subtitle, value and chevron), `ActionTile` (icon tile for main
 actions), `StatCard` (icon, label, large figure, note), `Avatar` (initials), `Pill` (status label).
 
+`Card` and `Figure` hold small groups of numbers.
+
+### Keeping screens calm
+
+Added after farmer feedback that screens felt cluttered:
+* **One job per screen, at most four blocks.** Detail lives one tap away ("Details", "All", a section choice).
+* **Show one section at a time** where a screen has several (the animal profile: Overview, Care, Milk, History).
+* **Hide the rare.** Options most records never change (sale date, currency, special price, note) sit behind one link.
+* **One colour for icons.** Icons are pasture green; red and straw appear only for a status that needs attention.
+* **No borders on cards.** White on milk-white with a soft shadow; borders only for an alert.
+* **One label per list row.** An animal shows its single most important status (gone, withdrawal, pregnant, in milk).
+* **Fewer explanations on screen.** Help text goes in hints for screen readers or behind the relevant control.
+
 Screen patterns:
-* **Home**: a deep green "today" card (greeting, date, milk today, milk for sale), then attention rows, four quick
-  action tiles, stat cards per topic, charts in a white card, and coming-up rows.
-* **Records**: a green milking-round banner, care actions as an icon tile grid, other entries as grouped rows.
-* **Animals**: rows with an initials avatar, ID, breed and age, and status pills (in milk, dry, pregnant, withdrawal).
-* **Sales**: stock and price stat cards, **New sale**, grouped links, and customers with avatar and balance.
+* **Home**: the green "today" card, four round quick actions (Milk, Sale, Animal, Health), **Needs attention**
+  (only when there is something, at most 3 rows), **This week** (milk, sold, owed and a 7-day milk chart) and
+  **Coming up** (3 rows). Herd, money and reports are one tap away.
+* **Records**: a green milking-round banner, then grouped rows: Health, Breeding, Other.
+* **Animals**: search and filters, rows with an initials avatar, breed and age and one status pill, and a floating
+  **Add animal** button.
+* **Animal profile**: a header card (photo or initials, name, ID, status), **Add record** (opens the list of
+  record types) and **Edit details**, then Overview, Care, Milk and History as one choice.
+* **Sales**: one card with milk for sale, price and **New sale**; four grouped links; customers.
+* **Sale form**: customer, litres, payment, total, Save. Date, currency, special price and note under one link.
 * **More**: a farm card, then grouped rows for records, account and data.
 * Tab bar: white, with the active tab's icon in a pale green pill.
 

@@ -1,23 +1,14 @@
-import { type Href, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { summarize } from '../../production/calc';
 import { L } from '../../production/format';
 import { listMilk } from '../../production/repo';
 import { useLocal } from '../../sync/store';
 import { toDateString } from '../../ui/DateField';
-import { ActionTile, IconBadge, type IconName, ListGroup, ListRow, SectionHeader, type Tint } from '../../ui/kit';
+import { IconBadge, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
 import { radius, shadow, spacing, useTheme } from '../../ui/theme';
 
-const CARE: { label: string; hint: string; icon: IconName; tint: Tint; href: Href }[] = [
-  { label: 'Health concern', hint: 'Symptoms, suspected or confirmed condition, follow-up', icon: 'stethoscope', tint: 'red', href: { pathname: '/care/[kind]/new', params: { kind: 'health' } } },
-  { label: 'Treatment', hint: 'Medicine as instructed, milk withdrawal', icon: 'pill', tint: 'red', href: { pathname: '/care/[kind]/new', params: { kind: 'treatment' } } },
-  { label: 'Vet visit', hint: 'Who came, why, findings', icon: 'medical-bag', tint: 'sky', href: { pathname: '/care/[kind]/new', params: { kind: 'vet-visit' } } },
-  { label: 'Heat or breeding', hint: 'Heat, natural mating, insemination', icon: 'heart-outline', tint: 'straw', href: { pathname: '/care/[kind]/new', params: { kind: 'breeding' } } },
-  { label: 'Pregnancy check', hint: 'Examination result', icon: 'heart-pulse', tint: 'straw', href: { pathname: '/care/[kind]/new', params: { kind: 'pregnancy-check' } } },
-  { label: 'Calving', hint: 'Outcome, register the calf', icon: 'cow', tint: 'straw', href: { pathname: '/care/[kind]/new', params: { kind: 'calving' } } },
-  { label: 'Vaccination', hint: 'One animal', icon: 'needle', tint: 'green', href: { pathname: '/care/[kind]/new', params: { kind: 'vaccination' } } },
-  { label: 'Group vaccination', hint: 'Several animals at once', icon: 'account-group', tint: 'green', href: '/care/vaccination-group' },
-];
+const care = (kind: string) => ({ pathname: '/care/[kind]/new', params: { kind } }) as const;
 
 export default function Records() {
   const t = useTheme();
@@ -30,38 +21,43 @@ export default function Records() {
       {/* The most frequent job on a dairy farm gets the biggest target. */}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Milking round. Today so far ${L(todaySummary.totalCl)} from ${todaySummary.cows} cows`}
+        accessibilityLabel={`Milking round. Today so far ${L(todaySummary.totalCl)}`}
         accessibilityHint="Enter litres for every cow in one session"
         onPress={() => router.push('/milk/round')}
         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.card + 4, backgroundColor: t.primary, opacity: pressed ? 0.9 : 1, ...shadow })}
       >
-        <IconBadge icon="water-outline" tint="green" size={52} />
+        <IconBadge icon="water-outline" size={48} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ color: t.onPrimary, fontSize: 20, fontWeight: '600' }}>Milking round</Text>
-          <Text style={{ color: t.primarySoft, fontSize: 14 }}>
-            Today so far: {L(todaySummary.totalCl)} from {todaySummary.cows} cow{todaySummary.cows === 1 ? '' : 's'}
-          </Text>
+          <Text style={{ color: t.primarySoft, fontSize: 14 }}>Today so far: {L(todaySummary.totalCl)}</Text>
         </View>
       </Pressable>
       <ListGroup>
-        <ListRow icon="water-plus-outline" tint="sky" title="Single milk entry" subtitle="One cow, one session" href="/milk/new" />
-        <ListRow icon="chart-line" tint="sky" title="Production summary" subtitle="Totals, averages, trends and alerts" href="/production" />
+        <ListRow icon="water-plus-outline" title="One milk entry" href="/milk/new" />
+        <ListRow icon="chart-line" title="Production" subtitle="Totals and trends" href="/production" />
       </ListGroup>
 
-      <SectionHeader title="Animal care" action="Reminders" onAction={() => router.push('/reminders')} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-        {CARE.map((c) => (
-          <ActionTile key={c.label} icon={c.icon} tint={c.tint} label={c.label} hint={c.hint} href={c.href} />
-        ))}
-      </View>
+      <SectionHeader title="Health" />
       <ListGroup>
-        <ListRow icon="calendar-check" title="Vaccination schedules" subtitle="From your vet’s guidance" href="/care/schedules" />
+        <ListRow icon="stethoscope" title="Health concern" href={care('health')} />
+        <ListRow icon="pill" title="Treatment" subtitle="Includes milk withdrawal" href={care('treatment')} />
+        <ListRow icon="medical-bag" title="Vet visit" href={care('vet-visit')} />
+        <ListRow icon="needle" title="Vaccination" subtitle="One animal or a group" href={care('vaccination')} />
       </ListGroup>
 
-      <SectionHeader title="Milk use and costs" />
+      <SectionHeader title="Breeding" />
       <ListGroup>
-        <ListRow icon="cup-outline" tint="sky" title="Milk use" subtitle="Home use, calves, spoilage, gifts" href={{ pathname: '/stock/new', params: { kind: 'farm_consumption' } }} />
-        <ListRow icon="receipt" tint="straw" title="Farm expense" subtitle="Feed, vet, transport and other costs" href="/expenses/new" />
+        <ListRow icon="heart-outline" title="Heat or breeding" href={care('breeding')} />
+        <ListRow icon="heart-pulse" title="Pregnancy check" href={care('pregnancy-check')} />
+        <ListRow icon="cow" title="Calving" href={care('calving')} />
+      </ListGroup>
+
+      <SectionHeader title="Other" />
+      <ListGroup>
+        <ListRow icon="account-group" title="Group vaccination" href="/care/vaccination-group" />
+        <ListRow icon="calendar-check" title="Vaccination schedules" href="/care/schedules" />
+        <ListRow icon="cup-outline" title="Milk use" subtitle="Home use, calves, spoilage" href={{ pathname: '/stock/new', params: { kind: 'farm_consumption' } }} />
+        <ListRow icon="receipt" title="Farm expense" href="/expenses/new" />
       </ListGroup>
     </ScrollView>
   );

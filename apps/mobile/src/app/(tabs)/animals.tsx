@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
-import { AGE_BANDS, type AnimalFilter, ageLabel, displayName, EMPTY_FILTER, matches, PRODUCTION_LABELS, type ProductionStatus, REPRODUCTIVE_LABELS, type ReproductiveStatus, shortCode, STATUS_LABELS } from '../../animals/model';
+import { AGE_BANDS, type AnimalFilter, ageLabel, displayName, EMPTY_FILTER, matches, PRODUCTION_LABELS, type ProductionStatus, REPRODUCTIVE_LABELS, type ReproductiveStatus, STATUS_LABELS } from '../../animals/model';
 import { listAnimals, listBreeds } from '../../animals/repo';
 import { useLocal } from '../../sync/store';
 import { activeWithdrawal, underTreatment } from '../../care/model';
@@ -51,11 +51,10 @@ export default function Animals() {
       <FlatList
         data={shown}
         keyExtractor={(a) => a.data.id}
-        contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}
+        contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: 96 }}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View style={{ gap: spacing.sm, marginBottom: spacing.sm }}>
-            <Button label="Register an animal" onPress={() => router.push('/animal/new')} />
             <TextField label="Search" value={filter.query} onChangeText={(query) => set({ query })} placeholder="Ear tag, name or ID" autoCorrect={false} autoCapitalize="none" />
             <Button
               label={showFilters ? 'Hide filters' : `Filters${activeFilters ? ` (${activeFilters})` : ''}`}
@@ -124,28 +123,26 @@ export default function Animals() {
                 gap: spacing.md,
                 padding: spacing.md,
                 borderRadius: radius.card,
-                borderWidth: 1,
-                borderColor: t.border,
                 backgroundColor: pressed ? t.primarySoft : t.surface,
                 ...shadow,
               })}
             >
               <Avatar name={displayName(a)} tint={a.status !== 'active' ? 'sky' : withdrawal ? 'red' : 'green'} size={48} />
               <View style={{ flex: 1, gap: 3 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm }}>
-                  <Text style={{ color: t.text, ...type.cardTitle, fontSize: 17, flexShrink: 1 }}>{displayName(a)}</Text>
-                  <Text style={{ color: t.textMuted, fontSize: 13 }}>ID {shortCode(a.id)}</Text>
-                </View>
+                <Text style={{ color: t.text, ...type.cardTitle, fontSize: 17 }}>{displayName(a)}</Text>
                 <Text style={{ color: t.textMuted, fontSize: 14 }}>
-                  {[a.sex === 'female' ? 'Female' : 'Male', breedName.get(a.breed_id ?? ''), ageLabel(a)].filter(Boolean).join(' · ')}
+                  {[breedName.get(a.breed_id ?? ''), ageLabel(a)].filter(Boolean).join(' · ') || (a.sex === 'female' ? 'Female' : 'Male')}
                 </Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
-                  {a.status !== 'active' ? <Pill label={STATUS_LABELS[a.status]} tint="sky" /> : null}
-                  {withdrawal ? <Pill label="Milk withdrawal" tint="red" /> : null}
-                  {a.status === 'active' && a.production_status !== 'not_applicable' ? <Pill label={PRODUCTION_LABELS[a.production_status]} tint={a.production_status === 'lactating' ? 'green' : 'straw'} /> : null}
-                  {a.reproductive_status === 'pregnant' ? <Pill label="Pregnant" tint="straw" /> : null}
-                  {!a.ear_tag ? <Pill label="No ear tag" tint="straw" /> : null}
-                </View>
+                {/* One label only: the most important thing about this animal right now. */}
+                {a.status !== 'active' ? (
+                  <Pill label={STATUS_LABELS[a.status]} tint="sky" />
+                ) : withdrawal ? (
+                  <Pill label="Milk withdrawal" tint="red" />
+                ) : a.reproductive_status === 'pregnant' ? (
+                  <Pill label="Pregnant" tint="straw" />
+                ) : a.production_status === 'lactating' ? (
+                  <Pill label="In milk" />
+                ) : null}
                 <SyncBadge state={sync_state} />
               </View>
               <MaterialCommunityIcons name="chevron-right" size={22} color={t.textMuted} importantForAccessibility="no" />
@@ -153,6 +150,30 @@ export default function Animals() {
           );
         }}
       />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Register an animal"
+        onPress={() => router.push('/animal/new')}
+        style={({ pressed }) => ({
+          position: 'absolute',
+          right: spacing.md,
+          bottom: spacing.md,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.xs,
+          height: 56,
+          paddingHorizontal: spacing.lg,
+          borderRadius: 28,
+          backgroundColor: t.primary,
+          opacity: pressed ? 0.9 : 1,
+          ...shadow,
+          shadowOpacity: 0.2,
+          elevation: 6,
+        })}
+      >
+        <MaterialCommunityIcons name="plus" size={24} color={t.onPrimary} />
+        <Text style={{ color: t.onPrimary, fontSize: 16, fontWeight: '600' }}>Add animal</Text>
+      </Pressable>
     </View>
   );
 }

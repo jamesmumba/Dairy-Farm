@@ -53,7 +53,7 @@ export function ListGroup({ children }: { children: ReactNode }) {
   const t = useTheme();
   const rows = Children.toArray(children).filter(Boolean);
   return (
-    <View style={{ backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, overflow: 'hidden', ...shadow }}>
+    <View style={{ backgroundColor: t.surface, borderRadius: radius.card, ...shadow }}>
       {rows.map((row, i) => (
         <View key={i}>
           {i ? <View style={{ height: 1, backgroundColor: t.border, marginLeft: 72 }} /> : null}
@@ -100,7 +100,7 @@ export function ListRow({
         gap: spacing.md,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm + 2,
-        backgroundColor: pressed ? t.primarySoft : t.surface,
+        backgroundColor: pressed ? t.primarySoft : 'transparent',
       })}
     >
       {leading ?? (icon ? <IconBadge icon={icon} tint={tint} /> : null)}
@@ -136,8 +136,6 @@ export function ActionTile({ icon, tint, label, hint, href }: { icon: IconName; 
         gap: spacing.sm,
         justifyContent: 'space-between',
         borderRadius: radius.card,
-        borderWidth: 1,
-        borderColor: pressed ? t.primary : t.border,
         backgroundColor: pressed ? t.primarySoft : t.surface,
         ...shadow,
       })}
@@ -184,8 +182,8 @@ export function StatCard({
     padding: spacing.md,
     gap: spacing.xs,
     borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: alert ? t.danger : t.border,
+    borderWidth: alert ? 1 : 0,
+    borderColor: t.danger,
     backgroundColor: t.surface,
     ...shadow,
   } as const;
@@ -227,6 +225,26 @@ export function Pill({ label, tint = 'green' }: { label: string; tint?: Tint }) 
   return (
     <View style={{ alignSelf: 'flex-start', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.chip, backgroundColor: t[bg] }}>
       <Text style={{ color: t[fg], fontSize: 13, fontWeight: '600' }}>{label}</Text>
+    </View>
+  );
+}
+
+/** A plain white card for grouped content. */
+export function Card({ children, gap = spacing.md }: { children: ReactNode; gap?: number }) {
+  const t = useTheme();
+  return <View style={{ backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap, ...shadow }}>{children}</View>;
+}
+
+/** A labelled figure inside a card: small label above, the number below. */
+export function Figure({ label, value, note, tone }: { label: string; value: string; note?: string; tone?: 'danger' }) {
+  const t = useTheme();
+  return (
+    <View style={{ flex: 1, gap: 2 }} accessible accessibilityLabel={`${label}: ${value}${note ? `. ${note}` : ''}`}>
+      <Text style={{ color: t.textMuted, fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: tone === 'danger' ? t.danger : t.text, fontSize: 20, fontWeight: '600', fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
+      {note ? <Text style={{ color: t.textMuted, fontSize: 12 }}>{note}</Text> : null}
     </View>
   );
 }

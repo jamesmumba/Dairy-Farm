@@ -31,7 +31,7 @@ const dateOf = (kind: CareKind, r: Record<string, any>): string =>
     schedule: '',
   })[kind] ?? '';
 
-export function AnimalCare({ animal, care }: { animal: Cattle; care: CareData }) {
+export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; care: CareData; showAdd?: boolean }) {
   const t = useTheme();
   const basis = useCardBasis();
   const id = animal.id;
@@ -90,7 +90,7 @@ export function AnimalCare({ animal, care }: { animal: Cattle; care: CareData })
         <Text style={{ color: t.textMuted, fontSize: 14 }}>Bred: not pregnant until a pregnancy check confirms it.</Text>
       ) : null}
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+      {showAdd ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
         {add('health', 'Health concern')}
         {add('treatment', 'Treatment')}
         {add('vet-visit', 'Vet visit')}
@@ -98,7 +98,7 @@ export function AnimalCare({ animal, care }: { animal: Cattle; care: CareData })
         {female ? add('breeding', 'Heat or breeding') : null}
         {female ? add('pregnancy-check', 'Pregnancy check') : null}
         {female ? add('calving', 'Calving') : null}
-      </View>
+      </View> : null}
 
       {records.map(({ kind, row }) => (
         <Pressable

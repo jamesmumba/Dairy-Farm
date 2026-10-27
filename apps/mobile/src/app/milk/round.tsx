@@ -90,7 +90,7 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
               <Text style={{ color: t.text, fontSize: 17 }}>{displayName(c)}</Text>
               {withdrawal ? (
                 <Text style={{ color: t.danger, fontSize: 14 }} accessibilityRole="alert">
-                  ⚠ Withdrawal until {formatDateTime(withdrawal.withdrawal_ends_at)}: record it, but this milk is not for sale
+                  ⚠ Withdrawal until {formatDateTime(withdrawal.withdrawal_ends_at)} · not for sale
                 </Text>
               ) : null}
             </View>

@@ -5,7 +5,7 @@ import { listPrice, money } from '../../finance/calc';
 import { useFinance } from '../../finance/useFinance';
 import { litres } from '../../production/calc';
 import { Button, TextField } from '../../ui/form';
-import { Avatar, ListGroup, ListRow, SectionHeader, StatCard } from '../../ui/kit';
+import { Avatar, Card, Figure, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
 import { radius, shadow, spacing, useTheme } from '../../ui/theme';
 
 export default function Sales() {
@@ -24,22 +24,28 @@ export default function Sales() {
       data={customers}
       keyExtractor={(c) => c.id}
       ListHeaderComponent={
-        <View style={{ gap: spacing.sm, marginBottom: spacing.sm }}>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-            <StatCard icon="warehouse" label="Milk for sale today" value={`${litres(f.available(f.today))} L`} note={f.unsyncedStockItems ? `Includes ${f.unsyncedStockItems} not yet synced` : undefined} href="/stock" />
-            <StatCard icon="tag-outline" tint="straw" label="Price per litre" value={price ? `${f.currency} ${price.price_per_litre}` : 'Not set'} href="/prices" alert={!price} />
-          </View>
-          {!price ? <Button label={`Set the ${f.currency} milk price`} variant="secondary" onPress={() => router.push('/prices')} /> : null}
-          <Button label="New sale" onPress={() => router.push('/sale/new')} />
+        <View style={{ gap: spacing.md, marginBottom: spacing.sm }}>
+          <Card>
+            <View style={{ flexDirection: 'row', gap: spacing.md }}>
+              <Figure label="Milk for sale today" value={`${litres(f.available(f.today))} L`} />
+              <Figure label="Price per litre" value={price ? `${f.currency} ${price.price_per_litre}` : 'Not set'} tone={price ? undefined : 'danger'} />
+            </View>
+            {price ? (
+              <Button label="New sale" onPress={() => router.push('/sale/new')} />
+            ) : (
+              <Button label={`Set the ${f.currency} milk price`} onPress={() => router.push('/prices')} />
+            )}
+          </Card>
           <ListGroup>
-            <ListRow icon="cash-plus" title="Record a payment" subtitle="Later payments, refunds and adjustments" href="/payment/new" />
-            <ListRow icon="warehouse" tint="sky" title="Milk stock" subtitle="Stock by day, milk use and adjustments" href="/stock" />
-            <ListRow icon="chart-bar" tint="sky" title="Money summary" subtitle="Revenue, payments, balances and expenses" href="/finance" />
-            <ListRow icon="receipt" tint="straw" title="Expenses" subtitle="Feed, vet, transport and other costs" href="/expenses" />
-            <ListRow icon="tag-outline" tint="straw" title="Milk prices" subtitle="Price per litre and its history" href="/prices" />
+            <ListRow icon="cash-plus" title="Record a payment" href="/payment/new" />
+            <ListRow icon="warehouse" title="Milk stock" href="/stock" />
+            <ListRow icon="chart-bar" title="Money summary" subtitle="Revenue, payments and expenses" href="/finance" />
+            <ListRow icon="tag-outline" title="Milk prices" href="/prices" />
           </ListGroup>
-          <SectionHeader title="Customers" action="Add" onAction={() => router.push('/customers/new')} />
-          <TextField label="Search customers" value={query} onChangeText={setQuery} placeholder="Name or phone" autoCorrect={false} />
+          <View style={{ gap: spacing.sm }}>
+            <SectionHeader title="Customers" action="Add" onAction={() => router.push('/customers/new')} />
+            {f.customers.length > 6 ? <TextField label="Search customers" value={query} onChangeText={setQuery} placeholder="Name or phone" autoCorrect={false} /> : null}
+          </View>
         </View>
       }
       ListEmptyComponent={<Text style={{ color: t.textMuted, fontSize: 16 }}>{f.customers.length ? 'No customers match.' : 'No customers yet.'}</Text>}
@@ -69,8 +75,7 @@ export default function Sales() {
             <ListRow
               leading={<Avatar name={c.name} tint={owes ? 'straw' : 'green'} />}
               title={c.name}
-              subtitle={c.phone ?? undefined}
-              value={owed.length ? owed.map(([cur, v]) => (v > 0 ? `Owes ${money(v, cur)}` : `Credit ${money(-v, cur)}`)).join('\n') : 'Settled'}
+                            value={owed.length ? owed.map(([cur, v]) => (v > 0 ? `Owes ${money(v, cur)}` : `Credit ${money(-v, cur)}`)).join('\n') : 'Settled'}
               valueTone={owes ? 'danger' : 'muted'}
               href={{ pathname: '/customers/[id]', params: { id: c.id } }}
             />
