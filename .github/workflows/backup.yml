@@ -1,0 +1,39 @@
+name: Database backup
+
+# Nightly encrypted backup of the production database, kept 30 days as a private workflow
+# artifact. A failed run sends the repository owner GitHub's failure email (monitoring).
+# Secrets: BACKUP_DATABASE_URL (Supabase session pooler or direct URL), BACKUP_PASSPHRASE.
+# Restore steps and the monthly restore test: docs/operations.md.
+
+on:
+  schedule:
+    - cron: '30 0 * * *' # 02:30 in Zambia (UTC+2)
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    container: postgres:17
+    steps:
+      - name: Dump (custom format, compressed)
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges --schema=public --schema=auth --file=dairy.dump
+
+      - name: Check the dump is readable before keeping it
+        run: pg_restore --list dairy.dump > /dev/null
+
+      - name: Encrypt (AES-256)
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          apt-get update -qq && apt-get install -y -qq gnupg > /dev/null
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 --output "dairy-$(date -u +%F).dump.gpg" dairy.dump
+          rm dairy.dump
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dairy-backup-${{ github.run_id }}
+          path: dairy-*.dump.gpg
+          retention-days: 30
+          if-no-files-found: error
