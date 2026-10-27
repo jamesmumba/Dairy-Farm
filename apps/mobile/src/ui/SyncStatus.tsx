@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 import { runSync, useSyncStatus } from '../sync/engine';
-import { minTouch, radius, spacing, useTheme } from './theme';
+import { minTouch, radius, shadow, spacing, useTheme } from './theme';
 
 function ago(iso: string) {
   const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -34,7 +34,7 @@ export function SyncStatus() {
       accessibilityLabel={text}
       accessibilityHint={reviewing ? 'Opens the list of changes that need attention' : 'Syncs now'}
       onPress={() => (reviewing ? router.push('/sync-issues') : void runSync())}
-      style={{ minHeight: minTouch, justifyContent: 'center', paddingHorizontal: spacing.md, backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border }}
+      style={{ minHeight: minTouch, justifyContent: 'center', paddingHorizontal: spacing.md, backgroundColor: t.surface, borderRadius: radius.card, ...shadow }}
     >
       <Text style={{ color, fontSize: 15 }}>
         {icon} {text}

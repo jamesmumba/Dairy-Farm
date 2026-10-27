@@ -31,10 +31,10 @@ export function useTheme() {
 /** Soft card shadow, tinted green so it reads as depth rather than grey dirt. */
 export const shadow = {
   shadowColor: '#173F2B',
-  shadowOpacity: 0.07,
-  shadowRadius: 10,
-  shadowOffset: { width: 0, height: 3 },
-  elevation: 2,
+  shadowOpacity: 0.12,
+  shadowRadius: 14,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 4,
 };
 
 /**

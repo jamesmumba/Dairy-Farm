@@ -14,7 +14,7 @@ import { useSyncStatus } from '../../sync/engine';
 import { Chips } from '../../ui/Chips';
 import { DateField } from '../../ui/DateField';
 import { Button, Notice } from '../../ui/form';
-import { radius, spacing, useTheme, useCardBasis } from '../../ui/theme';
+import { radius, shadow, spacing, useCardBasis, useTheme } from '../../ui/theme';
 
 function ReportTable({ table }: { table: Table }) {
   const t = useTheme();
@@ -139,7 +139,7 @@ export default function ReportScreen() {
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
         {report.summary.map((s) => (
-          <View key={s.label} style={{ flexBasis: basis, flexGrow: 1, backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md }} accessible accessibilityLabel={`${s.label}: ${s.value}. ${s.note ?? ''}`}>
+          <View key={s.label} style={{ flexBasis: basis, flexGrow: 1, backgroundColor: t.surface, borderRadius: radius.card, ...shadow, padding: spacing.md }} accessible accessibilityLabel={`${s.label}: ${s.value}. ${s.note ?? ''}`}>
             <Text style={{ color: t.textMuted, fontSize: 13 }}>{s.label}</Text>
             <Text style={{ color: t.text, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{s.value}</Text>
             {s.note ? <Text style={{ color: t.textMuted, fontSize: 12 }}>{s.note}</Text> : null}

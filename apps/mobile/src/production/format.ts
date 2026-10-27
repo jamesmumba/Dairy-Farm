@@ -2,7 +2,8 @@ import { litres } from './calc';
 
 export const SESSION_LABELS = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening' } as const;
 
-export const L = (cl: number) => `${litres(cl)} L`;
+/** Litres for reading on screen: "10 L", "12.5 L", "12.25 L" (exports keep two decimals). */
+export const L = (cl: number) => `${litres(cl).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')} L`;
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

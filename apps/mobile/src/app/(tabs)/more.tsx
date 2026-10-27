@@ -9,7 +9,7 @@ export default function More() {
   const farm = account?.farm_name || 'Your farm';
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.card, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border, ...shadow }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.card, backgroundColor: t.surface, ...shadow }}>
         <Avatar name={account?.display_name || farm} size={52} />
         <View style={{ flex: 1 }}>
           <Text accessibilityRole="header" style={{ color: t.text, ...type.sectionTitle }}>

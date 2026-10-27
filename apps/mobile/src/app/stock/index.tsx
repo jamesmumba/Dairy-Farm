@@ -11,7 +11,7 @@ import { listMilk } from '../../production/repo';
 import { useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { Button, Notice, TextField } from '../../ui/form';
-import { radius, spacing, useTheme, useCardBasis } from '../../ui/theme';
+import { radius, shadow, spacing, useCardBasis, useTheme } from '../../ui/theme';
 
 const REVERSIBLE = ['farm_consumption', 'calf_feeding', 'spoilage', 'gift', 'other_use', 'adjustment', 'opening_balance'];
 
@@ -59,7 +59,7 @@ export default function Stock() {
 
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
-      <View style={{ backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md }} accessible>
+      <View style={{ backgroundColor: t.surface, borderRadius: radius.card, ...shadow, padding: spacing.md }} accessible>
         <Text style={{ color: t.textMuted, fontSize: 14 }}>Saleable milk in stock now</Text>
         <Text style={{ color: t.text, fontSize: 26, fontWeight: '700' }}>{litres(f.available(f.today))} L</Text>
         <Text style={{ color: t.textMuted, fontSize: 13 }}>Milk under withdrawal is never counted. {f.unsyncedStockItems ? `Includes ${f.unsyncedStockItems} records not yet synced.` : ''}</Text>

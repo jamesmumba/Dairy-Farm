@@ -11,7 +11,7 @@ import { getRecord, useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { Button, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { minTouch, radius, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, shadow, spacing, useTheme } from '../../ui/theme';
 
 export default function CustomerStatement() {
   const t = useTheme();
@@ -50,7 +50,7 @@ export default function CustomerStatement() {
       ) : null}
       {!c.active ? <Notice>This customer is marked inactive.</Notice> : null}
 
-      <View style={{ backgroundColor: t.surface, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, padding: spacing.md, gap: 4 }} accessible>
+      <View style={{ backgroundColor: t.surface, borderRadius: radius.card, ...shadow, padding: spacing.md, gap: 4 }} accessible>
         <Text style={{ color: t.textMuted, fontSize: 14 }}>Balance</Text>
         {bal.length === 0 ? <Text style={{ color: t.text, fontSize: 20, fontWeight: '700' }}>Nothing owed</Text> : null}
         {bal.map(([cur, v]) => (

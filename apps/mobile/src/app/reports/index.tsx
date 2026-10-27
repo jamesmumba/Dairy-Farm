@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text } from 'react-native';
 import { REPORTS } from '../../reports/build';
-import { minTouch, radius, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, shadow, spacing, useTheme } from '../../ui/theme';
 
 const ABOUT: Record<string, string> = {
   herd: 'Animals on the farm, breeds, cows in milk, pregnancies, animals that left',
@@ -23,7 +23,7 @@ export default function Reports() {
           accessibilityRole="button"
           accessibilityHint={ABOUT[r.id]}
           onPress={() => router.push({ pathname: '/reports/[id]', params: { id: r.id } })}
-          style={{ minHeight: minTouch + 8, justifyContent: 'center', padding: spacing.md, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface }}
+          style={{ minHeight: minTouch + 8, justifyContent: 'center', padding: spacing.md, borderRadius: radius.card, ...shadow, backgroundColor: t.surface }}
         >
           <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }}>{r.title}</Text>
           <Text style={{ color: t.textMuted, fontSize: 14 }}>{ABOUT[r.id]}</Text>

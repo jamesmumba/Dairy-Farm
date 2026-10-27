@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Button } from './form';
-import { spacing, useTheme } from './theme';
+import { minTouch, spacing, useTheme } from './theme';
 
 export interface Bar {
   key: string;
@@ -45,7 +44,13 @@ export function BarChart({
 
   return (
     <View style={{ gap: spacing.sm }}>
-      <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }}>{title}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
+        <Text style={{ color: t.text, fontSize: 16, fontWeight: '600', flexShrink: 1 }}>{title}</Text>
+        {/* Small and out of the way, but still a full-size touch target. */}
+        <Pressable accessibilityRole="button" onPress={() => setTable((v) => !v)} hitSlop={12} style={{ minHeight: minTouch - 8, justifyContent: 'center' }}>
+          <Text style={{ color: t.primary, fontSize: 14, fontWeight: '600' }}>{table ? 'Chart' : 'Table'}</Text>
+        </Pressable>
+      </View>
       <Text style={{ color: t.textMuted, fontSize: 15 }} accessibilityLiveRegion="polite">
         {shown ? `${shown.label}: ${shown.missing ? 'no records' : format(shown.value)}${shown === peak && !selected ? ' (highest)' : ''}` : 'No records in this period'}
       </Text>
@@ -60,7 +65,7 @@ export function BarChart({
           ))}
         </View>
       ) : (
-        <View accessible accessibilityLabel={summary} accessibilityHint="Use Show as table to hear each value">
+        <View accessible accessibilityLabel={summary} accessibilityHint="Use Table to hear each value">
           <View style={{ height, flexDirection: 'row', alignItems: 'flex-end', gap: 2, borderBottomWidth: 1, borderBottomColor: t.border }}>
             {bars.map((b) => {
               const active = b.key === shown?.key;
@@ -77,6 +82,9 @@ export function BarChart({
                     <View
                       style={{
                         height: max ? Math.max(2, (b.value / max) * (height - 4)) : 0,
+                        width: '72%',
+                        maxWidth: 32,
+                        alignSelf: 'center',
                         backgroundColor: t.chart,
                         opacity: shown && !active ? 0.55 : 1,
                         borderTopLeftRadius: 4,
@@ -97,7 +105,6 @@ export function BarChart({
           </View>
         </View>
       )}
-      <Button label={table ? 'Show as chart' : 'Show as table'} variant="link" onPress={() => setTable((v) => !v)} />
     </View>
   );
 }

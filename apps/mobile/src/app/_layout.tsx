@@ -35,7 +35,7 @@ function Gate() {
 
   const signedIn = status === 'signedIn';
   const onboarded = !!account?.onboarding_completed_at;
-  const header = { headerShown: true, headerStyle: { backgroundColor: t.background }, headerShadowVisible: false, headerTintColor: t.text, headerRight: () => <SyncHeader /> };
+  const header = { headerShown: true, headerBackButtonDisplayMode: 'minimal' as const, headerStyle: { backgroundColor: t.background }, headerShadowVisible: false, headerTintColor: t.text, headerRight: () => <SyncHeader /> };
 
   return (
     <AppLockProvider key={signedIn ? 'in' : 'out'} active={signedIn} onSignOut={() => signOut()}>
