@@ -14,11 +14,10 @@ import { useReportInput } from '../../reports/useReportInput';
 import { useAuth } from '../../state/auth';
 import { useSyncStatus } from '../../sync/engine';
 import { BarChart } from '../../ui/BarChart';
-import { Chips } from '../../ui/Chips';
 import { HorizontalBars } from '../../ui/HorizontalBars';
-import { Avatar, Card, Figure, FigureRow, type IconName, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
+import { Avatar, Card, Figure, Headline, IconBadge, type IconName, ListGroup, ListRow, MetricChip, SectionHeader, Segmented, StatementLine } from '../../ui/kit';
 import { SyncStatus } from '../../ui/SyncStatus';
-import { radius, shadow, spacing, type, useTheme } from '../../ui/theme';
+import { minTouch, radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 // Home leads with what needs the farmer today and what to do next, then the summary the specification
 // asks for (herd, milk, money for a chosen period, with charts); each section opens its details.
@@ -128,6 +127,7 @@ export default function Home() {
   );
   const moneyMax = Math.max(0, ...salesBars.map((b) => b.value), ...payBars.map((b) => b.value));
   const fmtMoney = (c: number) => money(c, f.currency);
+  const periodName = choice === 'today' ? 'today' : choice === 'week' ? 'this week' : 'this month';
   const upcoming = reminders.filter((r) => r.urgency === 'overdue' || r.urgency === 'today' || r.urgency === 'upcoming').slice(0, 3);
   const attentionRows = [...attention.entries()].slice(0, 3);
   const syncWorthShowing = sync.pending > 0 || sync.failed > 0 || sync.state === 'offline' || sync.state === 'attention';
@@ -166,76 +166,102 @@ export default function Home() {
         </View>
       ) : null}
 
+      {/* Herd: one big number, then chips for the groups that matter; warnings only when there are any. */}
       <View style={{ gap: spacing.sm }}>
-        <SectionHeader title="Herd" />
-        <Card href="/animals" label={`Herd: ${herd} active of ${animals.length}, ${inMilk} in milk, ${pregnant} confirmed pregnant, ${attention.size} needing attention, ${vaccDue.length} vaccinations due`}>
-          <FigureRow>
-            <Figure label="Active" value={String(herd)} note={`of ${animals.length} recorded`} />
-            <Figure label="In milk" value={String(inMilk)} />
-            <Figure label="Pregnant" value={String(pregnant)} note="confirmed" />
-            <Figure label="Need attention" value={String(attention.size)} tone={attention.size ? 'danger' : undefined} />
-            <Figure label="Vaccinations due" value={String(vaccDue.length)} note={vaccOverdue ? `${vaccOverdue} overdue` : 'next 30 days'} tone={vaccOverdue ? 'danger' : undefined} />
-          </FigureRow>
+        <SectionHeader title="Herd" action="Animals" onAction={() => router.push('/animals')} />
+        <Card href="/animals" label={`Herd: ${herd} active animals of ${animals.length} recorded, ${inMilk} in milk, ${pregnant} confirmed pregnant`}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <IconBadge icon="cow" size={48} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: t.text, fontSize: 26, fontWeight: '600' }}>
+                {herd} <Text style={{ fontSize: 17, fontWeight: '500', color: t.textMuted }}>active animal{herd === 1 ? '' : 's'}</Text>
+              </Text>
+              <Text style={{ color: t.textMuted, fontSize: 14 }}>{animals.length} recorded in total</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            <MetricChip icon="water-outline" value={String(inMilk)} label="in milk" tint="sky" />
+            <MetricChip icon="heart-pulse" value={String(pregnant)} label="pregnant" tint="straw" />
+            {attention.size ? <MetricChip icon="alert-circle-outline" value={String(attention.size)} label="need attention" tint="red" /> : null}
+            {vaccOverdue ? (
+              <MetricChip icon="needle" value={String(vaccOverdue)} label={`vaccination${vaccOverdue === 1 ? '' : 's'} overdue`} tint="red" />
+            ) : (
+              <MetricChip icon="needle" value={String(vaccDue.length)} label={`vaccination${vaccDue.length === 1 ? '' : 's'} due`} />
+            )}
+          </View>
         </Card>
       </View>
 
-      {/* One period choice drives the milk and money cards below. */}
-      <Chips
-        label="Period for milk and money"
-        value={choice}
-        options={[
-          { value: 'today', label: 'Today' },
-          { value: 'week', label: 'This week' },
-          { value: 'month', label: 'This month' },
-        ]}
-        onChange={(v) => v && setChoice(v)}
-        allowClear={false}
-      />
-
       <View style={{ gap: spacing.sm }}>
-        <SectionHeader title="Milk" action="Production" onAction={() => router.push('/production')} />
-        <Card>
-          <FigureRow>
-            <Figure label="Produced" value={L(milkPeriod.totalCl)} note={milkPeriod.restrictedCl ? `${L(milkPeriod.restrictedCl)} withdrawal` : undefined} />
-            <Figure label="Sold" value={L(moneyPeriod.litresCl)} />
-            <Figure label="For sale now" value={`${litres(f.available(today))} L`} />
-          </FigureRow>
-          <Chips
-            label="Chart"
-            value={milkChart}
-            options={[
-              { value: 'daily', label: 'Per day' },
-              { value: 'cow', label: 'By cow' },
-            ]}
-            onChange={(v) => v && setMilkChart(v)}
-            allowClear={false}
+        <SectionHeader title="Milk and money" />
+        <Segmented
+          label="Period for milk and money"
+          value={choice}
+          options={[
+            { value: 'today', label: 'Today' },
+            { value: 'week', label: 'This week' },
+            { value: 'month', label: 'This month' },
+          ]}
+          onChange={setChoice}
+        />
+      </View>
+
+      {/* Milk: what was produced is the headline; where it went sits underneath. */}
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md }}>
+          <View style={{ flex: 1 }}>
+            <Headline label={`Milk produced ${periodName}`} value={L(milkPeriod.totalCl)} />
+          </View>
+          <IconBadge icon="water-outline" tint="sky" />
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing.md }}>
+          <Figure label="Sold" value={L(moneyPeriod.litresCl)} />
+          <Figure label="For sale now" value={`${litres(f.available(today))} L`} />
+          {milkPeriod.restrictedCl ? <Figure label="Withdrawal" value={L(milkPeriod.restrictedCl)} tone="danger" /> : null}
+        </View>
+        <Segmented
+          label="Milk chart"
+          value={milkChart}
+          options={[
+            { value: 'daily', label: 'Per day' },
+            { value: 'cow', label: 'By cow' },
+          ]}
+          onChange={setMilkChart}
+        />
+        {milkChart === 'daily' ? (
+          <BarChart
+            title={choice === 'today' ? 'Last 7 days' : 'Per day'}
+            bars={dailyTotals(milk, chartFrom, to).map((d) => ({ key: d.date, label: dayLabel(d.date), short: String(Number(d.date.slice(8))), value: d.cl, missing: !d.recorded }))}
+            format={L}
+            height={100}
           />
-          {milkChart === 'daily' ? (
-            <BarChart
-              title={choice === 'today' ? 'Milk per day, last 7 days' : 'Milk per day'}
-              bars={dailyTotals(milk, chartFrom, to).map((d) => ({ key: d.date, label: dayLabel(d.date), short: String(Number(d.date.slice(8))), value: d.cl, missing: !d.recorded }))}
-              format={L}
-              height={100}
-            />
-          ) : (
-            <HorizontalBars title="Milk by cow" items={byCow} format={L} limit={6} />
-          )}
-        </Card>
-      </View>
+        ) : (
+          <HorizontalBars title="By cow" items={byCow} format={L} limit={6} />
+        )}
+        <Pressable accessibilityRole="button" onPress={() => router.push('/production')} style={{ minHeight: minTouch - 8, justifyContent: 'center' }}>
+          <Text style={{ color: t.primary, fontSize: 15, fontWeight: '600' }}>Production details ›</Text>
+        </Pressable>
+      </Card>
 
-      <View style={{ gap: spacing.sm }}>
-        <SectionHeader title={`Money (${f.currency})`} action="Summary" onAction={() => router.push('/finance')} />
-        <Card>
-          <FigureRow>
-            <Figure label="Sales" value={money(moneyPeriod.revenueCents, f.currency)} />
-            <Figure label="Received" value={money(moneyPeriod.receiptsCents, f.currency)} />
-            <Figure label="Owed now" value={money(moneyPeriod.outstandingCents, f.currency)} tone={moneyPeriod.outstandingCents > 0 ? 'danger' : undefined} />
-            <Figure label="Expenses" value={money(moneyPeriod.expensesCents, f.currency)} />
-          </FigureRow>
-          <BarChart title="Sales per day" bars={salesBars} format={fmtMoney} height={70} max={moneyMax} />
-          <BarChart title="Payments received per day" bars={payBars} format={fmtMoney} height={70} max={moneyMax} />
-        </Card>
-      </View>
+      {/* Money: sales as the headline, then a short statement, then the two trends on one scale. */}
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md }}>
+          <View style={{ flex: 1 }}>
+            <Headline label={`Sales ${periodName}`} value={money(moneyPeriod.revenueCents, f.currency)} note={`${moneyPeriod.salesCount} sale${moneyPeriod.salesCount === 1 ? '' : 's'}`} />
+          </View>
+          <IconBadge icon="cash-multiple" />
+        </View>
+        <View>
+          <StatementLine first label="Money received" value={money(moneyPeriod.receiptsCents, f.currency)} />
+          <StatementLine label="Customers owe now" value={money(moneyPeriod.outstandingCents, f.currency)} tone={moneyPeriod.outstandingCents > 0 ? 'danger' : undefined} />
+          <StatementLine label="Expenses" value={money(moneyPeriod.expensesCents, f.currency)} />
+        </View>
+        <BarChart title="Sales per day" bars={salesBars} format={fmtMoney} height={64} max={moneyMax} />
+        <BarChart title="Payments received per day" bars={payBars} format={fmtMoney} height={64} max={moneyMax} />
+        <Pressable accessibilityRole="button" onPress={() => router.push('/finance')} style={{ minHeight: minTouch - 8, justifyContent: 'center' }}>
+          <Text style={{ color: t.primary, fontSize: 15, fontWeight: '600' }}>Money summary ›</Text>
+        </Pressable>
+      </Card>
 
       <View style={{ gap: spacing.sm }}>
         <SectionHeader title="Coming up" action="All" onAction={() => router.push('/reminders')} />

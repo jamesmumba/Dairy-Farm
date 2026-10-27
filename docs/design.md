@@ -198,7 +198,7 @@ sales first, with extra kept as credit.
 
 ## Components
 
-Building blocks in `src/ui/kit.tsx`: `IconBadge`, `SectionHeader` (title with a "See all" style link), `ListGroup`
+Building blocks in `src/ui/kit.tsx`: `Segmented` (pill switch for a period or chart), `MetricChip` (icon, number, label), `Headline` (a card's big number), `StatementLine` (label and amount), `IconBadge`, `SectionHeader` (title with a "See all" style link), `ListGroup`
 and `ListRow` (iOS-style grouped rows with icon, subtitle, value and chevron), `ActionTile` (icon tile for main
 actions), `StatCard` (icon, label, large figure, note), `Avatar` (initials), `Pill` (status label).
 
@@ -218,9 +218,10 @@ Added after farmer feedback that screens felt cluttered:
 Screen patterns:
 * **Home**: the green "today" card, four round quick actions (Milk, Sale, Animal, Health), **Needs attention**
   (only when there is something, at most 3 rows), then the summary the specification requires (section 6):
-  a **Herd** card (active of recorded, in milk, confirmed pregnant, needing attention, vaccinations due/overdue),
-  one period choice (today, this week, this month), a **Milk** card (produced, sold, for sale now; chart per day or
-  by cow) and a **Money** card (sales, received, owed now, expenses; sales and payments per day on one scale), and
+  a **Herd** card (the number of active animals large, then chips: in milk, pregnant, and, only when there are any,
+  needing attention and vaccinations overdue), one period switch (Today / This week / This month), a **Milk** card
+  (produced as the headline; sold and for sale now underneath; per-day or by-cow chart) and a **Money** card (sales
+  as the headline; received, owed now and expenses as a short statement; sales and payments per day on one scale),
   **Coming up** (3 rows). Each section opens its details.
 * **Records**: a green milking-round banner, then grouped rows: Health, Breeding, Other.
 * **Animals**: search and filters, rows with an initials avatar, breed and age and one status pill, and a floating

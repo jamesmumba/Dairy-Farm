@@ -316,3 +316,68 @@ export function FormCard({ title, children }: { title?: string; children: ReactN
     </View>
   );
 }
+
+/** A pill-shaped switch between a few options (period, chart type). Reads as one control, not a row of buttons. */
+export function Segmented<V extends string>({ label, value, options, onChange }: { label: string; value: V; options: readonly { value: V; label: string }[]; onChange: (v: V) => void }) {
+  const t = useTheme();
+  return (
+    <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ flexDirection: 'row', backgroundColor: t.border, borderRadius: radius.chip, padding: 3 }}>
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: on }}
+            accessibilityLabel={`${label}: ${o.label}`}
+            onPress={() => onChange(o.value)}
+            style={{ flex: 1, minHeight: minTouch - 10, alignItems: 'center', justifyContent: 'center', borderRadius: radius.chip - 3, backgroundColor: on ? t.surface : 'transparent', ...(on ? shadow : null), shadowOpacity: on ? 0.08 : 0 }}
+          >
+            <Text numberOfLines={1} style={{ color: on ? t.primary : t.textMuted, fontSize: 14, fontWeight: on ? '700' : '500' }}>
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** A soft pill with an icon, a bold number and a short label: "12 in milk". */
+export function MetricChip({ icon, value, label, tint = 'green' }: { icon: IconName; value: string; label: string; tint?: Tint }) {
+  const t = useTheme();
+  const [fg, bg] = TINTS[tint];
+  return (
+    <View accessible accessibilityLabel={`${value} ${label}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.sm + 2, paddingVertical: 6, borderRadius: radius.chip, backgroundColor: t[bg] }}>
+      <MaterialCommunityIcons name={icon} size={16} color={t[fg]} />
+      <Text style={{ color: t[fg], fontSize: 14 }}>
+        <Text style={{ fontWeight: '700' }}>{value}</Text> {label}
+      </Text>
+    </View>
+  );
+}
+
+/** The big number of a card: small label above, large value, optional line underneath. */
+export function Headline({ label, value, note, tone }: { label: string; value: string; note?: string; tone?: 'danger' }) {
+  const t = useTheme();
+  return (
+    <View style={{ gap: 2 }} accessible accessibilityLabel={`${label}: ${value}${note ? `. ${note}` : ''}`}>
+      <Text style={{ color: t.textMuted, fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: tone === 'danger' ? t.danger : t.text, fontSize: 32, fontWeight: '600', fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
+      {note ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{note}</Text> : null}
+    </View>
+  );
+}
+
+/** One line of a short statement: label left, amount right, hairline above. */
+export function StatementLine({ label, value, tone, first }: { label: string; value: string; tone?: 'danger'; first?: boolean }) {
+  const t = useTheme();
+  return (
+    <View accessible accessibilityLabel={`${label}: ${value}`} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm + 2, borderTopWidth: first ? 0 : 1, borderTopColor: t.border }}>
+      <Text style={{ color: t.textMuted, fontSize: 15 }}>{label}</Text>
+      <Text style={{ color: tone === 'danger' ? t.danger : t.text, fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{value}</Text>
+    </View>
+  );
+}
