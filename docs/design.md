@@ -9,7 +9,7 @@ WCAG AA contrast.
 | Topic | Decision |
 |---|---|
 | Input borders | Stay `line-200`; the error state uses a 2 pt `red-700` border |
-| Dark mode | Keeps the earlier dark palette for now. A dark version of this design is to be done later |
+| Dark mode | The app is light-only for now (`userInterfaceStyle: light`), so every phone shows this design. The dark palette stays in `palette.ts` (and its contrast is tested) for the dark design to come |
 | Charts | One hue per chart (`green-700`); series are compared in separate small charts on one scale, never by two similar hues |
 | Sale confirmation | Only for an unusual sale: a special price, part or no payment, a currency other than the farm's, or more than half the milk in stock. An ordinary sale saves at once and shows a "Sale saved" notice |
 | Stock reconciliation task | Dropped. Stock is a ledger with reasoned adjustments; negative-stock days are shown as a notice on the stock screen |
@@ -92,7 +92,9 @@ No long all-caps labels, light weights, or text in images.
 * 8 pt spacing scale: 4, 8, 16, 24, 32 (and 12 where needed). 16 pt screen side padding.
 * Cards and panels: radius 16, 1 pt `line-200` border, no heavy shadows. Inputs and buttons: radius 12. Chips: radius 20.
 * No heavy gradients, glass effects or layered card piles.
-* Outline icons support labels; they never replace them.
+* Icons: Material Community Icons (`@expo/vector-icons`), which include farm shapes (cow, milk drop, needle,
+  stethoscope). They sit in soft rounded "badges" tinted green, sky, straw or red by topic, and always next to a label.
+* Cards have a soft green-tinted shadow (`shadow` in `theme.ts`) and a hairline border.
 * Touch targets at least 48 × 48 dp.
 
 ## Information architecture
@@ -196,6 +198,20 @@ sales first, with extra kept as credit.
 
 ## Components
 
+Building blocks in `src/ui/kit.tsx`: `IconBadge`, `SectionHeader` (title with a "See all" style link), `ListGroup`
+and `ListRow` (iOS-style grouped rows with icon, subtitle, value and chevron), `ActionTile` (icon tile for main
+actions), `StatCard` (icon, label, large figure, note), `Avatar` (initials), `Pill` (status label).
+
+Screen patterns:
+* **Home**: a deep green "today" card (greeting, date, milk today, milk for sale), then attention rows, four quick
+  action tiles, stat cards per topic, charts in a white card, and coming-up rows.
+* **Records**: a green milking-round banner, care actions as an icon tile grid, other entries as grouped rows.
+* **Animals**: rows with an initials avatar, ID, breed and age, and status pills (in milk, dry, pregnant, withdrawal).
+* **Sales**: stock and price stat cards, **New sale**, grouped links, and customers with avatar and balance.
+* **More**: a farm card, then grouped rows for records, account and data.
+* Tab bar: white, with the active tab's icon in a pale green pill.
+
+Other components: 
 `SyncHeader` (header indicator), `SyncStatus` (full status on Home), `SyncBadge` (per record), `Notice`
 (info, success, attention, error), `Button`, `TextField`, `Choice`, `Toggle`, `Chips`, `DateField`, `BarChart`,
 `HorizontalBars`, summary tiles and quick actions on Home.

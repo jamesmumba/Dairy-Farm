@@ -10,7 +10,9 @@ import { toDateString } from '../../lib/dates';
 import { Chips } from '../../ui/Chips';
 import { Button, TextField } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { minTouch, radius, spacing, useTheme } from '../../ui/theme';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Avatar, Pill } from '../../ui/kit';
+import { minTouch, radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 export default function Animals() {
   const t = useTheme();
@@ -101,29 +103,55 @@ export default function Animals() {
           </View>
         }
         ListEmptyComponent={
-          <Text style={{ color: t.textMuted, fontSize: 16 }}>
-            {animals.length ? 'No animals match your search or filters.' : 'No animals yet. Register your first animal to start keeping records.'}
-          </Text>
-        }
-        renderItem={({ item: { data: a, sync_state } }) => (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${displayName(a)}, ${a.sex}, ${breedName.get(a.breed_id ?? '') ?? 'breed not set'}, ${STATUS_LABELS[a.status]}`}
-            onPress={() => router.push({ pathname: '/animal/[id]', params: { id: a.id } })}
-            style={{ minHeight: minTouch + 16, padding: spacing.md, borderRadius: radius.card, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, gap: 2 }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm }}>
-              <Text style={{ color: t.text, fontSize: 17, fontWeight: '600', flexShrink: 1 }}>{displayName(a)}</Text>
-              <Text style={{ color: t.textMuted, fontSize: 14 }}>ID {shortCode(a.id)}</Text>
-            </View>
-            <Text style={{ color: t.textMuted, fontSize: 15 }}>
-              {[a.sex === 'female' ? 'Female' : 'Male', breedName.get(a.breed_id ?? ''), ageLabel(a), PRODUCTION_LABELS[a.production_status]].filter(Boolean).join(' · ')}
+          <View style={{ alignItems: 'center', gap: spacing.sm, padding: spacing.lg }}>
+            <MaterialCommunityIcons name="cow" size={48} color={t.chart} importantForAccessibility="no" />
+            <Text style={{ color: t.textMuted, fontSize: 16, textAlign: 'center' }}>
+              {animals.length ? 'No animals match your search or filters.' : 'No animals yet. Register your first animal to start keeping records.'}
             </Text>
-            {a.status !== 'active' ? <Text style={{ color: t.text, fontSize: 15 }}>{STATUS_LABELS[a.status]}</Text> : null}
-            {!a.ear_tag ? <Text style={{ color: t.textMuted, fontSize: 14 }}>No ear tag yet</Text> : null}
-            <SyncBadge state={sync_state} />
-          </Pressable>
-        )}
+          </View>
+        }
+        renderItem={({ item: { data: a, sync_state } }) => {
+          const withdrawal = !!activeWithdrawal(care.treatments, a.id);
+          return (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${displayName(a)}, ${a.sex}, ${breedName.get(a.breed_id ?? '') ?? 'breed not set'}, ${STATUS_LABELS[a.status]}${withdrawal ? ', milk withdrawal' : ''}`}
+              onPress={() => router.push({ pathname: '/animal/[id]', params: { id: a.id } })}
+              style={({ pressed }) => ({
+                minHeight: minTouch + 24,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.md,
+                padding: spacing.md,
+                borderRadius: radius.card,
+                borderWidth: 1,
+                borderColor: t.border,
+                backgroundColor: pressed ? t.primarySoft : t.surface,
+                ...shadow,
+              })}
+            >
+              <Avatar name={displayName(a)} tint={a.status !== 'active' ? 'sky' : withdrawal ? 'red' : 'green'} size={48} />
+              <View style={{ flex: 1, gap: 3 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm }}>
+                  <Text style={{ color: t.text, ...type.cardTitle, fontSize: 17, flexShrink: 1 }}>{displayName(a)}</Text>
+                  <Text style={{ color: t.textMuted, fontSize: 13 }}>ID {shortCode(a.id)}</Text>
+                </View>
+                <Text style={{ color: t.textMuted, fontSize: 14 }}>
+                  {[a.sex === 'female' ? 'Female' : 'Male', breedName.get(a.breed_id ?? ''), ageLabel(a)].filter(Boolean).join(' · ')}
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+                  {a.status !== 'active' ? <Pill label={STATUS_LABELS[a.status]} tint="sky" /> : null}
+                  {withdrawal ? <Pill label="Milk withdrawal" tint="red" /> : null}
+                  {a.status === 'active' && a.production_status !== 'not_applicable' ? <Pill label={PRODUCTION_LABELS[a.production_status]} tint={a.production_status === 'lactating' ? 'green' : 'straw'} /> : null}
+                  {a.reproductive_status === 'pregnant' ? <Pill label="Pregnant" tint="straw" /> : null}
+                  {!a.ear_tag ? <Pill label="No ear tag" tint="straw" /> : null}
+                </View>
+                <SyncBadge state={sync_state} />
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={22} color={t.textMuted} importantForAccessibility="no" />
+            </Pressable>
+          );
+        }}
       />
     </View>
   );

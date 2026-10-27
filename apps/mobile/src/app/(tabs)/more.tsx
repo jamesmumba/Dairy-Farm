@@ -1,44 +1,43 @@
-import { type Href, router } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useAuth } from '../../state/auth';
-import { minTouch, spacing, useTheme } from '../../ui/theme';
-
-const ITEMS: { label: string; hint: string; href?: Href }[] = [
-  { label: 'Profile and settings', hint: 'Name, farm, currency, reminders', href: '/settings' },
-  { label: 'Security', hint: 'App lock, password, sign out', href: '/security' },
-  { label: 'Breeds', hint: 'Add or hide breeds', href: '/breeds' },
-  { label: 'Sync issues', hint: 'Changes your account did not accept', href: '/sync-issues' },
-  { label: 'Reminders', hint: 'Due, overdue and withdrawal notices', href: '/reminders' },
-  { label: 'Audit history', hint: 'Corrections, voids, price changes and adjustments', href: '/audit' },
-  { label: 'Reports and exports', hint: 'Herd, milk, health, breeding, vaccination, money; CSV and PDF', href: '/reports' },
-  { label: 'Delete account', hint: 'Request deletion of your account and records', href: '/delete-account' },
-];
+import { Avatar, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
+import { radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 export default function More() {
   const t = useTheme();
   const { account } = useAuth();
+  const farm = account?.farm_name || 'Your farm';
   return (
-    <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
-      <Text accessibilityRole="header" style={{ color: t.text, fontSize: 24, fontWeight: '700' }}>
-        {account?.farm_name || 'More'}
-      </Text>
-      {ITEMS.map(({ label, hint, href }) => (
-        <Pressable
-          key={label}
-          accessibilityRole="button"
-          accessibilityLabel={label}
-          accessibilityHint={hint}
-          accessibilityState={{ disabled: !href }}
-          disabled={!href}
-          onPress={() => href && router.push(href)}
-          style={{ minHeight: minTouch + 8, justifyContent: 'center', paddingHorizontal: spacing.md, borderBottomWidth: 1, borderBottomColor: t.border }}
-        >
-          <View style={{ opacity: href ? 1 : 0.6 }}>
-            <Text style={{ color: t.text, fontSize: 17 }}>{label}</Text>
-            <Text style={{ color: t.textMuted, fontSize: 14 }}>{hint}</Text>
-          </View>
-        </Pressable>
-      ))}
+    <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.card, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border, ...shadow }}>
+        <Avatar name={account?.display_name || farm} size={52} />
+        <View style={{ flex: 1 }}>
+          <Text accessibilityRole="header" style={{ color: t.text, ...type.sectionTitle }}>
+            {farm}
+          </Text>
+          <Text style={{ color: t.textMuted, ...type.secondary }}>{[account?.display_name, account?.farm_location].filter(Boolean).join(' · ') || 'Add your farm details in settings'}</Text>
+        </View>
+      </View>
+
+      <SectionHeader title="Farm records" />
+      <ListGroup>
+        <ListRow icon="file-chart-outline" title="Reports and exports" subtitle="Herd, milk, health, breeding, money; CSV and PDF" href="/reports" />
+        <ListRow icon="bell-outline" tint="straw" title="Reminders" subtitle="Due, overdue and withdrawal notices" href="/reminders" />
+        <ListRow icon="history" tint="sky" title="Audit history" subtitle="Corrections, voids, price changes and adjustments" href="/audit" />
+        <ListRow icon="cow" title="Breeds" subtitle="Add or hide breeds" href="/breeds" />
+      </ListGroup>
+
+      <SectionHeader title="Account" />
+      <ListGroup>
+        <ListRow icon="cog-outline" title="Profile and settings" subtitle="Name, farm, currency, reminders" href="/settings" />
+        <ListRow icon="shield-lock-outline" title="Security" subtitle="App lock, password, sign out" href="/security" />
+        <ListRow icon="sync" tint="sky" title="Sync issues" subtitle="Changes your account did not accept" href="/sync-issues" />
+      </ListGroup>
+
+      <SectionHeader title="Your data" />
+      <ListGroup>
+        <ListRow icon="delete-outline" tint="red" title="Delete account" subtitle="Request deletion of your account and records" href="/delete-account" />
+      </ListGroup>
     </ScrollView>
   );
 }

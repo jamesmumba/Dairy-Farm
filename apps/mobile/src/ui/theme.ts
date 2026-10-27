@@ -1,5 +1,5 @@
-import { useColorScheme, useWindowDimensions } from 'react-native';
-import { dark, light } from './palette';
+import { useWindowDimensions } from 'react-native';
+import { light } from './palette';
 
 export type Theme = typeof light;
 
@@ -22,9 +22,20 @@ export const type = {
 /** Minimum touch target (dp), per Android and iOS accessibility guidance. */
 export const minTouch = 48;
 
+// The app is light-only until the dark design is done (docs/design.md); the dark palette
+// in palette.ts is kept and tested for that.
 export function useTheme() {
-  return useColorScheme() === 'dark' ? dark : light;
+  return light;
 }
+
+/** Soft card shadow, tinted green so it reads as depth rather than grey dirt. */
+export const shadow = {
+  shadowColor: '#173F2B',
+  shadowOpacity: 0.07,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 2,
+};
 
 /**
  * Width of a summary card: two per row, or one per row on narrow phones and with large text
