@@ -1,6 +1,6 @@
 # API contract (v1)
 
-The Fastify API in `apps/api` is the only way the app reads or writes farm data. The Supabase
+The API in `apps/api` (Hono, deployed as the Supabase Edge Function `api`) is the only way the app reads or writes farm data. The Supabase
 Data API is locked out: RLS is on, there are no policies, and grants are revoked for `anon` and
 `authenticated`. The app talks to Supabase directly only for **Auth** (sign-in, refresh, recovery)
 and, from Stage 3, for **Storage** uploads through short-lived signed URLs that the API issues.
@@ -9,14 +9,14 @@ and, from Stage 3, for **Storage** uploads through short-lived signed URLs that 
 
 | Topic | Rule |
 |---|---|
-| Base path | `/v1`. `GET /health` is the only unauthenticated route. |
+| Base URL | `https://<project-ref>.supabase.co/functions/v1/api`, then `/v1/...`. `GET /health` and `GET /health/ready` (which also checks the database) are the only unauthenticated routes. |
 | Auth | `Authorization: Bearer <Supabase access token>`. The API verifies it against the project JWKS and sets `owner_id` from the token. Any `owner_id` in a body, query or header is ignored. |
 | JSON | `snake_case` keys, matching the database columns. |
 | Decimals | Money and litres are **strings** with fixed precision (`"100.00"`, `"12.50"`), never JSON numbers. Litres use 2 dp, money uses 2 dp, unit price uses 2 dp. |
 | Dates | Business dates are `YYYY-MM-DD`. Event times are ISO 8601 with offset. |
 | IDs | UUIDs. The app generates them for records it creates, so a record keeps the same id offline and online. |
 | Errors | `{ "error": "<code>", "message": "<safe text>" }`. 5xx responses never include internal details. |
-| Rate limit | 300 requests/minute per client address (`TRUST_PROXY=true` behind a hosting proxy). Exceeding it returns 429. |
+| Rate limit | 300 requests/minute per client address, counted per running function instance (Supabase may run several, so it guards against floods rather than being a precise quota). Exceeding it returns 429 with `Retry-After`. Invalid JSON returns `400 bad_request`. |
 | Headers | Every response has `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`. Request bodies are limited to 256 KB (otherwise `413`). |
 | Owner checks | A record of another farmer always answers `404 not_found`, before any other validation of the request. This is checked for every id route by `test/isolation.test.ts`. |
 

@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { Router } from './router.js';
 import { z } from 'zod';
 import { CARE_ENTITIES, createCare, createSchema, listCare, removeCare, RemoveBody, updateCare, updateSchema } from './care.js';
 import type { Db } from './db.js';
@@ -9,7 +9,7 @@ const IdParam = z.object({ id: z.uuid() });
 const ListQuery = z.object({ cattle_id: z.uuid().optional() }).strict();
 
 /** The same five routes for every care entity: list, create, update, remove. */
-export function careRoutes(v1: FastifyInstance, { db }: { db: Db }) {
+export function careRoutes(v1: Router, { db }: { db: Db }) {
   for (const e of CARE_ENTITIES) {
     const create = createSchema(e);
     const update = updateSchema(e);

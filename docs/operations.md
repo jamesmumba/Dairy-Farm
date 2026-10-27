@@ -6,9 +6,9 @@ How to deploy, build, back up, restore, monitor and support the Dairy Farm app.
 
 | | Database / Auth / Storage | API | App build |
 |---|---|---|---|
-| Development | Supabase project `dairy-farm` (eu-central-1) | `npm run dev` on a laptop | Expo Go or a development build |
-| Staging | A second Supabase project | A separate API deployment | EAS `preview` profile (internal APK / TestFlight) |
-| Production | A third Supabase project (a paid plan is recommended, for managed backups) | A production deployment | EAS `production` profile (Play Store / App Store) |
+| Development | Supabase project `dairy-farm` (eu-central-1) | Edge Function `api` on `dairy-farm` (or `npm run dev` on a laptop) | Expo Go or a development build |
+| Staging | A second Supabase project | Edge Function `api` on that project | EAS `preview` profile (internal APK / TestFlight) |
+| Production | A third Supabase project (a paid plan is recommended, for managed backups) | Edge Function `api` on that project | EAS `production` profile (Play Store / App Store) |
 
 Apply the migrations in `supabase/migrations` in order to each new project: `supabase db push`, or the SQL editor. Never point staging or development at production data.
 
@@ -16,11 +16,11 @@ Apply the migrations in `supabase/migrations` in order to each new project: `sup
 
 | Where | Variable | Notes |
 |---|---|---|
-| API | `DATABASE_URL` | Session pooler or direct connection. Secret |
-| API | `SUPABASE_URL` | Public |
-| API | `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_…`). It signs photo URLs and deletes sign-ins in the erasure script. **Never in the app** |
-| API | `PORT`, `HOST`, `LOG_LEVEL` | Defaults: 3000, 0.0.0.0, info |
-| API | `TRUST_PROXY` | Set to `true` behind a hosting proxy (Fly, Render, Railway), so rate limits see real client addresses |
+| Edge Function | `SUPABASE_URL`, `SUPABASE_DB_URL`, `SUPABASE_SECRET_KEYS`, `SUPABASE_JWKS` | Provided by Supabase to every function. **Nothing to set by hand** |
+| Local API / scripts | `DATABASE_URL` | Session pooler or direct connection. Secret |
+| Local API / scripts | `SUPABASE_URL` | Public |
+| Local API / scripts | `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_…`). It signs photo URLs and deletes sign-ins in the erasure script. **Never in the app** |
+| Local API | `PORT`, `HOST`, `TRUST_PROXY` | Defaults: 3000, 0.0.0.0, false. Set `TRUST_PROXY=true` only behind a proxy that sets `X-Forwarded-For` |
 | App (EAS env) | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_API_URL` | Public by design. Set per environment with `npx eas-cli env:create`. The app refuses to start without them |
 | GitHub | `EXPO_TOKEN`, `BACKUP_DATABASE_URL`, `BACKUP_PASSPHRASE` | Repository secrets |
 
@@ -36,25 +36,35 @@ Apply the migrations in `supabase/migrations` in order to each new project: `sup
 
 ## Deploying the API
 
-The API is a stateless Docker container (`apps/api/Dockerfile`, Node 24, runs as a non-root user). Health check: `GET /health` returns `{"status":"ok"}`.
+The API runs as the Supabase Edge Function `api`, so the database, sign-in, storage and API are all on one platform.
+`apps/api/src/edge.ts` is the entry point. `npm run build:edge` bundles it with the API into
+`supabase/functions/api/index.js` (one file; npm packages load as pinned `npm:` imports). `npm test` rebuilds it
+first, and `test/edgeBundle.test.ts` runs that exact file, so commit it together with the source. CI fails if the
+committed copy is out of date.
 
-**Fly.io** (Johannesburg region, the closest to Zambia):
 ```bash
 cd apps/api
-fly launch --no-deploy --region jnb --name dairy-farm-api
-fly secrets set DATABASE_URL=... SUPABASE_URL=... SUPABASE_SECRET_KEY=... TRUST_PROXY=true
-fly deploy
+npm test                                   # rebuilds and tests the bundle
+npx supabase login                         # once
+npx supabase functions deploy api --project-ref <project-ref> --no-verify-jwt
 ```
-Add an HTTP check on `/health` in `fly.toml` and keep at least one machine running.
 
-**Render**: create a Web Service from the repository, with root `apps/api` and runtime Docker. Set the same environment variables and use `/health` as the health check path. The free tier sleeps when idle, so the first request after a pause is slow.
+`--no-verify-jwt` is required: the API verifies tokens itself (against the project's ES256 signing keys), and
+`/health` must answer without one. The function is served at `https://<project-ref>.supabase.co/functions/v1/api`.
 
 After deploying:
-1. Set `EXPO_PUBLIC_API_URL` to the HTTPS address in the EAS environment.
-2. Run `npm run integrity` against the database.
-3. Do manual check M2 in `docs/testing.md`.
+1. `curl https://<project-ref>.supabase.co/functions/v1/api/health/ready` returns `{"status":"ok","database":"ok"}`,
+   and `/v1/me` without a token returns 401.
+2. Set `EXPO_PUBLIC_API_URL` to that address in the EAS environment.
+3. Run `npm run integrity` against the database.
+4. Do manual check M2 in `docs/testing.md`.
 
-The API stops cleanly on SIGTERM: it finishes requests that are in progress, then closes database connections.
+Logs: Supabase dashboard › Edge Functions › `api` › Logs. Errors are logged there; responses never include
+internal details.
+
+**Running on Node instead (optional).** The same app runs as a Node server (`src/server.ts`, `npm run dev`, or the
+Dockerfile, which runs as a non-root user and stops cleanly on SIGTERM). Use it for local development, or if the API
+ever needs a long-running host.
 
 ## Building the app
 

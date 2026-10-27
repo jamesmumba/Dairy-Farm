@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buildApp } from '../src/app.js';
+import { testApp } from './inject.js';
 import type { Accounts, FarmerAccount } from '../src/accounts.js';
 import { account, fakePhotos, noDb, verifyToken } from './fixtures.js';
 
@@ -39,7 +39,7 @@ beforeEach(() => {
 const auth = { authorization: 'Bearer valid-farmer-a' };
 
 async function patch(body: unknown, version: string | null = '1') {
-  const app = await buildApp({ verifyToken, accounts: store.accounts, db: noDb, photos: fakePhotos().photos, receipts: fakePhotos().photos, logLevel: 'silent' });
+  const app = await testApp({ verifyToken, accounts: store.accounts, db: noDb, photos: fakePhotos().photos, receipts: fakePhotos().photos });
   return app.inject({
     method: 'PATCH',
     url: '/v1/me',
@@ -101,7 +101,7 @@ describe('PATCH /v1/me', () => {
 
 describe('POST /v1/me/deletion-request', () => {
   it('records the request with an optional reason', async () => {
-    const app = await buildApp({ verifyToken, accounts: store.accounts, db: noDb, photos: fakePhotos().photos, receipts: fakePhotos().photos, logLevel: 'silent' });
+    const app = await testApp({ verifyToken, accounts: store.accounts, db: noDb, photos: fakePhotos().photos, receipts: fakePhotos().photos });
     const res = await app.inject({
       method: 'POST',
       url: '/v1/me/deletion-request',

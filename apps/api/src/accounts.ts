@@ -97,7 +97,9 @@ export function pgAccounts(pool: Db): Accounts {
         if (Object.keys(changes).length === 0 && !completing) return { ok: true, account: current };
 
         // Column names come from the strict zod schema keys, never from raw input.
-        const sets = Object.keys(changes).map((key, i) => `${key} = $${i + 2}`);
+        // JSON goes in as text and is parsed once by Postgres (drivers differ in how they
+        // encode a string sent to a jsonb parameter).
+        const sets = Object.entries(changes).map(([key, v], i) => `${key} = $${i + 2}${typeof v === 'object' && v !== null ? '::text::jsonb' : ''}`);
         if (completing) sets.push('onboarding_completed_at = now()');
         const values = Object.values(changes).map((v) => (typeof v === 'object' && v !== null ? JSON.stringify(v) : v));
         const updated = await client.query<FarmerAccount>(

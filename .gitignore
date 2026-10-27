@@ -5,3 +5,4 @@ dist/
 !.env.example
 .expo/
 *.log
+apps/api/test/.edge-bundle-*.mjs

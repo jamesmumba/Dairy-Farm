@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { FastifyInstance } from 'fastify';
 import { pgAccounts } from '../src/accounts.js';
-import { buildApp } from '../src/app.js';
+import { testApp } from './inject.js';
 import { fakePhotos, verifyToken } from './fixtures.js';
 import { testDb } from './pglite.js';
 
@@ -10,13 +9,12 @@ export async function harness() {
   const db = await testDb();
   const storage = fakePhotos();
   const receiptStorage = fakePhotos();
-  const app: FastifyInstance = await buildApp({
+  const app = await testApp({
     verifyToken,
     accounts: pgAccounts(db),
     db,
     photos: storage.photos,
     receipts: receiptStorage.photos,
-    logLevel: 'silent',
   });
 
   /** A new farmer with their own auth user; returns a request helper bound to their token. */

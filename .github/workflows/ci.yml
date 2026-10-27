@@ -20,6 +20,9 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run test:postgres
+      # npm test rebuilt the Edge Function; the committed copy must match the source.
+      - run: git diff --exit-code -- ../../supabase/functions/api/index.js
       - run: npm run build
 
   mobile:

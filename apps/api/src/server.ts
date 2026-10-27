@@ -1,3 +1,6 @@
+// Local development and any Node host: `npm run dev`. Production runs as a Supabase Edge
+// Function instead (src/edge.ts).
+import { serve } from '@hono/node-server';
 import pg from 'pg';
 import { loadConfig } from './config.js';
 import { supabaseTokenVerifier } from './auth.js';
@@ -14,17 +17,17 @@ const app = await buildApp({
   db: pool,
   photos: supabasePhotos(config.SUPABASE_URL, config.SUPABASE_SECRET_KEY),
   receipts: supabasePhotos(config.SUPABASE_URL, config.SUPABASE_SECRET_KEY, RECEIPT_BUCKET),
-  logLevel: config.LOG_LEVEL,
   trustProxy: config.TRUST_PROXY === 'true',
 });
 
-// Hosts stop the API with SIGTERM: finish in-flight requests, then close the database pool.
-for (const signal of ['SIGTERM', 'SIGINT'] as const) {
-  process.once(signal, async () => {
-    await app.close();
-    await pool.end();
-    process.exit(0);
-  });
-}
+const server = serve({ fetch: app.fetch, port: config.PORT, hostname: config.HOST }, (info) => console.log(`API listening on http://${config.HOST}:${info.port}`));
 
-await app.listen({ port: config.PORT, host: config.HOST });
+// Stop cleanly: finish in-flight requests, then close the database pool.
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+  process.once(signal, () =>
+    server.close(async () => {
+      await pool.end();
+      process.exit(0);
+    }),
+  );
+}

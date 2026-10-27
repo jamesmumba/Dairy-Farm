@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { FastifyInstance } from 'fastify';
+import type { Router } from './router.js';
 import { z } from 'zod';
 import { BREED_COLUMNS, BreedCreate, BreedUpdate, createBreed, updateBreed } from './breeds.js';
 import {
@@ -25,7 +25,7 @@ import { pull, PullQuery } from './sync.js';
 const IdParam = z.object({ id: z.uuid() });
 const PHOTO_URL_SECONDS = 600;
 
-export function animalRoutes(v1: FastifyInstance, { db, photos }: { db: Db; photos: Photos }) {
+export function animalRoutes(v1: Router, { db, photos }: { db: Db; photos: Photos }) {
   const ctx = (req: { farmer: { account: { id: string }; authUserId: string } }) => ({
     owner: req.farmer.account.id,
     actor: req.farmer.authUserId,

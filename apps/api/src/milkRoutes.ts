@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { Router } from './router.js';
 import { z } from 'zod';
 import type { Db } from './db.js';
 import { parse, requireIdempotencyKey, requireVersion, send } from './http.js';
@@ -7,7 +7,7 @@ import { correctMilk, createMilk, listMilk, MilkCorrect, MilkCreate, MilkListQue
 
 const IdParam = z.object({ id: z.uuid() });
 
-export function milkRoutes(v1: FastifyInstance, { db }: { db: Db }) {
+export function milkRoutes(v1: Router, { db }: { db: Db }) {
   const who = (req: { farmer: { account: { id: string }; authUserId: string } }) => ({
     owner: req.farmer.account.id,
     actor: req.farmer.authUserId,

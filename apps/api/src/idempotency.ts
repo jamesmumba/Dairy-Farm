@@ -46,7 +46,7 @@ export async function idempotent(
       const result = await run(client);
       await client.query(
         `insert into public.idempotency_keys (owner_id, key, operation, request_hash, response_status, response_body)
-         values ($1, $2, $3, $4, $5, $6)`,
+         values ($1, $2, $3, $4, $5, $6::text::jsonb)`,
         [ownerId, key, operation, requestHash, result.status, JSON.stringify(result.body)],
       );
       return result;

@@ -149,9 +149,11 @@ describe('owner isolation sweep', () => {
   });
 
   it('covers every route that takes an id', () => {
-    const routes = h.app.printRoutes({ commonPrefix: false });
-    const withId = routes.split('\n').filter((l) => l.includes(':id')).length;
-    // Each id route above (methods counted separately) plus the care routes; keeps this list in step with the API.
-    expect(ATTEMPTS.length).toBeGreaterThanOrEqual(withId - 2);
+    // Fails, naming the route, when an id route is added to the API without an isolation check here.
+    const pattern = (url: string) => url.replace(/[0-9a-f]{8}-[0-9a-f-]{27}/g, ':id').split('?')[0];
+    const attempted = new Set(ATTEMPTS.map(([method, url]) => `${method} ${pattern(url())}`));
+    const routes = h.app.routes.filter((r) => r.method !== 'ALL' && r.path.includes(':id')).map((r) => `${r.method} ${r.path}`);
+    expect(routes.length).toBeGreaterThan(30);
+    expect(routes.filter((r) => !attempted.has(r))).toEqual([]);
   });
 });

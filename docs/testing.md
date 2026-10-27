@@ -6,7 +6,8 @@ Recorded on **27 Oct 2026** (Stage 8). Automated tests run with `npm test` in `a
 
 | Suite | What it runs against | Tests | Result |
 |---|---|---|---|
-| API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **171** | **171 passed, 0 failed** |
+| API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **182** | **182 passed, 0 failed** |
+| API through postgres.js (`npm run test:postgres`) | The same tests, with PGlite reached over a Postgres socket by postgres.js, the driver the Edge Function uses | **182** | **182 passed, 0 failed** |
 | Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **81** | **81 passed, 0 failed** |
 
 Mutation checks: for each critical rule, the code was broken on purpose to confirm a test fails. All were caught, and the code was then restored.
@@ -19,7 +20,10 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 
 | API file | Tests | Covers |
 |---|---|---|
-| `app.test.ts` | 6 | Health check, token required, forged token, owner taken only from the token, no internal details in errors, cache and nosniff headers, oversized bodies refused |
+| `app.test.ts` | 7 | Health check, token required, forged token, owner taken only from the token, no internal details in errors, cache and nosniff headers, oversized bodies and invalid JSON refused, rate limit per client |
+| `auth.test.ts` | 5 | Supabase token verification: a valid token is accepted; tokens from another project, for a non-user audience, expired, or signed with another key are refused |
+| `account.test.ts` | 2 | Settings stored as JSON objects (not strings), with a version bump and audit; default breeds created once |
+| `edgeBundle.test.ts` | 3 | The built Edge Function file itself, under a stand-in for Deno, over postgres.js: health, readiness, 401s, and account, animal, milk, customer, price and sale end to end with a safe retry |
 | `profile.test.ts` | 13 | Profile and onboarding updates, If-Match conflicts, validation, deletion request |
 | `animals.test.ts` | 21 | Registration, duplicate ear tags, idempotent retries, parents, status changes, deletion rules, photos, sync paging, audit |
 | `milk.test.ts` | 17 | Sessions and the daily sum, duplicates, limits, corrections and voids with stock, withdrawal restriction, timeline |
@@ -71,7 +75,7 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 | Bundles | Android and iOS export successfully |
 | API production build | `npm run build` compiles, and `dist` loads |
 
-**Note on the hosted database:** on 27 Oct 2026 the dev project `dairy-farm` had no accounts or records. So the phone testing so far did not go through this project's API, and the end-to-end path has not been exercised against the real deployment. Run M2 once the API is deployed.
+**Note on the hosted database:** on 27 Oct 2026 the dev project `dairy-farm` had no accounts or records. So the phone testing so far did not go through this project's API. The Edge Function was deployed on 27 Oct 2026: `/health`, `/health/ready` (database reached) and 401 for missing or forged tokens were checked against it. Signed-in use has not been exercised against the deployment yet: run M2.
 
 ## Manual device checks
 

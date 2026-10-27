@@ -38,10 +38,11 @@ export interface AuditEntry {
   after?: unknown;
 }
 
+/** JSON values are sent as text and cast in SQL (`::text::jsonb`), so every driver stores them the same way. */
 export async function audit(client: DbClient, e: AuditEntry) {
   await client.query(
     `insert into public.audit_logs (owner_id, actor_user_id, action, entity_table, entity_id, reason, before_data, after_data)
-     values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+     values ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8::text::jsonb)`,
     [
       e.ownerId,
       e.actorUserId,

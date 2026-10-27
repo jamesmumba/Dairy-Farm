@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { FastifyInstance } from 'fastify';
+import type { Router } from './router.js';
 import { z } from 'zod';
 import { audit, type Db } from './db.js';
 import {
@@ -42,7 +42,7 @@ import { pastDate } from './validation.js';
 const IdParam = z.object({ id: z.uuid() });
 const URL_SECONDS = 600;
 
-export function financeRoutes(v1: FastifyInstance, { db, receipts }: { db: Db; receipts: Photos }) {
+export function financeRoutes(v1: Router, { db, receipts }: { db: Db; receipts: Photos }) {
   const who = (req: { farmer: { account: { id: string }; authUserId: string } }) => ({ owner: req.farmer.account.id, actor: req.farmer.authUserId });
   const id = (params: unknown) => parse(IdParam, params).id;
 

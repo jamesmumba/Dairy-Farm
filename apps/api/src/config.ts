@@ -9,7 +9,6 @@ const Env = z.object({
   SUPABASE_SECRET_KEY: z.string().min(20),
   PORT: z.coerce.number().int().default(3000),
   HOST: z.string().default('0.0.0.0'),
-  LOG_LEVEL: z.string().default('info'),
   TRUST_PROXY: z.enum(['true', 'false']).default('false'),
 });
 

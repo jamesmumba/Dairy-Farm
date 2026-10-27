@@ -4,14 +4,15 @@ A mobile app for one farmer to keep records for a dairy farm in Zambia: herd, mi
 animal health, breeding, vaccination, sales, stock, expenses and reports. It works offline and
 syncs when there is a connection.
 
-**Status:** All 8 stages are built and tested (171 API and 81 mobile automated tests passing). Before release, deploy the API and run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
+**Status:** All 8 stages are built and tested (182 API and 81 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
 
 ## Repository layout
 
 | Path | What |
 |---|---|
 | `apps/mobile` | React Native + Expo (SDK 58) + TypeScript app, Expo Router, routes in `src/app` |
-| `apps/api` | Fastify 5 TypeScript REST API: auth, owner scoping, business rules |
+| `apps/api` | Hono TypeScript REST API: auth, owner scoping, business rules. Runs as a Supabase Edge Function (or on Node locally) |
+| `supabase/functions/api` | The built Edge Function (`npm run build:edge`, generated; do not edit) |
 | `supabase/migrations` | PostgreSQL schema (applied to the hosted project) |
 | `docs/` | [API contract](docs/api-contract.md), [data model](docs/data-model.md), [testing record](docs/testing.md), [operations](docs/operations.md) (deploy, builds, backup/restore, monitoring, deletion, support), [privacy](docs/privacy.md), [farmer guide](docs/farmer-guide.md) |
 | `.github/workflows/ci.yml` | Typecheck, tests, bundle check; manual EAS build |
@@ -20,7 +21,7 @@ syncs when there is a connection.
 
 | Decision | Choice |
 |---|---|
-| Backend | Fastify API holds all business rules. Supabase provides managed Postgres, Auth and private Storage. |
+| Backend | The API holds all business rules. Supabase provides managed Postgres, Auth and private Storage, and runs the API as an Edge Function, so there is one platform to operate. |
 | Data access | Only the API reaches the tables. The Supabase Data API is locked out (RLS on, no policies, grants revoked). |
 | Sign-in | Supabase Auth with email and password. Email verification and password reset use 6-digit codes typed in the app (no deep links). Email is sent through Resend SMTP. |
 | App lock | Optional. Uses the phone's fingerprint, face or screen lock (expo-local-authentication). Locks on launch and after 5 minutes in the background. |
@@ -45,7 +46,7 @@ syncs when there is a connection.
 | Dashboard | Home shows needs attention, herd, milk, and sales and money for a chosen period, with charts and coming-up items. Every tile opens its details |
 | Production alerts | By default, the last 7 days vs the 7 before, flagged at −20% with at least 4 days of records in each. The farmer can change this in settings |
 | Database | Supabase project `dairy-farm`, eu-central-1 (Frankfurt), free tier |
-| API hosting | Not chosen yet. It's a Docker container with a health check; Fly.io (Johannesburg) and Render steps are in [operations.md](docs/operations.md#deploying-the-api) |
+| API hosting | Supabase Edge Function `api` on the `dairy-farm` project: `https://xgdhqmlkjfhcfjkmrqrx.supabase.co/functions/v1/api`. Steps are in [operations.md](docs/operations.md#deploying-the-api) |
 | Account deletion | An operator script erases all of a farmer's records, photos and sign-in after their request, and keeps an anonymous receipt |
 | Backups | Nightly `pg_dump`, checked and AES-256 encrypted, kept 30 days (`.github/workflows/backup.yml`), plus a monthly restore test |
 
@@ -59,8 +60,10 @@ Requirements: Node 24+, npm 11+, the Expo Go app on a phone (or an Android emula
 cd apps/api
 cp .env.example .env    # DATABASE_URL, SUPABASE_URL, SUPABASE_SECRET_KEY (server only)
 npm install
-npm test                # runs against PGlite (in-process Postgres with all migrations); no DB needed
-npm run dev             # http://localhost:3000/health
+npm test                # builds the Edge Function, then tests on PGlite (in-process Postgres with all migrations); no DB needed
+npm run test:postgres   # the same tests through postgres.js, the driver the Edge Function uses
+npm run dev             # local Node server: http://localhost:3000/health
+npm run build:edge      # rebuild supabase/functions/api/index.js after changing src/
 ```
 
 ### Mobile
@@ -74,8 +77,8 @@ npm test                # offline-sync tests: real store/engine on node:sqlite, 
 npm run lint
 ```
 
-On a real phone, set `EXPO_PUBLIC_API_URL` to your computer's LAN address (e.g. `http://192.168.1.20:3000`),
-not `localhost`. The phone and computer must be on the same Wi-Fi.
+`EXPO_PUBLIC_API_URL` points at the deployed Edge Function. To use a local API on a real phone instead, set it to your
+computer's LAN address (e.g. `http://192.168.1.20:3000`), not `localhost`. The phone and computer must be on the same Wi-Fi.
 
 ### Supabase Auth settings (one-time, in the dashboard)
 

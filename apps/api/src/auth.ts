@@ -1,11 +1,14 @@
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createLocalJWKSet, createRemoteJWKSet, type JSONWebKeySet, jwtVerify } from 'jose';
 
 export type VerifyToken = (token: string) => Promise<{ authUserId: string }>;
 
-/** Verifies Supabase Auth access tokens against the project's published signing keys. */
-export function supabaseTokenVerifier(supabaseUrl: string): VerifyToken {
-  const issuer = `${supabaseUrl}/auth/v1`;
-  const jwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
+/**
+ * Verifies Supabase Auth access tokens against the project's signing keys: the given key set
+ * (Edge Functions receive it as SUPABASE_JWKS), or else the project's published JWKS URL.
+ */
+export function supabaseTokenVerifier(supabaseUrl: string, keys?: JSONWebKeySet): VerifyToken {
+  const issuer = `${supabaseUrl.replace(/\/$/, '')}/auth/v1`;
+  const jwks = keys ? createLocalJWKSet(keys) : createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
 
   return async (token) => {
     const { payload } = await jwtVerify(token, jwks, { issuer, audience: 'authenticated' });
