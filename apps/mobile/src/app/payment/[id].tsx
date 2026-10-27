@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert } from 'react-native';
 import { money, toCents } from '../../finance/calc';
 import { METHOD_LABELS, type Payment } from '../../finance/model';
 import { voidPayment } from '../../finance/repo';
@@ -9,10 +9,9 @@ import { formatDateTime } from '../../lib/dates';
 import { getRecord, useLocal } from '../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { useTheme } from '../../ui/theme';
+import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
 
 export default function PaymentScreen() {
-  const t = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const f = useFinance();
   const stored = useLocal(() => getRecord<Payment>('payments', id), id);
@@ -33,28 +32,37 @@ export default function PaymentScreen() {
   }
 
   return (
-    <FormScreen title={money(toCents(p.amount), p.currency)} intro={`${{ payment: 'Payment', refund: 'Refund', adjustment: 'Discount or write-off' }[p.kind]} · ${customer?.name ?? ''} · ${formatDateTime(p.paid_at)}`}>
+    <FormScreen title={{ payment: 'Payment', refund: 'Refund', adjustment: 'Discount or write-off' }[p.kind]}>
+      <Hero
+        label={`${customer?.name ?? 'Customer'} · ${formatDateTime(p.paid_at)}`}
+        value={money(toCents(p.amount), p.currency)}
+        tone={p.status === 'voided' ? 'muted' : undefined}
+        pill={p.status === 'voided' ? <Pill label="Voided" tint="sky" /> : undefined}
+      />
       <SyncBadge state={stored.sync_state} />
-      {p.status === 'voided' ? <Notice>Voided: {p.void_reason}</Notice> : null}
-      <Text style={{ color: t.text, fontSize: 16 }}>Method: {METHOD_LABELS[p.method]}</Text>
-      {p.reference ? <Text style={{ color: t.text, fontSize: 16 }}>Reference: {p.reference}</Text> : null}
-      {p.reason ? <Text style={{ color: t.text, fontSize: 16 }}>Reason: {p.reason}</Text> : null}
-      {p.kind !== 'refund' && p.status === 'completed' ? (
-        <Text style={{ color: t.textMuted, fontSize: 15 }}>
-          Applied to sales: {money(applied, p.currency)}
-          {toCents(p.amount) > applied ? ` · kept as credit: ${money(toCents(p.amount) - applied, p.currency)}` : ''}
-        </Text>
-      ) : null}
+      {p.status === 'voided' && p.void_reason ? <Notice>Voided: {p.void_reason}</Notice> : null}
+      <Details
+        rows={[
+          ['Method', METHOD_LABELS[p.method]],
+          ['Reference', p.reference],
+          ['Reason', p.reason],
+          ['Applied to sales', p.kind !== 'refund' && p.status === 'completed' ? money(applied, p.currency) : null],
+          ['Kept as credit', p.kind !== 'refund' && p.status === 'completed' && toCents(p.amount) > applied ? money(toCents(p.amount) - applied, p.currency) : null],
+        ]}
+      />
       {error ? <Notice tone="error">{error}</Notice> : null}
-      {p.status === 'completed' && !voiding ? <Button label="Void this payment" variant="link" onPress={() => setVoiding(true)} /> : null}
-      {voiding ? (
-        <>
-          <TextField label="Why is this payment being voided?" value={reason} onChangeText={setReason} />
+      {!voiding ? (
+        <ListGroup>
+          {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" href={{ pathname: '/customers/[id]', params: { id: customer.id } }} /> : null}
+          {p.status === 'completed' ? <ListRow icon="close-circle-outline" tint="red" title="Void this payment" onPress={() => setVoiding(true)} /> : null}
+        </ListGroup>
+      ) : (
+        <FormCard title="Void this payment">
+          <TextField label="Why?" value={reason} onChangeText={setReason} />
           <Button label="Void payment" variant="danger" onPress={doVoid} />
           <Button label="Cancel" variant="link" onPress={() => setVoiding(false)} />
-        </>
-      ) : null}
-      {customer ? <Button label={`Open ${customer.name}`} variant="link" onPress={() => router.push({ pathname: '/customers/[id]', params: { id: customer.id } })} /> : null}
+        </FormCard>
+      )}
     </FormScreen>
   );
 }

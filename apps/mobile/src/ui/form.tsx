@@ -13,7 +13,18 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { minTouch, radius, spacing, type, useTheme } from './theme';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { minTouch, radius, shadow, spacing, type, useTheme } from './theme';
+
+/** The app's mark: a cow in a deep green rounded square. Used where there is no navigation header. */
+export function BrandMark({ size = 64 }: { size?: number }) {
+  const t = useTheme();
+  return (
+    <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden style={{ width: size, height: size, borderRadius: size * 0.28, backgroundColor: t.primary, alignItems: 'center', justifyContent: 'center', ...shadow }}>
+      <MaterialCommunityIcons name="cow" size={size * 0.58} color={t.onPrimary} />
+    </View>
+  );
+}
 
 /**
  * Scrolling screen for forms and detail pages. Inside the app the title goes in the navigation header
@@ -30,9 +41,12 @@ export function FormScreen({ title, intro, children, standalone = false }: { tit
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl }} keyboardShouldPersistTaps="handled">
           {standalone ? (
-            <Text accessibilityRole="header" style={{ color: t.text, ...type.screenTitle }}>
-              {title}
-            </Text>
+            <View style={{ gap: spacing.md, marginTop: spacing.lg }}>
+              <BrandMark />
+              <Text accessibilityRole="header" style={{ color: t.text, ...type.screenTitle }}>
+                {title}
+              </Text>
+            </View>
           ) : null}
           {intro ? <Text style={{ color: t.textMuted, fontSize: 15 }}>{intro}</Text> : null}
           {children}

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { Chips } from '../ui/Chips';
 import { useState } from 'react';
 import { Alert, Text } from 'react-native';
 import type { FarmerAccount } from '../lib/account';
@@ -18,7 +18,8 @@ import {
   UnitsSection,
   validate,
 } from '../ui/profileFields';
-import { spacing, useTheme } from '../ui/theme';
+import { FormCard } from '../ui/kit';
+import { useTheme } from '../ui/theme';
 import { type DeclineRule, DEFAULT_DECLINE_RULE } from '../production/calc';
 
 const ALL: Section[] = ['profile', 'farm', 'units', 'reminders'];
@@ -45,8 +46,19 @@ function differences(mine: ProfileForm, saved: ProfileForm) {
     });
 }
 
+type Tab = 'profile' | 'farm' | 'units' | 'reminders' | 'alerts' | 'breeding';
+const TABS: { value: Tab; label: string }[] = [
+  { value: 'profile', label: 'Profile' },
+  { value: 'farm', label: 'Farm' },
+  { value: 'units', label: 'Units' },
+  { value: 'reminders', label: 'Reminders' },
+  { value: 'alerts', label: 'Milk alerts' },
+  { value: 'breeding', label: 'Breeding' },
+];
+
 export default function Settings() {
   const t = useTheme();
+  const [tab, setTab] = useState<Tab>('profile');
   const { account, updateAccount } = useAuth();
   const [form, update, clearDraft] = useDraft('settings', () => formFromAccount(account!));
   const [errors, setErrors] = useState<ProfileErrors>({});
@@ -92,16 +104,23 @@ export default function Settings() {
 
   return (
     <FormScreen title="Profile and settings">
+      {/* One section at a time; the profile sections share one Save, so switching never loses an edit. */}
+      <Chips label="Section" value={tab} options={TABS} onChange={(v) => v && setTab(v)} allowClear={false} />
       {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
-      <ProfileSection form={form} errors={errors} update={update} />
-      <FarmSection form={form} errors={errors} update={update} />
-      <UnitsSection form={form} errors={errors} update={update} />
-      <RemindersSection form={form} errors={errors} update={update} />
-      <Text style={{ color: t.textMuted, fontSize: 14 }}>Changes to currency and other settings are kept in your account history.</Text>
-      <Button label="Save changes" onPress={() => save()} busy={busy} />
-      <DeclineRuleSection />
-      <BreedingIntervalsSection />
-      <Button label="Done" variant="link" onPress={() => router.back()} />
+      {tab === 'alerts' ? (
+        <DeclineRuleSection />
+      ) : tab === 'breeding' ? (
+        <BreedingIntervalsSection />
+      ) : (
+        <FormCard>
+          {tab === 'profile' ? <ProfileSection form={form} errors={errors} update={update} /> : null}
+          {tab === 'farm' ? <FarmSection form={form} errors={errors} update={update} /> : null}
+          {tab === 'units' ? <UnitsSection form={form} errors={errors} update={update} /> : null}
+          {tab === 'reminders' ? <RemindersSection form={form} errors={errors} update={update} /> : null}
+          <Button label="Save changes" onPress={() => save()} busy={busy} />
+          <Text style={{ color: t.textMuted, fontSize: 13 }}>Saves profile, farm, units and reminders together. Changes are kept in your account history.</Text>
+        </FormCard>
+      )}
     </FormScreen>
   );
 }
@@ -130,19 +149,16 @@ function BreedingIntervalsSection() {
   }
 
   return (
-    <>
-      <Text accessibilityRole="header" style={{ color: t.text, fontSize: 20, fontWeight: '700', marginTop: spacing.lg }}>
-        Breeding intervals
-      </Text>
-      <Text style={{ color: t.textMuted, fontSize: 15 }}>
+    <FormCard title="Breeding intervals">
+      <Text style={{ color: t.textMuted, fontSize: 14 }}>
         Used to plan a pregnancy check after each mating or insemination, and to suggest a calving date once a pregnancy is confirmed.
         The starting values are commonly used ones: confirm them with your vet.
       </Text>
       {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
       <TextField label="Pregnancy check after (days)" value={check} onChangeText={setCheck} keyboardType="number-pad" maxLength={3} />
       <TextField label="Gestation (days)" value={gestation} onChangeText={setGestation} keyboardType="number-pad" maxLength={3} />
-      <Button label="Save breeding intervals" variant="secondary" onPress={save} />
-    </>
+      <Button label="Save breeding intervals" onPress={save} />
+    </FormCard>
   );
 }
 
@@ -173,11 +189,8 @@ function DeclineRuleSection() {
   }
 
   return (
-    <>
-      <Text accessibilityRole="header" style={{ color: t.text, fontSize: 20, fontWeight: '700', marginTop: spacing.lg }}>
-        Production alerts
-      </Text>
-      <Text style={{ color: t.textMuted, fontSize: 15 }}>
+    <FormCard title="Production alerts">
+      <Text style={{ color: t.textMuted, fontSize: 14 }}>
         A cow is flagged when her average daily milk over the recent days (up to yesterday) is lower than her average over the days before by at least the percentage below.
       </Text>
       {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
@@ -185,7 +198,7 @@ function DeclineRuleSection() {
       <TextField label="Compared with the days before" value={form.baseline_days} onChangeText={set('baseline_days')} keyboardType="number-pad" maxLength={2} />
       <TextField label="Flag a drop of at least (%)" value={form.threshold_pct} onChangeText={set('threshold_pct')} keyboardType="number-pad" maxLength={2} />
       <TextField label="Minimum days with records in each period" value={form.min_days} onChangeText={set('min_days')} keyboardType="number-pad" maxLength={2} />
-      <Button label="Save alert settings" variant="secondary" onPress={save} />
-    </>
+      <Button label="Save alert settings" onPress={save} />
+    </FormCard>
   );
 }

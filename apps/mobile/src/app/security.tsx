@@ -6,7 +6,8 @@ import { supabase } from '../lib/supabase';
 import { useAppLock } from '../state/appLock';
 import { useAuth } from '../state/auth';
 import { useSyncStatus } from '../sync/engine';
-import { Button, FormScreen, Notice, Toggle } from '../ui/form';
+import { FormScreen, Notice, Toggle } from '../ui/form';
+import { Card, ListGroup, ListRow } from '../ui/kit';
 import { useTheme } from '../ui/theme';
 
 export default function Security() {
@@ -46,16 +47,15 @@ export default function Security() {
   return (
     <FormScreen title="Security">
       {message ? <Notice tone="error">{message}</Notice> : null}
-      <Text style={{ color: t.textMuted, fontSize: 15 }}>Signed in as {email}</Text>
-      <Toggle
-        label="App lock"
-        hint="Ask for fingerprint, face or screen lock when opening the app"
-        value={lock.enabled}
-        onChange={toggleLock}
-      />
-      <Button label="Change password" variant="secondary" onPress={changePassword} hint="We will email you a 6-digit code" />
-      <Button label="Sign out" variant="secondary" onPress={() => confirmSignOut('local')} />
-      <Button label="Sign out on all devices" variant="secondary" onPress={() => confirmSignOut('global')} />
+      <Text style={{ color: t.textMuted, fontSize: 14 }}>Signed in as {email}</Text>
+      <Card>
+        <Toggle label="App lock" hint="Fingerprint, face or screen lock when opening the app" value={lock.enabled} onChange={toggleLock} />
+      </Card>
+      <ListGroup>
+        <ListRow icon="key-outline" title="Change password" subtitle="We email you a 6-digit code" onPress={changePassword} />
+        <ListRow icon="logout" title="Sign out" onPress={() => confirmSignOut('local')} />
+        <ListRow icon="cellphone-remove" tint="red" title="Sign out on all devices" onPress={() => confirmSignOut('global')} />
+      </ListGroup>
     </FormScreen>
   );
 }

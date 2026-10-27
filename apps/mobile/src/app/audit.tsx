@@ -5,7 +5,7 @@ import { formatDateTime } from '../lib/dates';
 import { getJson, setJson } from '../lib/localDb';
 import { Chips } from '../ui/Chips';
 import { Button, Notice } from '../ui/form';
-import { spacing, useTheme } from '../ui/theme';
+import { radius, shadow, spacing, useTheme } from '../ui/theme';
 
 interface AuditEntry {
   id: number;
@@ -65,17 +65,21 @@ export default function AuditHistory() {
   }, [load]);
 
   return (
-    <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
+    <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
       <Chips label="Show" value={table} options={FILTERS} onChange={(v) => { setEntries(getJson(`audit.${v ?? 'all'}`) ?? []); setTable(v); }} />
       {offline ? <Notice>Offline: showing the history last loaded on this phone.</Notice> : null}
       {entries.length === 0 ? <Text style={{ color: t.textMuted }}>No changes recorded yet.</Text> : null}
       {entries.map((e) => {
         const keys = [...new Set([...Object.keys(e.before_data ?? {}), ...Object.keys(e.after_data ?? {})])].filter((k) => !['id', 'owner_id', 'created_at', 'updated_at', 'version'].includes(k)).slice(0, 8);
         return (
-          <View key={e.id} style={{ borderBottomWidth: 1, borderBottomColor: t.border, paddingVertical: spacing.xs, gap: 2 }} accessible>
-            <Text style={{ color: t.textMuted, fontSize: 13 }}>{formatDateTime(e.occurred_at)}</Text>
-            <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{e.action.replace(/[._]/g, ' ')}</Text>
-            {e.reason ? <Text style={{ color: t.text, fontSize: 15 }}>Reason: {e.reason}</Text> : null}
+          <View key={e.id} style={{ backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap: 4, ...shadow }} accessible>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm }}>
+              <Text style={{ color: t.text, fontSize: 16, fontWeight: '600', flex: 1 }}>
+                {e.action.replace(/[._]/g, ' ').replace(/^./, (c) => c.toUpperCase())}
+              </Text>
+              <Text style={{ color: t.textMuted, fontSize: 13 }}>{formatDateTime(e.occurred_at)}</Text>
+            </View>
+            {e.reason ? <Text style={{ color: t.text, fontSize: 15 }}>“{e.reason}”</Text> : null}
             {e.before_data
               ? keys.map((k) => (
                   <Text key={k} style={{ color: t.textMuted, fontSize: 14 }}>

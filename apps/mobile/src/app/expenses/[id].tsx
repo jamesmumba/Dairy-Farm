@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert } from 'react-native';
 import { money, toCents } from '../../finance/calc';
 import { ExpenseForm, type ExpenseFields } from '../../finance/ExpenseForm';
 import { CATEGORY_LABELS, type Expense, METHOD_LABELS } from '../../finance/model';
@@ -12,10 +12,10 @@ import { formatDate } from '../../lib/dates';
 import { getRecord, useLocal } from '../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { radius, useTheme } from '../../ui/theme';
+import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
+import { radius } from '../../ui/theme';
 
 export default function ExpenseScreen() {
-  const t = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const stored = useLocal(() => getRecord<Expense>('farm_expenses', id), id);
   const [mode, setMode] = useState<'view' | 'edit' | 'void'>('view');
@@ -68,30 +68,45 @@ export default function ExpenseScreen() {
   }
 
   return (
-    <FormScreen title={money(toCents(e.amount), e.currency)} intro={`${CATEGORY_LABELS[e.category]} · ${formatDate(e.expense_date)}`}>
+    <FormScreen title="Expense">
+      <Hero
+        label={`${CATEGORY_LABELS[e.category]} · ${formatDate(e.expense_date)}`}
+        value={money(toCents(e.amount), e.currency)}
+        tone={e.status === 'voided' ? 'muted' : undefined}
+        pill={
+          e.status === 'voided' ? (
+            <Pill label="Voided" tint="sky" />
+          ) : e.payment_status === 'paid' ? (
+            <Pill label="Paid" />
+          ) : (
+            <Pill label={e.payment_status === 'unpaid' ? 'Not paid yet' : 'Partly paid'} tint="straw" />
+          )
+        }
+      />
       <SyncBadge state={stored.sync_state} />
-      {e.status === 'voided' ? <Notice>Voided: {e.void_reason}</Notice> : null}
-      {e.payee ? <Text style={{ color: t.text, fontSize: 16 }}>Paid to: {e.payee}</Text> : null}
-      <Text style={{ color: t.text, fontSize: 16 }}>
-        {e.payment_status === 'paid' ? 'Paid' : e.payment_status === 'unpaid' ? 'Not paid yet' : 'Partly paid'}
-        {e.payment_method ? ` · ${METHOD_LABELS[e.payment_method]}` : ''}
-      </Text>
-      {e.notes ? <Text style={{ color: t.text, fontSize: 16 }}>{e.notes}</Text> : null}
+      {e.status === 'voided' && e.void_reason ? <Notice>Voided: {e.void_reason}</Notice> : null}
+      <Details
+        rows={[
+          ['Paid to', e.payee],
+          ['Method', e.payment_method ? METHOD_LABELS[e.payment_method] : null],
+          ['Note', e.notes],
+        ]}
+      />
       {photo ? <Image source={photo} style={{ width: '100%', aspectRatio: 3 / 4, borderRadius: radius.card }} contentFit="contain" accessibilityLabel="Receipt photo" cachePolicy="disk" /> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
       {e.status === 'active' && mode === 'view' ? (
-        <>
-          <Button label={photo ? 'Replace receipt photo' : 'Photograph the receipt'} variant="secondary" onPress={addReceipt} />
-          <Button label="Correct this expense" variant="secondary" onPress={() => setMode('edit')} />
-          <Button label="Void (entered by mistake)" variant="link" onPress={() => setMode('void')} />
-        </>
+        <ListGroup>
+          <ListRow icon="camera-outline" title={photo ? 'Replace receipt photo' : 'Photograph the receipt'} onPress={addReceipt} />
+          <ListRow icon="pencil-outline" title="Correct this expense" subtitle="Old values stay in the history" onPress={() => setMode('edit')} />
+          <ListRow icon="close-circle-outline" tint="red" title="Void" subtitle="Only if entered by mistake" onPress={() => setMode('void')} />
+        </ListGroup>
       ) : null}
       {mode === 'void' ? (
-        <>
-          <TextField label="Why void this expense?" value={reason} onChangeText={setReason} />
+        <FormCard title="Void this expense">
+          <TextField label="Why?" value={reason} onChangeText={setReason} />
           <Button label="Void expense" variant="danger" onPress={doVoid} />
           <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
-        </>
+        </FormCard>
       ) : null}
     </FormScreen>
   );

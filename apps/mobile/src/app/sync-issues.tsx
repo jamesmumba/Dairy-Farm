@@ -197,10 +197,13 @@ export default function SyncIssues() {
   const ops = useLocal(failedOps);
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>
-      <Text style={{ color: t.textMuted, fontSize: 16 }}>
-        These changes are saved on this phone but your account did not accept them. Nothing is lost until you choose to discard it.
-      </Text>
-      {ops.length === 0 ? <Notice>Everything on this phone has been saved to your account.</Notice> : null}
+      {ops.length === 0 ? (
+        <Notice tone="success" title="All saved">
+          Everything on this phone has been saved to your account.
+        </Notice>
+      ) : (
+        <Text style={{ color: t.textMuted, fontSize: 14 }}>Saved on this phone, but your account did not accept them. Nothing is lost until you discard it.</Text>
+      )}
       {ops.map((op) => (
         <Issue key={op.op_id} op={op} />
       ))}

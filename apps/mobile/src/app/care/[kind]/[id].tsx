@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, Text } from 'react-native';
 import { displayName } from '../../../animals/model';
 import { listAnimals } from '../../../animals/repo';
 import { CareForm } from '../../../care/CareForm';
@@ -12,7 +12,8 @@ import { formatDate, formatDateTime } from '../../../lib/dates';
 import { useLocal } from '../../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../../ui/form';
 import { SyncBadge } from '../../../ui/SyncBadge';
-import { spacing, useTheme } from '../../../ui/theme';
+import { Details, FormCard, Hero, ListGroup, ListRow } from '../../../ui/kit';
+import { useTheme } from '../../../ui/theme';
 
 type Row = { id: string; version: number; deleted_at: string | null } & Record<string, unknown>;
 
@@ -64,9 +65,10 @@ export default function CareRecord() {
   }
 
   return (
-    <FormScreen title={CARE_KINDS[kind].label} intro={animal ? displayName(animal) : undefined}>
+    <FormScreen title={CARE_KINDS[kind].label}>
+      <Hero label={animal ? displayName(animal) : CARE_KINDS[kind].label} value={config.summary(r, ctx)} />
       <SyncBadge state={record.sync_state} />
-      {r.version === 0 ? <Text style={{ color: t.textMuted, fontSize: 14 }}>Results that depend on your account (status changes, scheduled checks, milk re-checks) appear after this syncs.</Text> : null}
+      {r.version === 0 ? <Text style={{ color: t.textMuted, fontSize: 13 }}>Status changes, scheduled checks and milk re-checks appear after this syncs.</Text> : null}
       {treatment?.milk_entries_rechecked ? (
         <Notice>{treatment.milk_entries_rechecked} milk entr{treatment.milk_entries_rechecked === 1 ? 'y was' : 'ies were'} re-checked against this withdrawal and updated.</Notice>
       ) : null}
@@ -88,32 +90,24 @@ export default function CareRecord() {
         />
       ) : (
         <>
-          <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }}>{config.summary(r, ctx)}</Text>
-          <View>
-            {config.fields
+          <Details
+            rows={config.fields
               .filter((f) => !f.createOnly)
-              .map((f) => [f, show(f.key, f.type)] as const)
-              .filter(([, v]) => v !== null)
-              .map(([f, v]) => (
-                <View key={f.key} style={{ flexDirection: 'row', gap: spacing.md, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: t.border }} accessible accessibilityLabel={`${f.label}: ${v}`}>
-                  <Text style={{ color: t.textMuted, fontSize: 15, width: 130 }}>{f.label}</Text>
-                  <Text style={{ color: t.text, fontSize: 16, flex: 1 }}>{v}</Text>
-                </View>
-              ))}
-          </View>
+              .map((f) => [f.label, show(f.key, f.type)] as [string, string | null])}
+          />
           {mode === 'remove' ? (
-            <View style={{ gap: spacing.md }}>
-              <TextField label="Why remove this record?" hint="For records entered by mistake" value={reason} onChangeText={setReason} />
+            <FormCard title="Remove this record">
+              <TextField label="Why?" hint="For records entered by mistake" value={reason} onChangeText={setReason} />
               <Button label="Remove record" variant="danger" onPress={remove} />
               <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
-            </View>
+            </FormCard>
           ) : (
-            <>
-              <Button label="Edit" onPress={() => setMode('edit')} />
-              <Button label="Remove (entered by mistake)" variant="link" onPress={() => setMode('remove')} />
-            </>
+            <ListGroup>
+              {animal ? <ListRow icon="cow" title={displayName(animal)} subtitle="Open the animal" href={{ pathname: '/animal/[id]', params: { id: animal.id } }} /> : null}
+              <ListRow icon="pencil-outline" title="Edit" onPress={() => setMode('edit')} />
+              <ListRow icon="delete-outline" tint="red" title="Remove" subtitle="Only if entered by mistake" onPress={() => setMode('remove')} />
+            </ListGroup>
           )}
-          {animal ? <Button label={`Open ${displayName(animal)}`} variant="link" onPress={() => router.push({ pathname: '/animal/[id]', params: { id: animal.id } })} /> : null}
         </>
       )}
     </FormScreen>

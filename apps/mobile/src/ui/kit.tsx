@@ -248,3 +248,49 @@ export function Figure({ label, value, note, tone }: { label: string; value: str
     </View>
   );
 }
+
+/** The headline of a detail page: a small label, one large value, and an optional note or status pill. */
+export function Hero({ label, value, note, tone, pill }: { label: string; value: string; note?: string; tone?: 'danger' | 'muted'; pill?: ReactNode }) {
+  const t = useTheme();
+  return (
+    <View style={{ backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap: 2, ...shadow }} accessible accessibilityLabel={`${label}: ${value}${note ? `. ${note}` : ''}`}>
+      <Text style={{ color: t.textMuted, fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: tone === 'danger' ? t.danger : tone === 'muted' ? t.textMuted : t.text, fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{value}</Text>
+      {note ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{note}</Text> : null}
+      {pill ? <View style={{ marginTop: spacing.xs }}>{pill}</View> : null}
+    </View>
+  );
+}
+
+/** Label/value pairs in a card, with hairlines between them. Empty values are left out. */
+export function Details({ rows }: { rows: [label: string, value: string | null | undefined, tone?: 'danger'][] }) {
+  const t = useTheme();
+  const shown = rows.filter(([, v]) => v !== null && v !== undefined && v !== '');
+  if (!shown.length) return null;
+  return (
+    <View style={{ backgroundColor: t.surface, borderRadius: radius.card, paddingHorizontal: spacing.md, ...shadow }}>
+      {shown.map(([label, value, tone], i) => (
+        <View
+          key={label}
+          accessible
+          accessibilityLabel={`${label}: ${value}`}
+          style={{ flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.sm + 4, borderTopWidth: i ? 1 : 0, borderTopColor: t.border }}
+        >
+          <Text style={{ color: t.textMuted, fontSize: 15, width: 120 }}>{label}</Text>
+          <Text style={{ color: tone === 'danger' ? t.danger : t.text, fontSize: 15, flex: 1, textAlign: 'right' }}>{value}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** A titled white card holding a small form (correct, void, reverse…), so it reads as one step. */
+export function FormCard({ title, children }: { title?: string; children: ReactNode }) {
+  const t = useTheme();
+  return (
+    <View style={{ backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap: spacing.md, ...shadow }}>
+      {title ? <Text style={{ color: t.text, ...type.cardTitle, fontSize: 17 }}>{title}</Text> : null}
+      {children}
+    </View>
+  );
+}

@@ -14,7 +14,7 @@ import { formatDateTime } from '../../lib/dates';
 import { Chips } from '../../ui/Chips';
 import { DateField, toDateString } from '../../ui/DateField';
 import { Button, FieldError, FormScreen, Notice, Toggle } from '../../ui/form';
-import { minTouch, radius, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, shadow, spacing, useTheme } from '../../ui/theme';
 
 export default function MilkingRound() {
   const [date, setDate] = useState(toDateString(new Date()));
@@ -80,56 +80,58 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
   }
 
   return (
-    <View style={{ gap: spacing.sm }}>
-      {cows.map((c) => {
-        const existing = findSession(milk, { cattle_id: c.id, production_date: date, session });
-        const withdrawal = activeWithdrawal(treatments, c.id, sessionAt);
-        return (
-          <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: minTouch, borderBottomWidth: 1, borderBottomColor: t.border, paddingVertical: 4 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: t.text, fontSize: 17 }}>{displayName(c)}</Text>
-              {withdrawal ? (
-                <Text style={{ color: t.danger, fontSize: 14 }} accessibilityRole="alert">
-                  ⚠ Withdrawal until {formatDateTime(withdrawal.withdrawal_ends_at)} · not for sale
-                </Text>
-              ) : null}
-            </View>
-            {existing ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${displayName(c)}: ${L(toCl(existing.data.quantity))} recorded. Open to correct.`}
-                onPress={() => router.push({ pathname: '/milk/[id]', params: { id: existing.data.id } })}
-                style={{ minHeight: minTouch, justifyContent: 'center' }}
-              >
-                <Text style={{ color: t.textMuted, fontSize: 16 }}>✓ {L(toCl(existing.data.quantity))}</Text>
-              </Pressable>
-            ) : (
-              <View style={{ width: 110 }}>
-                <TextInput
-                  accessibilityLabel={`Litres for ${displayName(c)}`}
-                  value={values[c.id] ?? ''}
-                  onChangeText={(v) => update({ [c.id]: v })}
-                  keyboardType="decimal-pad"
-                  placeholder="L"
-                  placeholderTextColor={t.textMuted}
-                  maxLength={6}
-                  style={{
-                    minHeight: minTouch,
-                    borderWidth: errors[c.id] ? 2 : 1,
-                    borderColor: errors[c.id] ? t.danger : t.border,
-                    borderRadius: radius.control,
-                    paddingHorizontal: spacing.md,
-                    fontSize: 18,
-                    color: t.text,
-                    backgroundColor: t.surface,
-                    textAlign: 'right',
-                  }}
-                />
+    <View style={{ gap: spacing.md }}>
+      <View style={{ backgroundColor: t.surface, borderRadius: radius.card, paddingHorizontal: spacing.md, ...shadow }}>
+        {cows.map((c, i) => {
+          const existing = findSession(milk, { cattle_id: c.id, production_date: date, session });
+          const withdrawal = activeWithdrawal(treatments, c.id, sessionAt);
+          return (
+            <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: minTouch + 12, borderTopWidth: i ? 1 : 0, borderTopColor: t.border, paddingVertical: spacing.sm }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: t.text, fontSize: 17 }}>{displayName(c)}</Text>
+                {withdrawal ? (
+                  <Text style={{ color: t.danger, fontSize: 14 }} accessibilityRole="alert">
+                    ⚠ Withdrawal until {formatDateTime(withdrawal.withdrawal_ends_at)} · not for sale
+                  </Text>
+                ) : null}
               </View>
-            )}
-          </View>
-        );
-      })}
+              {existing ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${displayName(c)}: ${L(toCl(existing.data.quantity))} recorded. Open to correct.`}
+                  onPress={() => router.push({ pathname: '/milk/[id]', params: { id: existing.data.id } })}
+                  style={{ minHeight: minTouch, justifyContent: 'center' }}
+                >
+                  <Text style={{ color: t.textMuted, fontSize: 16 }}>✓ {L(toCl(existing.data.quantity))}</Text>
+                </Pressable>
+              ) : (
+                <View style={{ width: 110 }}>
+                  <TextInput
+                    accessibilityLabel={`Litres for ${displayName(c)}`}
+                    value={values[c.id] ?? ''}
+                    onChangeText={(v) => update({ [c.id]: v })}
+                    keyboardType="decimal-pad"
+                    placeholder="L"
+                    placeholderTextColor={t.textMuted}
+                    maxLength={6}
+                    style={{
+                      minHeight: minTouch,
+                      borderWidth: errors[c.id] ? 2 : 1,
+                      borderColor: errors[c.id] ? t.danger : t.border,
+                      borderRadius: radius.control,
+                      paddingHorizontal: spacing.md,
+                      fontSize: 18,
+                      color: t.text,
+                      backgroundColor: t.surface,
+                      textAlign: 'right',
+                    }}
+                  />
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </View>
       {Object.keys(errors).length ? <FieldError message={LITRES_HINT} /> : null}
       <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }} accessibilityLiveRegion="polite">
         {typed.length} cow{typed.length === 1 ? '' : 's'} · {L(totalCl)}

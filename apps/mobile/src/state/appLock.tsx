@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Notice } from '../ui/form';
+import { Button, Notice, BrandMark } from '../ui/form';
 import { spacing, useTheme } from '../ui/theme';
 
 // Convenience lock only: it never replaces server sign-in or account recovery.
@@ -98,7 +98,8 @@ function LockScreen({ onUnlocked, onSignOut }: { onUnlocked: () => void; onSignO
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.background, justifyContent: 'center', padding: spacing.lg }}>
       <View style={{ gap: spacing.md }}>
-        <Text accessibilityRole="header" style={{ color: t.text, fontSize: 26, fontWeight: '700' }}>
+        <BrandMark />
+        <Text accessibilityRole="header" style={{ color: t.text, fontSize: 28, fontWeight: '600' }}>
           Dairy Farm is locked
         </Text>
         <Text style={{ color: t.textMuted, fontSize: 16 }}>Use your phone’s fingerprint, face or screen lock to continue.</Text>

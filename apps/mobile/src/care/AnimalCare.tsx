@@ -1,9 +1,10 @@
 import { type Href, router } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import type { Cattle } from '../animals/model';
 import { formatDate, formatDateTime, toDateString } from '../lib/dates';
 import { Button, Notice } from '../ui/form';
-import { minTouch, spacing, useTheme, useCardBasis } from '../ui/theme';
+import { Card, type IconName, ListGroup, ListRow } from '../ui/kit';
+import { spacing, useCardBasis, useTheme } from '../ui/theme';
 import { CARE_FORMS } from './forms';
 import { activeWithdrawal, CARE_KINDS, type CareData, type CareKind, RESULT_LABELS, underTreatment } from './model';
 
@@ -12,9 +13,8 @@ export function WithdrawalBanner({ care, cattleId }: { care: CareData; cattleId:
   const w = activeWithdrawal(care.treatments, cattleId);
   if (!w) return null;
   return (
-    <Notice tone="error">
-      ⚠ Milk withdrawal until {formatDateTime(w.withdrawal_ends_at)} ({w.medication}). Milk from this cow is not for sale or human consumption until then,
-      even if the treatment has finished.
+    <Notice tone="error" title={`Milk withdrawal until ${formatDateTime(w.withdrawal_ends_at)}`}>
+      {w.medication}. Not for sale or drinking until then, even if the treatment has finished.
     </Notice>
   );
 }
@@ -30,6 +30,16 @@ const dateOf = (kind: CareKind, r: Record<string, any>): string =>
     vaccination: r.administered_on ?? r.due_on,
     schedule: '',
   })[kind] ?? '';
+
+const KIND_ICON: Partial<Record<CareKind, IconName>> = {
+  health: 'stethoscope',
+  treatment: 'pill',
+  'vet-visit': 'medical-bag',
+  breeding: 'heart-outline',
+  'pregnancy-check': 'heart-pulse',
+  calving: 'cow',
+  vaccination: 'needle',
+};
 
 export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; care: CareData; showAdd?: boolean }) {
   const t = useTheme();
@@ -74,21 +84,20 @@ export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; c
 
   return (
     <View style={{ gap: spacing.sm }}>
-      <Text accessibilityRole="header" style={{ color: t.text, fontSize: 20, fontWeight: '700', marginTop: spacing.md }}>
-        Health and care
-      </Text>
-      {lines.length ? (
-        lines.map((l) => (
-          <Text key={l.text} style={{ color: l.tone === 'danger' ? t.danger : t.text, fontSize: 16 }}>
-            {l.text}
-          </Text>
-        ))
-      ) : (
-        <Text style={{ color: t.textMuted, fontSize: 15 }}>No open health concerns or upcoming care.</Text>
-      )}
-      {female && animal.reproductive_status === 'bred' && !pendingCheck ? (
-        <Text style={{ color: t.textMuted, fontSize: 14 }}>Bred: not pregnant until a pregnancy check confirms it.</Text>
-      ) : null}
+      <Card gap={spacing.sm}>
+        {lines.length ? (
+          lines.map((l) => (
+            <Text key={l.text} style={{ color: l.tone === 'danger' ? t.danger : t.text, fontSize: 15 }}>
+              {l.text}
+            </Text>
+          ))
+        ) : (
+          <Text style={{ color: t.textMuted, fontSize: 15 }}>No open health concerns or upcoming care.</Text>
+        )}
+        {female && animal.reproductive_status === 'bred' && !pendingCheck ? (
+          <Text style={{ color: t.textMuted, fontSize: 13 }}>Bred: not pregnant until a pregnancy check confirms it.</Text>
+        ) : null}
+      </Card>
 
       {showAdd ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
         {add('health', 'Health concern')}
@@ -100,19 +109,19 @@ export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; c
         {female ? add('calving', 'Calving') : null}
       </View> : null}
 
-      {records.map(({ kind, row }) => (
-        <Pressable
-          key={`${kind}:${row.id}`}
-          accessibilityRole="button"
-          onPress={() => router.push({ pathname: '/care/[kind]/[id]', params: { kind, id: row.id } } as Href)}
-          style={{ minHeight: minTouch, justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: t.border }}
-        >
-          <Text style={{ color: t.textMuted, fontSize: 13 }}>
-            {CARE_KINDS[kind].label} · {formatDate(String(dateOf(kind, row)).slice(0, 10))}
-          </Text>
-          <Text style={{ color: t.text, fontSize: 16 }}>{CARE_FORMS[kind].summary(row, { care })}</Text>
-        </Pressable>
-      ))}
+      {records.length ? (
+        <ListGroup>
+          {records.map(({ kind, row }) => (
+            <ListRow
+              key={`${kind}:${row.id}`}
+              icon={KIND_ICON[kind] ?? 'clipboard-text-outline'}
+              title={CARE_FORMS[kind].summary(row, { care })}
+              subtitle={`${CARE_KINDS[kind].label} · ${formatDate(String(dateOf(kind, row)).slice(0, 10))}`}
+              href={{ pathname: '/care/[kind]/[id]', params: { kind, id: row.id } } as Href}
+            />
+          ))}
+        </ListGroup>
+      ) : null}
       {female && lastPregnant ? <Text style={{ color: t.textMuted, fontSize: 13 }}>Pregnancy status: {RESULT_LABELS[lastPregnant.result]} on {formatDate(lastPregnant.examined_on)}.</Text> : null}
     </View>
   );

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert, View } from 'react-native';
 import { fromCents, money, saleDue, saleTotal, toCents } from '../../finance/calc';
 import { METHOD_LABELS, type Sale } from '../../finance/model';
 import { correctSale, voidSale } from '../../finance/repo';
@@ -9,10 +9,10 @@ import { formatDateTime } from '../../lib/dates';
 import { getRecord, useLocal } from '../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { useTheme } from '../../ui/theme';
+import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
+import { spacing } from '../../ui/theme';
 
 export default function SaleScreen() {
-  const t = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const f = useFinance();
   const stored = useLocal(() => getRecord<Sale>('milk_sales', id), id);
@@ -63,54 +63,62 @@ export default function SaleScreen() {
   }
 
   return (
-    <FormScreen title={money(toCents(s.total), s.currency)} intro={`${customer?.name ?? 'Customer'} · ${formatDateTime(s.sale_at)}`}>
+    <FormScreen title="Sale">
+      <Hero
+        label={`${customer?.name ?? 'Customer'} · ${formatDateTime(s.sale_at)}`}
+        value={money(toCents(s.total), s.currency)}
+        tone={s.status === 'voided' ? 'muted' : undefined}
+        pill={s.status === 'voided' ? <Pill label="Voided" tint="sky" /> : due ? <Pill label={`Still due ${money(due, s.currency)}`} tint="straw" /> : <Pill label="Paid" />}
+      />
       <SyncBadge state={stored.sync_state} />
-      {s.status === 'voided' ? <Notice>Voided: {s.void_reason}</Notice> : null}
+      {s.status === 'voided' && s.void_reason ? <Notice>Voided: {s.void_reason}</Notice> : null}
       {correctedBy ? <Button label="Open the corrected sale" variant="link" onPress={() => router.replace({ pathname: '/sale/[id]', params: { id: correctedBy.id } })} /> : null}
-      {corrects ? <Text style={{ color: t.textMuted, fontSize: 14 }}>Corrects an earlier sale of {money(toCents(corrects.total), corrects.currency)}.</Text> : null}
-      <Text style={{ color: t.text, fontSize: 17 }}>
-        {s.quantity} L × {s.currency} {s.price_per_litre}
-        {s.price_source === 'override' ? ' (special price)' : ''}
-      </Text>
-      {s.status === 'completed' ? (
-        <Text style={{ color: due ? t.danger : t.text, fontSize: 17 }}>{due ? `Still due: ${money(due, s.currency)}` : 'Paid'}</Text>
-      ) : null}
-      {s.payment_method ? <Text style={{ color: t.textMuted, fontSize: 15 }}>Payment: {METHOD_LABELS[s.payment_method]}</Text> : null}
-      {s.notes ? <Text style={{ color: t.text, fontSize: 15 }}>Notes: {s.notes}</Text> : null}
+      <Details
+        rows={[
+          ['Litres', `${s.quantity} L`],
+          ['Price per litre', `${s.currency} ${s.price_per_litre}${s.price_source === 'override' ? ' (special)' : ''}`],
+          ['Paid by', s.payment_method ? METHOD_LABELS[s.payment_method] : null],
+          ['Note', s.notes],
+          ['Corrects', corrects ? `An earlier sale of ${money(toCents(corrects.total), corrects.currency)}` : null],
+        ]}
+      />
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {s.status === 'completed' && mode === 'view' ? (
-        <>
+        <View style={{ gap: spacing.sm }}>
           {due ? <Button label="Record a payment" onPress={() => router.push({ pathname: '/payment/new', params: { customer_id: s.customer_id, currency: s.currency } })} /> : null}
-          <Button
-            label="Correct this sale"
-            variant="secondary"
-            onPress={() => {
-              setQuantity(s.quantity);
-              setPrice(s.price_per_litre);
-              setMode('correct');
-            }}
-          />
-          <Button label="Void this sale" variant="link" onPress={() => setMode('void')} />
-        </>
+          <ListGroup>
+            {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" href={{ pathname: '/customers/[id]', params: { id: customer.id } }} /> : null}
+            <ListRow
+              icon="pencil-outline"
+              title="Correct this sale"
+              subtitle="Keeps the original as voided"
+              onPress={() => {
+                setQuantity(s.quantity);
+                setPrice(s.price_per_litre);
+                setMode('correct');
+              }}
+            />
+            <ListRow icon="close-circle-outline" tint="red" title="Void this sale" onPress={() => setMode('void')} />
+          </ListGroup>
+        </View>
       ) : null}
       {mode === 'correct' ? (
-        <>
+        <FormCard title="Correct this sale">
           <TextField label="Litres" value={quantity} onChangeText={setQuantity} keyboardType="decimal-pad" />
           <TextField label={`Price per litre (${s.currency})`} value={price} onChangeText={setPrice} keyboardType="decimal-pad" />
-          <TextField label="Reason for the correction" hint="Kept with the original and corrected values" value={reason} onChangeText={setReason} />
+          <TextField label="Reason" hint="Kept with the original and corrected values" value={reason} onChangeText={setReason} />
           <Button label="Save correction" onPress={doCorrect} />
           <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
-        </>
+        </FormCard>
       ) : null}
       {mode === 'void' ? (
-        <>
-          <TextField label="Why is this sale being voided?" value={reason} onChangeText={setReason} />
+        <FormCard title="Void this sale">
+          <TextField label="Why?" value={reason} onChangeText={setReason} />
           <Button label="Void sale" variant="danger" onPress={doVoid} />
           <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
-        </>
+        </FormCard>
       ) : null}
-      {customer ? <Button label={`Open ${customer.name}`} variant="link" onPress={() => router.push({ pathname: '/customers/[id]', params: { id: customer.id } })} /> : null}
     </FormScreen>
   );
 }

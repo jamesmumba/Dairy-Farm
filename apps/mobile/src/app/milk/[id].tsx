@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, Text } from 'react-native';
 import { displayName } from '../../animals/model';
 import { getAnimal } from '../../animals/repo';
 import { type Session, SESSIONS, toCl } from '../../production/calc';
@@ -11,7 +11,8 @@ import { Chips } from '../../ui/Chips';
 import { DateField } from '../../ui/DateField';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { spacing, useTheme } from '../../ui/theme';
+import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
+import { useTheme } from '../../ui/theme';
 
 export default function MilkEntryScreen() {
   const t = useTheme();
@@ -66,46 +67,53 @@ export default function MilkEntryScreen() {
   }
 
   return (
-    <FormScreen title={`${L(toCl(e.quantity))}`} intro={`${cow ? displayName(cow.data) : 'Animal'} · ${SESSION_LABELS[e.session]}, ${dayLabel(e.production_date)}`}>
+    <FormScreen title="Milk entry">
+      <Hero
+        label={`${cow ? displayName(cow.data) : 'Animal'} · ${SESSION_LABELS[e.session]}, ${dayLabel(e.production_date)}`}
+        value={L(toCl(e.quantity))}
+        tone={voided ? 'muted' : undefined}
+        pill={voided ? <Pill label="Voided" tint="sky" /> : e.restricted ? <Pill label="Withdrawal · not for sale" tint="red" /> : undefined}
+      />
       <SyncBadge state={entry.sync_state} />
       {voided ? <Notice>Voided: {e.void_reason}. Not counted in totals or stock.</Notice> : null}
-      {e.restricted && !voided ? (
-        <Notice tone="error">Milk withdrawal: this milk is not for sale or human consumption. It is recorded as produced but not added to stock.</Notice>
-      ) : null}
-      {e.notes ? <Text style={{ color: t.text, fontSize: 16 }}>Notes: {e.notes}</Text> : null}
-      {e.version === 0 ? <Text style={{ color: t.textMuted, fontSize: 14 }}>Milk withdrawal is checked when this entry syncs.</Text> : null}
+      {e.restricted && !voided ? <Notice tone="error">Under milk withdrawal: recorded as produced, but not for sale or drinking and not added to stock.</Notice> : null}
+      <Details rows={[['Note', e.notes]]} />
+      {e.version === 0 ? <Text style={{ color: t.textMuted, fontSize: 13 }}>Milk withdrawal is checked again when this entry syncs.</Text> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {mode === 'correct' ? (
-        <View style={{ gap: spacing.md }}>
+        <FormCard title="Correct this entry">
           <TextField label="Litres" value={quantity} onChangeText={setQuantity} keyboardType="decimal-pad" maxLength={6} />
           <DateField label="Date" value={date} onChange={(d) => d && setDate(d)} optional={false} />
           <Chips label="Session" value={session} options={SESSIONS.map((s) => ({ value: s, label: SESSION_LABELS[s] }))} onChange={(s) => s && setSession(s)} allowClear={false} />
-          <TextField label="Reason for the correction" hint="Kept in the history with the old value" value={reason} onChangeText={setReason} />
+          <TextField label="Reason" hint="Kept in the history with the old value" value={reason} onChangeText={setReason} />
           <Button label="Save correction" onPress={saveCorrection} />
           <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
-        </View>
+        </FormCard>
       ) : mode === 'void' ? (
-        <View style={{ gap: spacing.md }}>
-          <TextField label="Why is this entry a mistake?" value={reason} onChangeText={setReason} />
+        <FormCard title="Void this entry">
+          <TextField label="Why is it a mistake?" value={reason} onChangeText={setReason} />
           <Button label="Void entry" variant="danger" onPress={saveVoid} />
           <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
-        </View>
-      ) : !voided ? (
-        <>
-          <Button
-            label="Correct this entry"
-            onPress={() => {
-              setQuantity(e.quantity);
-              setDate(e.production_date);
-              setSession(e.session);
-              setMode('correct');
-            }}
-          />
-          <Button label="Void (entered by mistake)" variant="secondary" onPress={() => setMode('void')} />
-        </>
-      ) : null}
-      {cow ? <Button label={`Open ${displayName(cow.data)}`} variant="link" onPress={() => router.push({ pathname: '/animal/[id]', params: { id: e.cattle_id } })} /> : null}
+        </FormCard>
+      ) : (
+        <ListGroup>
+          {cow ? <ListRow icon="cow" title={displayName(cow.data)} subtitle="Open the animal" href={{ pathname: '/animal/[id]', params: { id: e.cattle_id } }} /> : null}
+          {!voided ? (
+            <ListRow
+              icon="pencil-outline"
+              title="Correct this entry"
+              onPress={() => {
+                setQuantity(e.quantity);
+                setDate(e.production_date);
+                setSession(e.session);
+                setMode('correct');
+              }}
+            />
+          ) : null}
+          {!voided ? <ListRow icon="close-circle-outline" tint="red" title="Void" subtitle="Only if entered by mistake" onPress={() => setMode('void')} /> : null}
+        </ListGroup>
+      )}
     </FormScreen>
   );
 }

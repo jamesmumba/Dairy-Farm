@@ -5,6 +5,7 @@ import { addBreed, updateBreed } from '../animals/repo';
 import { getRecord, listRecords, useLocal } from '../sync/store';
 import { Button, FormScreen, Notice, TextField, Toggle } from '../ui/form';
 import { SyncBadge } from '../ui/SyncBadge';
+import { FormCard, ListGroup } from '../ui/kit';
 import { spacing, useTheme } from '../ui/theme';
 
 export default function Breeds() {
@@ -23,17 +24,23 @@ export default function Breeds() {
   }
 
   return (
-    <FormScreen title="Breeds" intro="Breeds you can choose when registering animals. Turn a breed off to hide it from new registrations; animals already recorded keep it.">
-      <TextField label="Add a breed" value={name} onChangeText={setName} error={error} placeholder="e.g. Angoni" onSubmitEditing={add} />
-      <Button label="Add breed" onPress={add} />
+    <FormScreen title="Breeds">
+      <FormCard>
+        <TextField label="Add a breed" value={name} onChangeText={setName} error={error} placeholder="e.g. Angoni" onSubmitEditing={add} />
+        <Button label="Add breed" onPress={add} />
+      </FormCard>
       {breeds.length === 0 ? <Notice>Your breed list will appear after the first sync.</Notice> : null}
-      {breeds.map(({ data: b, sync_state }) => (
-        <View key={b.id} style={{ borderBottomWidth: 1, borderBottomColor: t.border, paddingBottom: spacing.sm }}>
-          <Toggle label={b.name} hint={b.active ? 'Shown when registering' : 'Hidden'} value={b.active} onChange={(active) => updateBreed(getRecord<Breed>('cattle_breeds', b.id)!, { active })} />
-          <SyncBadge state={sync_state} />
-        </View>
-      ))}
-      <Text style={{ color: t.textMuted, fontSize: 14 }}>Breeds are never deleted, so past records stay readable.</Text>
+      {breeds.length ? (
+        <ListGroup>
+          {breeds.map(({ data: b, sync_state }) => (
+            <View key={b.id} style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs }}>
+              <Toggle label={b.name} hint={b.active ? undefined : 'Hidden when registering'} value={b.active} onChange={(active) => updateBreed(getRecord<Breed>('cattle_breeds', b.id)!, { active })} />
+              <SyncBadge state={sync_state} />
+            </View>
+          ))}
+        </ListGroup>
+      ) : null}
+      <Text style={{ color: t.textMuted, fontSize: 13 }}>Turn a breed off to hide it from new registrations. Breeds are never deleted, so past records stay readable.</Text>
     </FormScreen>
   );
 }

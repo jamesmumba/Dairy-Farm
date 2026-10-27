@@ -9,7 +9,7 @@ import { getRecord } from '../sync/store';
 import { Chips } from '../ui/Chips';
 import { DateTimeField } from '../ui/DateField';
 import { Button, FormScreen, Notice, TextField } from '../ui/form';
-import { SyncBadge } from '../ui/SyncBadge';
+import { Card, Figure, FormCard, ListGroup, SectionHeader } from '../ui/kit';
 import { spacing, useTheme } from '../ui/theme';
 
 export default function Prices() {
@@ -41,34 +41,46 @@ export default function Prices() {
   }
 
   return (
-    <FormScreen title="Milk prices" intro="New sales use the price in force at the time of the sale. Changing the price never changes past sales.">
-      {CURRENCIES.map((c) => {
-        const p = listPrice(f.prices, c.value, now);
-        return (
-          <Text key={c.value} style={{ color: t.text, fontSize: 18 }}>
-            {c.value}: {p ? `${p.price_per_litre} per litre` : 'not set'}
-          </Text>
-        );
-      })}
-      {error ? <Notice tone="error">{error}</Notice> : null}
-      <Chips label="Currency" value={currency} options={CURRENCIES} onChange={(v) => v && setCurrency(v)} allowClear={false} />
-      <TextField label={`New price per litre (${currency})`} value={price} onChangeText={setPriceText} keyboardType="decimal-pad" />
-      <DateTimeField label="Starts" value={from} onChange={(v) => v && setFrom(v)} allowFuture optional={false} />
-      <TextField label="Reason (optional)" value={reason} onChangeText={setReason} />
-      <Button label="Set price" onPress={save} />
-
-      <Text accessibilityRole="header" style={{ color: t.text, fontSize: 20, fontWeight: '700', marginTop: spacing.md }}>
-        History
-      </Text>
-      {history.map((p) => (
-        <View key={p.id} style={{ borderBottomWidth: 1, borderBottomColor: t.border, paddingVertical: spacing.xs }}>
-          <Text style={{ color: t.text, fontSize: 16 }}>
-            {p.currency} {p.price_per_litre} from {formatDateTime(p.effective_from)}
-          </Text>
-          {p.reason ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{p.reason}</Text> : null}
-          <SyncBadge state={getRecord('milk_prices', p.id)?.sync_state ?? 'synced'} />
+    <FormScreen title="Milk prices">
+      <Card>
+        <View style={{ flexDirection: 'row', gap: spacing.md }}>
+          {CURRENCIES.map((c) => {
+            const p = listPrice(f.prices, c.value, now);
+            return <Figure key={c.value} label={`${c.value} per litre now`} value={p ? p.price_per_litre : 'Not set'} />;
+          })}
         </View>
-      ))}
+        <Text style={{ color: t.textMuted, fontSize: 13 }}>Changing the price never changes past sales.</Text>
+      </Card>
+      {error ? <Notice tone="error">{error}</Notice> : null}
+      <FormCard title="Set a new price">
+        <Chips label="Currency" value={currency} options={CURRENCIES} onChange={(v) => v && setCurrency(v)} allowClear={false} />
+        <TextField label={`Price per litre (${currency})`} value={price} onChangeText={setPriceText} keyboardType="decimal-pad" />
+        <DateTimeField label="Starts" value={from} onChange={(v) => v && setFrom(v)} allowFuture optional={false} />
+        <TextField label="Reason (optional)" value={reason} onChangeText={setReason} />
+        <Button label="Set price" onPress={save} />
+      </FormCard>
+
+      {history.length ? (
+        <>
+          <SectionHeader title="History" />
+          <ListGroup>
+            {history.map((p) => {
+              const waiting = (getRecord('milk_prices', p.id)?.sync_state ?? 'synced') !== 'synced';
+              return (
+                <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md }} accessible>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ color: t.text, fontSize: 16 }}>From {formatDateTime(p.effective_from)}</Text>
+                    {p.reason || waiting ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{[p.reason, waiting ? 'waiting to sync' : null].filter(Boolean).join(' · ')}</Text> : null}
+                  </View>
+                  <Text style={{ color: t.text, fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                    {p.currency} {p.price_per_litre}
+                  </Text>
+                </View>
+              );
+            })}
+          </ListGroup>
+        </>
+      ) : null}
     </FormScreen>
   );
 }
