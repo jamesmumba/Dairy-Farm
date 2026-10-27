@@ -8,7 +8,7 @@ Recorded on **27 Oct 2026** (Stage 8). Automated tests run with `npm test` in `a
 |---|---|---|---|
 | API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **182** | **182 passed, 0 failed** |
 | API through postgres.js (`npm run test:postgres`) | The same tests, with PGlite reached over a Postgres socket by postgres.js, the driver the Edge Function uses | **182** | **182 passed, 0 failed** |
-| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **117** | **117 passed, 0 failed** |
+| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **123** | **123 passed, 0 failed** |
 
 Mutation checks: for each critical rule, the code was broken on purpose to confirm a test fails. All were caught, and the code was then restored.
 * Breeding counted as pregnancy.
@@ -39,7 +39,7 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 | `sync.test.ts` | 15 | Offline save, then one sync with no duplicates. A lost response plus an app restart. Resending an in-flight op. Folding edits. Version chaining. Rejections blocking only their own record. Conflicts (keep mine / use saved). Pull never overwriting unsent edits. Remote deletions |
 | `calc.test.ts` | 14 | Exact litres, periods, totals, averages, breeds, high/low, decline rule |
 | `finance.test.ts` | 13 | Sale totals, price lookup, balances, unsynced payments, stock ledger and oversell, reconciliation, duplicate customers, money summary |
-| `reminders.test.ts` / `plan.test.ts` | 10 / 4 | Vaccination due in 7 days, overdue, withdrawal until the vet's time, clearance, pregnancy checks, calving, follow-ups. Notification times, preferences and the 60-notification limit |
+| `reminders.test.ts` / `plan.test.ts` | 10 / 10 | Vaccination due in 7 days, overdue, withdrawal until the vet's time, clearance, pregnancy checks, calving, follow-ups. Notification times, preferences and the 60-notification limit. Problems (unpaid balance, falling milk, sync) notify once at the reminder time or within a minute, are not repeated, notify again only after clearing, and respect the switches |
 | `forms.test.ts` | 7 | Care form rules and prefills (withdrawal end time, expected calving, next dose, calf registration) |
 | `financeReminders.test.ts` | 2 | Unpaid balances, stock discrepancy flagged without auto-correction |
 | `reports.test.ts` | 10 | All six reports, filters, needing-attention, CSV quoting and formula guard, HTML escaping |

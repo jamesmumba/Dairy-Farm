@@ -22,7 +22,7 @@ export default function More() {
       <SectionHeader title="Farm records" />
       <ListGroup>
         <ListRow icon="file-chart-outline" title="Reports and exports" subtitle="Herd, milk, health, breeding, money; CSV and PDF" href="/reports" />
-        <ListRow icon="bell-outline" tint="straw" title="Reminders" subtitle="Due, overdue and withdrawal notices" href="/reminders" />
+        <ListRow icon="bell-outline" tint="straw" title="Notifications" subtitle="Reminders, warnings and problems to fix" href="/reminders" />
         <ListRow icon="history" tint="sky" title="Audit history" subtitle="Corrections, voids, price changes and adjustments" href="/audit" />
         <ListRow icon="cow" title="Breeds" subtitle="Add or hide breeds" href="/breeds" />
       </ListGroup>

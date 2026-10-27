@@ -128,14 +128,14 @@ export function RemindersSection({ form, errors, update }: SectionProps) {
   const set = (patch: Partial<NotificationPrefs>) => update({ notification_prefs: { ...prefs, ...patch } });
   return (
     <>
-      <Why>Choose which reminders you want. Your phone will ask for permission to show notifications only when the first reminder is set.</Why>
+      <Why>Which of these also show as phone notifications. Everything always appears in Notifications in the app. Your phone asks for permission only when there is something to notify.</Why>
       <TextField label="Daily reminder time" hint="24-hour time, e.g. 06:00" value={prefs.reminder_time} onChangeText={(reminder_time) => set({ reminder_time })} error={errors.reminder_time} keyboardType="numbers-and-punctuation" maxLength={5} />
       <Toggle label="Vaccinations due or overdue" value={prefs.vaccinations} onChange={(vaccinations) => set({ vaccinations })} />
       <Toggle label="Pregnancy checks and calving" value={prefs.breeding} onChange={(breeding) => set({ breeding })} />
-      <Toggle label="Health follow-ups" value={prefs.health} onChange={(health) => set({ health })} />
-      <Toggle label="Milk withdrawal ending" hint="Strongly recommended" value={prefs.withdrawal} onChange={(withdrawal) => set({ withdrawal })} />
-      <Toggle label="Unpaid balances and stock problems" value={prefs.finance} onChange={(finance) => set({ finance })} />
-      <Toggle label="Records that failed to sync" value={prefs.sync_problems} onChange={(sync_problems) => set({ sync_problems })} />
+      <Toggle label="Health follow-ups and falling milk" value={prefs.health} onChange={(health) => set({ health })} />
+      <Toggle label="Milk withdrawal ending and clearance" hint="Strongly recommended" value={prefs.withdrawal} onChange={(withdrawal) => set({ withdrawal })} />
+      <Toggle label="Unpaid balances and stock problems" hint="Once per problem, at your reminder time" value={prefs.finance} onChange={(finance) => set({ finance })} />
+      <Toggle label="Changes that failed to sync" hint="Straight away, so nothing is lost" value={prefs.sync_problems} onChange={(sync_problems) => set({ sync_problems })} />
     </>
   );
 }

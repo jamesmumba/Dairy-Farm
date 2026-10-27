@@ -75,6 +75,7 @@ export function ListRow({
   href,
   onPress,
   leading,
+  unread,
 }: {
   icon?: IconName;
   tint?: Tint;
@@ -85,13 +86,15 @@ export function ListRow({
   href?: Href;
   onPress?: () => void;
   leading?: ReactNode;
+  /** Shown with a dot and a bold title, and announced as new. */
+  unread?: boolean;
 }) {
   const t = useTheme();
   const go = onPress ?? (href ? () => router.push(href) : undefined);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={[title, value, subtitle].filter(Boolean).join('. ')}
+      accessibilityLabel={[unread ? 'New' : null, title, value, subtitle].filter(Boolean).join('. ')}
       onPress={go}
       style={({ pressed }) => ({
         minHeight: minTouch + 16,
@@ -105,7 +108,7 @@ export function ListRow({
     >
       {leading ?? (icon ? <IconBadge icon={icon} tint={tint} /> : null)}
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ color: t.text, ...type.cardTitle }}>{title}</Text>
+        <Text style={{ color: t.text, ...type.cardTitle, fontWeight: unread ? '700' : '600' }}>{title}</Text>
         {subtitle ? <Text style={{ color: t.textMuted, ...type.secondary }}>{subtitle}</Text> : null}
       </View>
       {value ? (
@@ -113,6 +116,7 @@ export function ListRow({
           {value}
         </Text>
       ) : null}
+      {unread ? <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: t.primary }} /> : null}
       <MaterialCommunityIcons name="chevron-right" size={22} color={t.textMuted} importantForAccessibility="no" />
     </Pressable>
   );

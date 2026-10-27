@@ -37,7 +37,7 @@ export default function Records() {
         <ListRow icon="chart-line" title="Production" subtitle="Totals and trends" href="/production" />
       </ListGroup>
 
-      <SectionHeader title="Health" />
+      <SectionHeader title="Health" action="Notifications" onAction={() => router.push('/reminders')} />
       <ListGroup>
         <ListRow icon="stethoscope" title="Health concern" href={care('health')} />
         <ListRow icon="pill" title="Treatment" subtitle="Includes milk withdrawal" href={care('treatment')} />

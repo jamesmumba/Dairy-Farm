@@ -4,7 +4,7 @@ A mobile app for one farmer to keep records for a dairy farm in Zambia: herd, mi
 animal health, breeding, vaccination, sales, stock, expenses and reports. It works offline and
 syncs when there is a connection.
 
-**Status:** All 8 stages are built and tested (182 API and 117 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
+**Status:** All 8 stages are built and tested (182 API and 123 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
 
 ## Repository layout
 
@@ -36,7 +36,7 @@ syncs when there is a connection.
 | Milk stock | The ledger starts with production in Stage 4. Only eligible milk (not under withdrawal) enters saleable stock |
 | Withdrawal | Recording, correcting or removing a withdrawal re-checks milk already entered in its window: entries are re-marked and stock adjusted automatically, with an audit trail |
 | Breeding intervals | Set by the farmer: pregnancy check after 35 days and gestation of 283 days to start with, labelled "confirm with your vet". A vet's expected calving date always wins |
-| Reminders | Calculated on the phone, with local notifications (expo-notifications). No server push |
+| Notifications | Worked out on the phone from the records. An in-app **Notifications** inbox (bell with unread count in the tab headers) lists everything: withdrawals, vaccinations, pregnancy checks, calvings, follow-ups, clearance, unpaid balances, stock below zero, falling milk and sync problems. The same items are scheduled as local phone notifications (expo-notifications): dated reminders at the farmer's reminder time, problems once each while they last, sync problems within a minute. No server push for now |
 | Care records | One generic lifecycle on the API and one field-driven form on the phone, for health, vet visits, treatments, breeding, pregnancy checks, calvings, vaccinations and schedules |
 | Sales offline | Allowed. The phone checks stock first, and the server checks again on sync. A sale the server rejects goes to Sync issues with a "make a stock adjustment" action |
 | Prices | A listed price per currency with dated history. A sale can use a special price, recorded as an override. The server computes every total |

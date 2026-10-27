@@ -1,5 +1,5 @@
 // Finance reminders from records on the phone: unpaid balances and stock discrepancies.
-// Shown in the app only (no phone notifications).
+// Each notifies once on the phone while it lasts (see `alert` in care/reminders).
 
 import type { MilkRow } from '../production/calc';
 import type { Reminder } from '../care/reminders';
@@ -38,6 +38,7 @@ export function financeReminders(
         detail: `Unpaid since ${oldest}`,
         href: `/customers/${c.id}`,
         notifyOffsets: [],
+        alert: 'next_reminder',
       });
     }
   }
@@ -56,6 +57,7 @@ export function financeReminders(
         detail: `Stock went below zero on ${negative.length} day(s), first on ${negative[0].date}. Check production and sales.`,
         href: '/stock',
         notifyOffsets: [],
+        alert: 'next_reminder',
       });
     }
   }

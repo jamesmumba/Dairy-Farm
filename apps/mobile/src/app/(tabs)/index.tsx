@@ -3,7 +3,7 @@ import { type Href, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { displayName } from '../../animals/model';
-import type { ReminderKind } from '../../care/reminders';
+import { REMINDER_ICON } from '../../care/reminderIcon';
 import { useReminders } from '../../care/useReminders';
 import { money, summarize as summarizeMoney, toCents } from '../../finance/calc';
 import { useFinance } from '../../finance/useFinance';
@@ -28,17 +28,6 @@ const QUICK: { label: string; hint: string; icon: IconName; href: Href }[] = [
   { label: 'Animal', hint: 'Register an animal', icon: 'cow', href: '/animal/new' },
   { label: 'Health', hint: 'Record a health issue', icon: 'stethoscope', href: { pathname: '/care/[kind]/new', params: { kind: 'health' } } },
 ];
-
-const REMINDER_ICON: Record<ReminderKind, IconName> = {
-  withdrawal: 'water-off-outline',
-  withdrawal_clearance: 'water-check-outline',
-  vaccination: 'needle',
-  pregnancy_check: 'heart-pulse',
-  expected_calving: 'cow',
-  health_follow_up: 'stethoscope',
-  unpaid_balance: 'account-cash-outline',
-  stock_discrepancy: 'warehouse',
-};
 
 function greeting() {
   const h = new Date().getHours();
@@ -103,7 +92,7 @@ export default function Home() {
 
   const { today, animals, milk } = input;
   const attention = useMemo(() => needingAttention(input), [input]);
-  const withdrawals = reminders.filter((r) => r.urgency === 'active').length;
+  const withdrawals = reminders.filter((r) => r.kind === 'withdrawal').length;
   const milkDay = summarize(milk, today, today);
   const range = choice === 'today' ? { from: today, to: today } : periodRange(choice, today);
   const to = range.to > today ? today : range.to;

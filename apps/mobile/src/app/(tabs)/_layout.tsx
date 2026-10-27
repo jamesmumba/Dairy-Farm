@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { IconName } from '../../ui/kit';
+import { InboxBell } from '../../ui/InboxBell';
 import { SyncHeader } from '../../ui/SyncHeader';
 import { useTheme } from '../../ui/theme';
 
@@ -30,7 +31,12 @@ export default function TabLayout() {
         headerShadowVisible: false,
         headerTitleStyle: { fontWeight: '600', fontSize: 20 },
         headerTintColor: t.text,
-        headerRight: () => <SyncHeader />,
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <InboxBell />
+            <SyncHeader />
+          </View>
+        ),
       }}
     >
       {TABS.map(({ name, title, icon, active, hint }) => (

@@ -6,12 +6,13 @@ import { listAnimals } from '../animals/repo';
 import { DEFAULT_NOTIFICATION_PREFS } from '../lib/account';
 import { getJson, setJson } from '../lib/localDb';
 import { useAuth } from '../state/auth';
-import { useLocal } from '../sync/store';
-import { planNotifications } from './plan';
-import { computeReminders } from './reminders';
+import { failedOps, useLocal } from '../sync/store';
+import { type AlertLog, MAX_NOTIFICATIONS, planAlerts, planNotifications } from './plan';
+import { computeReminders, type Reminder } from './reminders';
 import { loadCareData } from './repo';
 import { loadFinance } from '../finance/repo';
 import { financeReminders } from '../finance/reminders';
+import { decline, DEFAULT_DECLINE_RULE } from '../production/calc';
 import { listMilk } from '../production/repo';
 import { farmDateOf } from '../lib/dates';
 
@@ -26,18 +27,61 @@ export function useReminders() {
   const animals = useLocal(listAnimals);
   const finance = useLocal(loadFinance);
   const milk = useLocal(() => listMilk().map((m) => m.data));
+  const failed = useLocal(failedOps);
   const timeZone = account?.time_zone;
+  const rule = account?.decline_rule ?? DEFAULT_DECLINE_RULE;
   return useMemo(() => {
     const now = new Date();
     const farmDate = (iso: string) => farmDateOf(iso, timeZone);
     const active = new Set(animals.filter((a) => a.data.status === 'active').map((a) => a.data.id));
     const names = new Map(animals.map((a) => [a.data.id, displayName(a.data)]));
     const order = { active: 0, overdue: 1, today: 2, upcoming: 3 };
-    const reminders = [...computeReminders(care, active, now), ...financeReminders(finance, milk, farmDate(now.toISOString()), farmDate)].sort(
+    const today = farmDate(now.toISOString());
+    // Falling milk, by the farmer's own rule: one problem per cow while it lasts.
+    const declines: Reminder[] = animals
+      .map((a) => a.data)
+      .filter((a) => a.status === 'active' && a.sex === 'female')
+      .flatMap((a) => {
+        const d = decline(milk, a.id, today, rule);
+        return d.state === 'decline'
+          ? [
+              {
+                key: `decline:${a.id}`,
+                kind: 'production_decline' as const,
+                urgency: 'active' as const,
+                due: today,
+                cattleId: a.id,
+                title: `Milk down ${Math.abs(d.changePct)}%`,
+                detail: `Last ${rule.recent_days} days against the ${rule.baseline_days} before`,
+                href: `/animal/${a.id}`,
+                notifyOffsets: [],
+                alert: 'next_reminder' as const,
+              },
+            ]
+          : [];
+      });
+    // Changes the account did not accept. The key follows the newest failure, so a new one alerts again.
+    const sync: Reminder[] = failed.length
+      ? [
+          {
+            key: `sync:${failed[failed.length - 1].op_id}`,
+            kind: 'sync_problem',
+            urgency: 'active',
+            due: today,
+            cattleId: '',
+            title: `${failed.length} change${failed.length === 1 ? '' : 's'} not saved to your account`,
+            detail: 'Open Sync issues to fix or discard them.',
+            href: '/sync-issues',
+            notifyOffsets: [],
+            alert: 'soon',
+          },
+        ]
+      : [];
+    const reminders = [...sync, ...computeReminders(care, active, now), ...declines, ...financeReminders(finance, milk, today, farmDate)].sort(
       (a, b) => order[a.urgency] - order[b.urgency] || a.due.localeCompare(b.due),
     );
     return { reminders, names };
-  }, [care, animals, finance, milk, timeZone]);
+  }, [care, animals, finance, milk, timeZone, failed, rule]);
 }
 
 export type NotificationStatus = { state: 'scheduled'; count: number; at: string } | { state: 'denied' } | { state: 'off' } | { state: 'none' };
@@ -60,11 +104,14 @@ export function useNotificationScheduler() {
   const { account } = useAuth();
   const { reminders, names } = useReminders();
   const prefs = { ...DEFAULT_NOTIFICATION_PREFS, ...account?.notification_prefs };
-  const planned = planNotifications(reminders, prefs, names, new Date());
-  const key = JSON.stringify(planned.map((p) => [p.id, p.at.getTime(), p.title]));
+  const now = new Date();
+  const alerts = planAlerts(reminders, prefs, names, now, getJson<AlertLog>('notifications.alerts') ?? {});
+  const planned = [...planNotifications(reminders, prefs, names, now), ...alerts.planned].sort((a, b) => a.at.getTime() - b.at.getTime()).slice(0, MAX_NOTIFICATIONS);
+  const key = JSON.stringify([planned.map((p) => [p.id, p.at.getTime(), p.title]), alerts.log]);
 
   useEffect(() => {
     let cancelled = false;
+    setJson('notifications.alerts', alerts.log);
     (async () => {
       if (!planned.length) {
         await Notifications.cancelAllScheduledNotificationsAsync();

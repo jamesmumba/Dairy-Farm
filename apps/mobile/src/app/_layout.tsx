@@ -69,7 +69,7 @@ function Gate() {
           <Stack.Screen name="care/[kind]/[id]" options={{ ...header, title: 'Record' }} />
           <Stack.Screen name="care/vaccination-group" options={{ ...header, title: 'Group vaccination' }} />
           <Stack.Screen name="care/schedules" options={{ ...header, title: 'Vaccination schedules' }} />
-          <Stack.Screen name="reminders" options={{ ...header, title: 'Reminders' }} />
+          <Stack.Screen name="reminders" options={{ ...header, title: 'Notifications' }} />
           <Stack.Screen name="customers/new" options={{ ...header, title: 'New customer' }} />
           <Stack.Screen name="customers/[id]" options={{ ...header, title: 'Customer' }} />
           <Stack.Screen name="sale/new" options={{ ...header, title: 'New sale' }} />

@@ -10,7 +10,9 @@ export type ReminderKind =
   | 'expected_calving'
   | 'health_follow_up'
   | 'unpaid_balance'
-  | 'stock_discrepancy';
+  | 'stock_discrepancy'
+  | 'production_decline'
+  | 'sync_problem';
 
 export type Urgency = 'overdue' | 'today' | 'upcoming' | 'active';
 
@@ -25,8 +27,13 @@ export interface Reminder {
   /** The care record it is about; finance reminders link to a screen instead. */
   record?: { kind: CareKind; id: string };
   href?: string;
-  /** Days before `due` to notify; [] = only shown in the app. */
+  /** Days before `due` to notify; [] = no dated notification. */
   notifyOffsets: number[];
+  /**
+   * A problem rather than a dated task: notify once while it lasts, at the farmer's next reminder time
+   * ('next_reminder') or within a minute ('soon'). It can notify again only after it has cleared.
+   */
+  alert?: 'next_reminder' | 'soon';
 }
 
 export const DEFAULT_VACCINE_OFFSETS = [30, 7, 1];
@@ -78,6 +85,7 @@ export function computeReminders(data: CareData, activeCattle: Set<string>, now:
         detail: `${t.medication}: confirm clearance if your vet requires it`,
         record: { kind: 'treatment', id: t.id },
         notifyOffsets: [],
+        alert: 'next_reminder',
       });
     }
   }
