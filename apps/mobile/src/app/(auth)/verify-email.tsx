@@ -28,7 +28,7 @@ export default function VerifyEmail() {
   }
 
   return (
-    <FormScreen title="Check your email" intro={`Enter the 6-digit code we sent to ${email}.`}>
+    <FormScreen standalone title="Check your email" intro={`Enter the 6-digit code we sent to ${email}.`}>
       {error ? <Notice tone="error">{error}</Notice> : null}
       {info ? <Notice>{info}</Notice> : null}
       <TextField label="Code" value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} autoComplete="one-time-code" textContentType="oneTimeCode" onSubmitEditing={verify} />

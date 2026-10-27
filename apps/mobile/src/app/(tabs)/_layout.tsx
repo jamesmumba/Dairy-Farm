@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Tabs } from 'expo-router/js-tabs';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { IconName } from '../../ui/kit';
 import { SyncHeader } from '../../ui/SyncHeader';
 import { useTheme } from '../../ui/theme';
@@ -15,12 +16,15 @@ const TABS: { name: string; title: string; icon: IconName; active: IconName; hin
 
 export default function TabLayout() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
+  // Clear of the home indicator / gesture bar, plus a little air so thumbs don't hit the edge.
+  const bottom = Math.max(insets.bottom, 8) + 8;
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: t.primary,
         tabBarInactiveTintColor: t.textMuted,
-        tabBarStyle: { backgroundColor: t.surface, borderTopColor: t.border, height: 72, paddingTop: 8, paddingBottom: 10 },
+        tabBarStyle: { backgroundColor: t.surface, borderTopColor: t.border, height: 64 + bottom, paddingTop: 8, paddingBottom: bottom },
         tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 2 },
         headerStyle: { backgroundColor: t.background },
         headerShadowVisible: false,

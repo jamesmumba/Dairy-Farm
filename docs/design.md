@@ -227,7 +227,16 @@ Screen patterns:
 * **Sales**: one card with milk for sale, price and **New sale**; four grouped links; customers.
 * **Sale form**: customer, litres, payment, total, Save. Date, currency, special price and note under one link.
 * **More**: a farm card, then grouped rows for records, account and data.
-* Tab bar: white, with the active tab's icon in a pale green pill.
+* **Production**: one headline card (total, change on the period before, per cow a day, cows milked, not for sale),
+  the chart in a card, then Falling milk and By cow as grouped rows.
+* **Milk stock**: milk for sale now, three actions, How stock changed (totals as a short sum, or each day), and milk
+  use as rows (tap one to reverse it).
+* **Money summary**: the operating result as the headline, then Sales − Expenses and Money received as short sums.
+* **Customer**: balance card, New sale and Payment side by side, statement as rows.
+* **Reminders, expenses, reports**: grouped rows with an icon, a short subtitle and the amount or date on the right.
+* **Forms**: the title appears once, in the header (sign-in and onboarding show it as a heading).
+* **Dates**: on iPhone a bottom sheet with the calendar and Cancel, Today and Done; on Android the system dialogs.
+* Tab bar: white, with the active tab's icon in a pale green pill, lifted clear of the phone's home bar.
 
 Other components: 
 `SyncHeader` (header indicator), `SyncStatus` (full status on Home), `SyncBadge` (per record), `Notice`

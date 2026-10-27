@@ -28,7 +28,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <FormScreen title="Choose a new password" intro={`Enter the 6-digit code we sent to ${email} and your new password.`}>
+    <FormScreen standalone title="Choose a new password" intro={`Enter the 6-digit code we sent to ${email} and your new password.`}>
       {error ? <Notice tone="error">{error}</Notice> : null}
       <TextField label="Code" value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} autoComplete="one-time-code" textContentType="oneTimeCode" />
       <TextField label="New password" hint={`At least ${MIN_PASSWORD} characters`} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" textContentType="newPassword" />

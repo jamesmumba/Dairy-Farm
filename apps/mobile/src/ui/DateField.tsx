@@ -1,11 +1,64 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Modal, Platform, Pressable, Text, View } from 'react-native';
-import { Button, FieldError } from './form';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FieldError } from './form';
 import { minTouch, radius, spacing, useTheme } from './theme';
 import { formatDate, formatDateTime, fromDateString, toDateString } from '../lib/dates';
 
 export { formatDate, formatDateTime, fromDateString, toDateString };
+
+/**
+ * iOS bottom sheet around the native calendar. The choice is a draft until Done, so picking today
+ * (already highlighted) still counts, and Cancel leaves the field as it was. The picker is forced to
+ * the light look: with the phone in dark mode it would otherwise draw white text on the light sheet.
+ */
+function IosPickerSheet({
+  initial,
+  mode,
+  maximumDate,
+  onCancel,
+  onDone,
+}: {
+  initial: Date;
+  mode: 'date' | 'datetime';
+  maximumDate?: Date;
+  onCancel: () => void;
+  onDone: (d: Date) => void;
+}) {
+  const t = useTheme();
+  const insets = useSafeAreaInsets();
+  // Mounted only while open, so each opening starts from the field's current value.
+  const [draft, setDraft] = useState(initial);
+  const action = (label: string, onPress: () => void, strong = false) => (
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8} style={{ minHeight: minTouch, minWidth: minTouch, justifyContent: 'center', paddingHorizontal: spacing.sm }}>
+      <Text style={{ color: t.primary, fontSize: 17, fontWeight: strong ? '700' : '500' }}>{label}</Text>
+    </Pressable>
+  );
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onCancel}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Close the calendar" style={{ flex: 1, backgroundColor: '#0006' }} onPress={onCancel} />
+      <View style={{ backgroundColor: t.surface, borderTopLeftRadius: radius.card + 4, borderTopRightRadius: radius.card + 4, paddingBottom: insets.bottom + spacing.sm, paddingHorizontal: spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: t.border }}>
+          {action('Cancel', onCancel)}
+          {action(mode === 'date' ? 'Today' : 'Now', () => setDraft(new Date()))}
+          {action('Done', () => onDone(draft), true)}
+        </View>
+        <DateTimePicker
+          value={draft}
+          mode={mode}
+          display="inline"
+          themeVariant="light"
+          accentColor={t.primary}
+          textColor={t.text}
+          maximumDate={maximumDate}
+          onChange={(_, d) => d && setDraft(d)}
+          style={{ alignSelf: 'center' }}
+        />
+      </View>
+    </Modal>
+  );
+}
 
 
 export function DateField({
@@ -73,14 +126,18 @@ export function DateField({
       </View>
       {error ? <FieldError message={error} /> : null}
 
-      <Modal visible={iosOpen} transparent animationType="slide" onRequestClose={() => setIosOpen(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' }}>
-          <View style={{ backgroundColor: t.background, padding: spacing.md, gap: spacing.md }}>
-            <DateTimePicker value={current} mode="date" display="inline" maximumDate={maximumDate} onChange={(_, date) => date && onChange(toDateString(date))} />
-            <Button label="Done" onPress={() => setIosOpen(false)} />
-          </View>
-        </View>
-      </Modal>
+      {iosOpen ? (
+        <IosPickerSheet
+          initial={current}
+          mode="date"
+          maximumDate={maximumDate}
+          onCancel={() => setIosOpen(false)}
+          onDone={(d) => {
+            setIosOpen(false);
+            onChange(toDateString(d));
+          }}
+        />
+      ) : null}
     </View>
   );
 }
@@ -126,7 +183,7 @@ export function DateTimeField({
             if (e2.type !== 'set' || !time) return;
             const combined = new Date(date);
             combined.setHours(time.getHours(), time.getMinutes(), 0, 0);
-            onChange(combined.toISOString());
+            onChange((maximumDate && combined > maximumDate ? maximumDate : combined).toISOString());
           },
         });
       },
@@ -164,14 +221,18 @@ export function DateTimeField({
       </View>
       {error ? <FieldError message={error} /> : null}
 
-      <Modal visible={iosOpen} transparent animationType="slide" onRequestClose={() => setIosOpen(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' }}>
-          <View style={{ backgroundColor: t.background, padding: spacing.md, gap: spacing.md }}>
-            <DateTimePicker value={current} mode="datetime" display="inline" maximumDate={maximumDate} onChange={(_, d) => d && onChange(d.toISOString())} />
-            <Button label="Done" onPress={() => setIosOpen(false)} />
-          </View>
-        </View>
-      </Modal>
+      {iosOpen ? (
+        <IosPickerSheet
+          initial={current}
+          mode="datetime"
+          maximumDate={maximumDate}
+          onCancel={() => setIosOpen(false)}
+          onDone={(d) => {
+            setIosOpen(false);
+            onChange(d.toISOString());
+          }}
+        />
+      ) : null}
     </View>
   );
 }

@@ -25,7 +25,7 @@ export default function SignIn() {
   }
 
   return (
-    <FormScreen title="Sign in" intro="Keep your herd, milk, health and sales records in one place.">
+    <FormScreen standalone title="Sign in" intro="Keep your herd, milk, health and sales records in one place.">
       {error ? <Notice tone="error">{error}</Notice> : null}
       <TextField label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
       <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" onSubmitEditing={submit} />

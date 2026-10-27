@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useNavigation } from 'expo-router';
+import { type ReactNode, useLayoutEffect } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,16 +15,26 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { minTouch, radius, spacing, type, useTheme } from './theme';
 
-export function FormScreen({ title, intro, children }: { title: string; intro?: string; children: ReactNode }) {
+/**
+ * Scrolling screen for forms and detail pages. Inside the app the title goes in the navigation header
+ * (shown once, not twice); `standalone` screens without a header (sign-in, onboarding) show it as a heading.
+ */
+export function FormScreen({ title, intro, children, standalone = false }: { title: string; intro?: string; children: ReactNode; standalone?: boolean }) {
   const t = useTheme();
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    if (!standalone) navigation.setOptions({ title });
+  }, [navigation, title, standalone]);
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
+    <SafeAreaView edges={standalone ? ['top', 'bottom', 'left', 'right'] : ['bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: t.background }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.md }} keyboardShouldPersistTaps="handled">
-          <Text accessibilityRole="header" style={{ color: t.text, ...type.screenTitle }}>
-            {title}
-          </Text>
-          {intro ? <Text style={{ color: t.textMuted, fontSize: 16 }}>{intro}</Text> : null}
+        <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl }} keyboardShouldPersistTaps="handled">
+          {standalone ? (
+            <Text accessibilityRole="header" style={{ color: t.text, ...type.screenTitle }}>
+              {title}
+            </Text>
+          ) : null}
+          {intro ? <Text style={{ color: t.textMuted, fontSize: 15 }}>{intro}</Text> : null}
           {children}
         </ScrollView>
       </KeyboardAvoidingView>

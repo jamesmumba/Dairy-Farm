@@ -28,7 +28,7 @@ export default function SignUp() {
   }
 
   return (
-    <FormScreen title="Create your account" intro="We will email you a 6-digit code to confirm your address. Your email is used to sign in and to recover your account.">
+    <FormScreen standalone title="Create your account" intro="We will email you a 6-digit code to confirm your address. Your email is used to sign in and to recover your account.">
       {errors.form ? <Notice tone="error">{errors.form}</Notice> : null}
       <TextField label="Email" value={email} onChangeText={setEmail} error={errors.email} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
       <TextField label="Password" hint={`At least ${MIN_PASSWORD} characters`} value={password} onChangeText={setPassword} error={errors.password} secureTextEntry autoComplete="new-password" textContentType="newPassword" />

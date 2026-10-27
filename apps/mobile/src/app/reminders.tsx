@@ -1,10 +1,11 @@
-import { type Href, router } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import type { Href } from 'expo-router';
+import { ScrollView, Text, View } from 'react-native';
 import type { Reminder, Urgency } from '../care/reminders';
 import { useNotificationStatus, useReminders } from '../care/useReminders';
 import { formatDate, formatDateTime } from '../lib/dates';
 import { Notice } from '../ui/form';
-import { minTouch, radius, spacing, useTheme } from '../ui/theme';
+import { type IconName, ListGroup, ListRow, SectionHeader } from '../ui/kit';
+import { spacing, useTheme } from '../ui/theme';
 
 const SECTIONS: { urgency: Urgency; title: string }[] = [
   { urgency: 'active', title: 'Milk withdrawal in force' },
@@ -27,48 +28,43 @@ export default function Reminders() {
           ? 'All reminder notifications are turned off in Profile and settings.'
           : 'No notifications scheduled.';
 
-  const item = (r: Reminder) => (
-    <Pressable
-      key={r.key}
-      accessibilityRole="button"
-      accessibilityLabel={`${r.cattleId ? `${names.get(r.cattleId) ?? 'Animal'}: ` : ''}${r.title}. ${r.detail}`}
-      onPress={() => router.push((r.href ?? { pathname: '/care/[kind]/[id]', params: { kind: r.record!.kind, id: r.record!.id } }) as Href)}
-      style={{
-        minHeight: minTouch,
-        padding: spacing.md,
-        borderRadius: radius.control,
-        backgroundColor: t.surface,
-        borderLeftWidth: 4,
-        borderLeftColor: r.urgency === 'active' || r.urgency === 'overdue' ? t.danger : t.primary,
-        gap: 2,
-      }}
-    >
-      <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>
-        {r.urgency === 'overdue' || r.urgency === 'active' ? '⚠ ' : ''}
-        {r.cattleId ? `${names.get(r.cattleId) ?? 'Animal'}: ` : ''}
-        {r.title}
-      </Text>
-      <Text style={{ color: t.textMuted, fontSize: 15 }}>{r.detail}</Text>
-      <Text style={{ color: t.textMuted, fontSize: 14 }}>{r.kind === 'withdrawal' ? `Until ${formatDateTime(r.due)}` : formatDate(r.due)}</Text>
-    </Pressable>
-  );
+  const ICON: Record<Reminder['kind'], IconName> = {
+    withdrawal: 'water-off-outline',
+    withdrawal_clearance: 'water-check-outline',
+    vaccination: 'needle',
+    pregnancy_check: 'heart-pulse',
+    expected_calving: 'cow',
+    health_follow_up: 'stethoscope',
+    unpaid_balance: 'account-cash-outline',
+    stock_discrepancy: 'warehouse',
+  };
 
   return (
-    <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
-      <Text style={{ color: t.textMuted, fontSize: 14 }}>{statusText} Calculated from records on this phone.</Text>
+    <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
       {reminders.length === 0 ? <Notice>Nothing due. Withdrawals, vaccinations, pregnancy checks, calvings and follow-ups will appear here.</Notice> : null}
       {SECTIONS.map(({ urgency, title }) => {
         const list = reminders.filter((r) => r.urgency === urgency);
         if (!list.length) return null;
+        const urgent = urgency === 'active' || urgency === 'overdue';
         return (
           <View key={urgency} style={{ gap: spacing.sm }}>
-            <Text accessibilityRole="header" style={{ color: t.text, fontSize: 20, fontWeight: '700', marginTop: spacing.md }}>
-              {title} ({list.length})
-            </Text>
-            {list.map(item)}
+            <SectionHeader title={`${title} (${list.length})`} />
+            <ListGroup>
+              {list.map((r) => (
+                <ListRow
+                  key={r.key}
+                  icon={ICON[r.kind]}
+                  tint={urgent ? 'red' : urgency === 'today' ? 'straw' : 'green'}
+                  title={`${r.cattleId ? `${names.get(r.cattleId) ?? 'Animal'}: ` : ''}${r.title}`}
+                  subtitle={`${r.kind === 'withdrawal' ? `Until ${formatDateTime(r.due)}` : formatDate(r.due)}${r.detail ? ` · ${r.detail}` : ''}`}
+                  href={(r.href ?? { pathname: '/care/[kind]/[id]', params: { kind: r.record!.kind, id: r.record!.id } }) as Href}
+                />
+              ))}
+            </ListGroup>
           </View>
         );
       })}
+      <Text style={{ color: t.textMuted, fontSize: 13, marginTop: spacing.sm }}>{statusText}</Text>
     </ScrollView>
   );
 }

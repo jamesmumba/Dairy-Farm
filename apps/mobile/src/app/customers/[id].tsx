@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { money, saleDue, toCents } from '../../finance/calc';
 import { CUSTOMER_TYPES, type Customer, METHOD_LABELS } from '../../finance/model';
 import { editCustomer } from '../../finance/repo';
@@ -11,7 +11,8 @@ import { getRecord, useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { Button, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
-import { minTouch, radius, shadow, spacing, useTheme } from '../../ui/theme';
+import { Card, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
+import { spacing, useTheme } from '../../ui/theme';
 
 export default function CustomerStatement() {
   const t = useTheme();
@@ -45,29 +46,35 @@ export default function CustomerStatement() {
       <SyncBadge state={stored.sync_state} />
       {saved ? (
         <Notice tone="success" title="Sale saved">
-          {saved}. Saved on this phone; your account confirms the price, payment and stock when it syncs. To change it, open the sale below.
+          {saved}. To change it, open it in the statement below.
         </Notice>
       ) : null}
       {!c.active ? <Notice>This customer is marked inactive.</Notice> : null}
 
-      <View style={{ backgroundColor: t.surface, borderRadius: radius.card, ...shadow, padding: spacing.md, gap: 4 }} accessible>
+      <Card gap={2}>
         <Text style={{ color: t.textMuted, fontSize: 14 }}>Balance</Text>
-        {bal.length === 0 ? <Text style={{ color: t.text, fontSize: 20, fontWeight: '700' }}>Nothing owed</Text> : null}
+        {bal.length === 0 ? <Text style={{ color: t.text, fontSize: 30, fontWeight: '600' }}>Nothing owed</Text> : null}
         {bal.map(([cur, v]) => (
-          <Text key={cur} style={{ color: v > 0 ? t.danger : t.text, fontSize: 20, fontWeight: '700' }}>
+          <Text key={cur} style={{ color: v > 0 ? t.danger : t.text, fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
             {v > 0 ? `Owes ${money(v, cur)}` : v < 0 ? `In credit ${money(-v, cur)}` : `${cur}: settled`}
           </Text>
         ))}
-        <Text style={{ color: t.textMuted, fontSize: 14 }}>
-          {litres(litresBought)} L bought in {sales.filter((s) => s.status === 'completed').length} sale(s). Payments are applied to the oldest sales first; anything extra is kept as credit.
+        <Text style={{ color: t.textMuted, fontSize: 13 }}>
+          {litres(litresBought)} L in {sales.filter((s) => s.status === 'completed').length} sales · payments clear the oldest sales first
         </Text>
+      </Card>
+
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        <View style={{ flex: 1 }}>
+          <Button label="New sale" onPress={() => router.push({ pathname: '/sale/new', params: { customer_id: id } })} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button label="Payment" variant="secondary" onPress={() => router.push({ pathname: '/payment/new', params: { customer_id: id } })} />
+        </View>
       </View>
 
-      <Button label="New sale" onPress={() => router.push({ pathname: '/sale/new', params: { customer_id: id } })} />
-      <Button label="Record a payment" variant="secondary" onPress={() => router.push({ pathname: '/payment/new', params: { customer_id: id } })} />
-
       {editing ? (
-        <>
+        <Card>
           <TextField label="Name" value={form.name ?? ''} onChangeText={(name) => setForm((x) => ({ ...x, name }))} />
           <TextField label="Phone" value={form.phone ?? ''} onChangeText={(phone) => setForm((x) => ({ ...x, phone: phone || null }))} keyboardType="phone-pad" />
           <TextField label="Address" value={form.address ?? ''} onChangeText={(address) => setForm((x) => ({ ...x, address: address || null }))} />
@@ -76,49 +83,46 @@ export default function CustomerStatement() {
           <Toggle label="Active customer" value={form.active ?? c.active} onChange={(active) => setForm((x) => ({ ...x, active }))} />
           <Button label="Save" onPress={save} />
           <Button label="Cancel" variant="link" onPress={() => setEditing(false)} />
-        </>
-      ) : (
-        <Button
-          label="Edit customer"
-          variant="link"
-          onPress={() => {
-            setForm({ name: c.name, phone: c.phone, address: c.address, customer_type: c.customer_type, notes: c.notes, active: c.active });
-            setEditing(true);
-          }}
-        />
-      )}
+        </Card>
+      ) : null}
 
-      <Text accessibilityRole="header" style={{ color: t.text, fontSize: 20, fontWeight: '700', marginTop: spacing.md }}>
-        Statement
-      </Text>
-      {history.length === 0 ? <Text style={{ color: t.textMuted }}>No sales or payments yet.</Text> : null}
-      {history.map(({ kind, row }) => {
-        const synced = getRecord(kind === 'sale' ? 'milk_sales' : 'payments', row.id)?.sync_state ?? 'synced';
-        const voided = row.status === 'voided';
-        return (
-          <Pressable
-            key={`${kind}:${row.id}`}
-            accessibilityRole="button"
-            onPress={() => router.push({ pathname: kind === 'sale' ? '/sale/[id]' : '/payment/[id]', params: { id: row.id } })}
-            style={{ minHeight: minTouch, justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: t.border, paddingVertical: 4, opacity: voided ? 0.6 : 1 }}
-          >
-            <Text style={{ color: t.textMuted, fontSize: 13 }}>{formatDateTime(kind === 'sale' ? (row as { sale_at: string }).sale_at : (row as { paid_at: string }).paid_at)}</Text>
-            {kind === 'sale' ? (
-              <Text style={{ color: t.text, fontSize: 16, textDecorationLine: voided ? 'line-through' : 'none' }}>
-                Sale: {(row as { quantity: string }).quantity} L × {(row as { price_per_litre: string }).price_per_litre} = {money(toCents((row as { total: string }).total), row.currency)}
-                {!voided ? ` · ${due.get(row.id) ? `due ${money(due.get(row.id)!, row.currency)}` : 'paid'}` : ' · voided'}
-              </Text>
-            ) : (
-              <Text style={{ color: t.text, fontSize: 16, textDecorationLine: voided ? 'line-through' : 'none' }}>
-                {{ payment: 'Payment', refund: 'Refund', adjustment: 'Adjustment' }[(row as { kind: 'payment' | 'refund' | 'adjustment' }).kind]}: {money(toCents((row as { amount: string }).amount), row.currency)} ·{' '}
-                {METHOD_LABELS[(row as { method: keyof typeof METHOD_LABELS }).method]}
-                {voided ? ' · voided' : ''}
-              </Text>
-            )}
-            <SyncBadge state={synced} />
-          </Pressable>
-        );
-      })}
+      <SectionHeader
+        title="Statement"
+        action={editing ? undefined : 'Edit customer'}
+        onAction={() => {
+          setForm({ name: c.name, phone: c.phone, address: c.address, customer_type: c.customer_type, notes: c.notes, active: c.active });
+          setEditing(true);
+        }}
+      />
+      {history.length === 0 ? <Text style={{ color: t.textMuted, fontSize: 15 }}>No sales or payments yet.</Text> : null}
+      {history.length ? (
+        <ListGroup>
+          {history.map(({ kind, row }) => {
+            const synced = getRecord(kind === 'sale' ? 'milk_sales' : 'payments', row.id)?.sync_state ?? 'synced';
+            const voided = row.status === 'voided';
+            const when = formatDateTime(kind === 'sale' ? (row as { sale_at: string }).sale_at : (row as { paid_at: string }).paid_at);
+            const owing = kind === 'sale' && !voided ? due.get(row.id) : 0;
+            const status = voided ? 'voided' : kind === 'sale' ? (owing ? `due ${money(owing, row.currency)}` : 'paid') : METHOD_LABELS[(row as { method: keyof typeof METHOD_LABELS }).method];
+            const title =
+              kind === 'sale'
+                ? `${(row as { quantity: string }).quantity} L sold`
+                : { payment: 'Payment', refund: 'Refund', adjustment: 'Adjustment' }[(row as { kind: 'payment' | 'refund' | 'adjustment' }).kind];
+            const amount = money(toCents(kind === 'sale' ? (row as { total: string }).total : (row as { amount: string }).amount), row.currency);
+            return (
+              <View key={`${kind}:${row.id}`} style={{ opacity: voided ? 0.55 : 1 }}>
+                <ListRow
+                  icon={kind === 'sale' ? 'water-outline' : 'cash-plus'}
+                  tint={owing ? 'straw' : 'green'}
+                  title={title}
+                  subtitle={`${when} · ${status}${synced !== 'synced' ? ' · waiting to sync' : ''}`}
+                  value={`${kind === 'sale' ? '' : '− '}${amount}`}
+                  href={{ pathname: kind === 'sale' ? '/sale/[id]' : '/payment/[id]', params: { id: row.id } }}
+                />
+              </View>
+            );
+          })}
+        </ListGroup>
+      ) : null}
     </FormScreen>
   );
 }

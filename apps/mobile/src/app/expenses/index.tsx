@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, Text } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { money, toCents } from '../../finance/calc';
 import { CATEGORY_LABELS } from '../../finance/model';
 import { useFinance } from '../../finance/useFinance';
@@ -7,8 +7,8 @@ import { formatDate } from '../../lib/dates';
 import { periodRange } from '../../production/calc';
 import { getRecord } from '../../sync/store';
 import { Button } from '../../ui/form';
-import { SyncBadge } from '../../ui/SyncBadge';
-import { minTouch, spacing, useTheme } from '../../ui/theme';
+import { Card, ListGroup, ListRow } from '../../ui/kit';
+import { spacing, useTheme } from '../../ui/theme';
 
 export default function Expenses() {
   const t = useTheme();
@@ -22,31 +22,38 @@ export default function Expenses() {
   );
 
   return (
-    <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
-      <Text style={{ color: t.text, fontSize: 18, fontWeight: '600' }}>
-        This month: {monthTotals.length ? monthTotals.map(([cur, c]) => money(c, cur)).join(' · ') : 'no expenses'}
-      </Text>
+    <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl }}>
+      <Card gap={2}>
+        <Text style={{ color: t.textMuted, fontSize: 14 }}>Spent this month</Text>
+        <Text style={{ color: t.text, fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{monthTotals.length ? monthTotals.map(([cur, c]) => money(c, cur)).join(' · ') : 'Nothing yet'}</Text>
+      </Card>
       <Button label="Add an expense" onPress={() => router.push('/expenses/new')} />
-      {list.map((e) => (
-        <Pressable
-          key={e.id}
-          accessibilityRole="button"
-          onPress={() => router.push({ pathname: '/expenses/[id]', params: { id: e.id } })}
-          style={{ minHeight: minTouch, justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: t.border, paddingVertical: 4, opacity: e.status === 'voided' ? 0.6 : 1 }}
-        >
-          <Text style={{ color: t.text, fontSize: 16, textDecorationLine: e.status === 'voided' ? 'line-through' : 'none' }}>
-            {CATEGORY_LABELS[e.category]}: {money(toCents(e.amount), e.currency)}
-            {e.payee ? ` · ${e.payee}` : ''}
-          </Text>
-          <Text style={{ color: t.textMuted, fontSize: 14 }}>
-            {formatDate(e.expense_date)}
-            {e.payment_status !== 'paid' ? ` · ${e.payment_status === 'unpaid' ? 'not paid yet' : 'partly paid'}` : ''}
-            {e.receipt_path || e.local_receipt_uri ? ' · receipt' : ''}
-            {e.status === 'voided' ? ' · voided' : ''}
-          </Text>
-          <SyncBadge state={getRecord('farm_expenses', e.id)?.sync_state ?? 'synced'} />
-        </Pressable>
-      ))}
+      {list.length ? (
+        <ListGroup>
+          {list.map((e) => {
+            const voided = e.status === 'voided';
+            const waiting = (getRecord('farm_expenses', e.id)?.sync_state ?? 'synced') !== 'synced';
+            return (
+              <View key={e.id} style={{ opacity: voided ? 0.55 : 1 }}>
+                <ListRow
+                  icon="receipt"
+                  tint={e.payment_status !== 'paid' && !voided ? 'straw' : 'green'}
+                  title={`${CATEGORY_LABELS[e.category]}${e.payee ? ` · ${e.payee}` : ''}`}
+                  subtitle={[
+                    formatDate(e.expense_date),
+                    voided ? 'voided' : e.payment_status === 'unpaid' ? 'not paid yet' : e.payment_status === 'partially_paid' ? 'partly paid' : null,
+                    waiting ? 'waiting to sync' : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  value={money(toCents(e.amount), e.currency)}
+                  href={{ pathname: '/expenses/[id]', params: { id: e.id } }}
+                />
+              </View>
+            );
+          })}
+        </ListGroup>
+      ) : null}
     </ScrollView>
   );
 }
