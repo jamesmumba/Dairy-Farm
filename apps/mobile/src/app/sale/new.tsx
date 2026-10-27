@@ -156,7 +156,9 @@ export default function NewSale() {
             Balance after: {balanceAfter > 0 ? `owes ${money(balanceAfter, currency)}` : balanceAfter < 0 ? `in credit ${money(-balanceAfter, currency)}` : 'settled'}
           </Text>
         ) : null}
-        {quantityCl > stockCl ? <Text style={{ color: t.danger, fontSize: 15 }}>Only {litres(stockCl)} L in stock for this date</Text> : null}
+        <Text style={{ color: quantityCl > stockCl ? t.danger : t.textMuted, fontSize: 14 }}>
+          {quantityCl > stockCl ? `Only ${litres(stockCl)} L in stock for this date` : `Stock for this date: ${litres(stockCl)} L${valid ? ` → ${litres(stockCl - quantityCl)} L` : ''}`}
+        </Text>
       </View>
       {quantityCl > stockCl ? <Button label="Make a stock adjustment" variant="secondary" onPress={() => router.push({ pathname: '/stock/new', params: { kind: 'adjustment', date } })} /> : null}
       <Button label="Save sale" onPress={save} />

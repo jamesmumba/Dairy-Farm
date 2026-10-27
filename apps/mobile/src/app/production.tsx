@@ -137,6 +137,9 @@ export default function Production() {
       {declines.length ? (
         <View style={{ gap: spacing.sm }}>
           <SectionHeader title="Falling milk" />
+          <Text style={{ color: t.textMuted, fontSize: 13 }}>
+            Last {rule.recent_days} days (to yesterday) against the {rule.baseline_days} before, flagged at {rule.threshold_pct}% down. Change this in settings.
+          </Text>
           <ListGroup>
             {declines.map(({ a, d }) =>
               d.state === 'decline' ? (

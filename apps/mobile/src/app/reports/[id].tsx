@@ -143,7 +143,7 @@ export default function ReportScreen() {
       ) : null}
 
       <Text style={{ color: t.textMuted, fontSize: 13 }}>
-        {formatDate(f.from)} – {formatDate(f.to)} · {report.units}
+        {formatDate(f.from)} – {formatDate(f.to)} · {report.units} · made {new Date(report.generatedAt).toLocaleString()}
         {sync.pending ? ` · ${sync.pending} not yet synced` : ''}
       </Text>
 

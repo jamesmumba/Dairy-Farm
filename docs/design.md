@@ -217,8 +217,11 @@ Added after farmer feedback that screens felt cluttered:
 
 Screen patterns:
 * **Home**: the green "today" card, four round quick actions (Milk, Sale, Animal, Health), **Needs attention**
-  (only when there is something, at most 3 rows), **This week** (milk, sold, owed and a 7-day milk chart) and
-  **Coming up** (3 rows). Herd, money and reports are one tap away.
+  (only when there is something, at most 3 rows), then the summary the specification requires (section 6):
+  a **Herd** card (active of recorded, in milk, confirmed pregnant, needing attention, vaccinations due/overdue),
+  one period choice (today, this week, this month), a **Milk** card (produced, sold, for sale now; chart per day or
+  by cow) and a **Money** card (sales, received, owed now, expenses; sales and payments per day on one scale), and
+  **Coming up** (3 rows). Each section opens its details.
 * **Records**: a green milking-round banner, then grouped rows: Health, Breeding, Other.
 * **Animals**: search and filters, rows with an initials avatar, breed and age and one status pill, and a floating
   **Add animal** button.

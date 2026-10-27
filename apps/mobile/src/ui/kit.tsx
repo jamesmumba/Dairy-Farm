@@ -229,10 +229,32 @@ export function Pill({ label, tint = 'green' }: { label: string; tint?: Tint }) 
   );
 }
 
-/** A plain white card for grouped content. */
-export function Card({ children, gap = spacing.md }: { children: ReactNode; gap?: number }) {
+/** A plain white card for grouped content. With `href` the whole card opens that screen. */
+export function Card({ children, gap = spacing.md, href, label }: { children: ReactNode; gap?: number; href?: Href; label?: string }) {
   const t = useTheme();
-  return <View style={{ backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap, ...shadow }}>{children}</View>;
+  const style = { backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap, ...shadow };
+  if (!href) return <View style={style}>{children}</View>;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint="Opens the details" onPress={() => router.push(href)} style={({ pressed }) => [style, pressed && { backgroundColor: t.primarySoft }]}>
+      {children}
+    </Pressable>
+  );
+}
+
+/** Figures laid out three to a row (two with large text), so a card can hold a handful of numbers calmly. */
+export function FigureRow({ children }: { children: ReactNode }) {
+  const basis = useCardBasis();
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md, columnGap: spacing.md }}>
+      {Children.toArray(children)
+        .filter(Boolean)
+        .map((c, i) => (
+          <View key={i} style={{ flexBasis: basis === '100%' ? '45%' : '28%', flexGrow: 1 }}>
+            {c}
+          </View>
+        ))}
+    </View>
+  );
 }
 
 /** A labelled figure inside a card: small label above, the number below. */
