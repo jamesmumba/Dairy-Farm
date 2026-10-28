@@ -4,7 +4,7 @@ A mobile app for one farmer to keep records for a dairy farm in Zambia: herd, mi
 animal health, breeding, vaccination, sales, stock, expenses and reports. It works offline and
 syncs when there is a connection.
 
-**Status:** All 8 stages are built and tested (187 API and 129 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
+**Status:** All 8 stages are built and tested (187 API and 137 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
 
 ## Repository layout
 

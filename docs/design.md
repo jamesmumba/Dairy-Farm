@@ -230,6 +230,11 @@ Screen patterns:
   record types) and **Edit details**, then Overview, Care, Milk and History as one choice.
 * **Sales**: one card with milk for sale, price and **New sale**; four grouped links; customers.
 * **Sale form**: customer, litres, payment, total, Save, then the confirmation. Date, currency, special price and note under one link.
+* **Audit history**: one plain sentence per change, grouped by day (Today, Yesterday, then dates), with an icon,
+  the time and the reason in quotes, e.g. "ZM-001 · Daisy: milk entry corrected / Milk changed from 12 L to 10 L /
+  "Misread the bucket"". Names instead of ids, units and the farmer's date format, settings as sentences. Shows
+  changes worth reviewing by default; *Include new records* adds routine new entries. Filters: Milk and stock,
+  Animals and care, Sales and money, Settings and exports. Tapping an entry opens its record (`src/audit/describe.ts`).
 * **Forms**: each form sits in one white card; fields inside a card use the milk-white fill so they stand out (`OnCard`).
 * **App icon and splash**: the white cow on pasture green (`apps/mobile/scripts/make-icons.py` draws them from the icon font).
 * **More**: a farm card, then grouped rows for records, account and data.
