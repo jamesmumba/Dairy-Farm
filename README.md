@@ -23,7 +23,7 @@ syncs when there is a connection.
 |---|---|
 | Backend | The API holds all business rules. Supabase provides managed Postgres, Auth and private Storage, and runs the API as an Edge Function, so there is one platform to operate. |
 | Data access | Only the API reaches the tables. The Supabase Data API is locked out (RLS on, no policies, grants revoked). |
-| Sign-in | Supabase Auth with email and password. Sign-up is confirmed with Supabase's email link; the link lands on a short "go back to the app" page and the farmer taps *I've confirmed my email*. Password reset uses a 6-digit code typed in the app. No deep links. Email is sent through Resend SMTP. |
+| Sign-in | Supabase Auth with email and password. Sign-up is confirmed with Supabase's email link; the link lands on a short "go back to the app" page and the farmer taps *I've confirmed my email*. Password reset is also an email link: opened on the phone, it reopens the app on *Choose a new password* (PKCE, so it works only on the phone that asked for it). A signed-in farmer changes the password directly in Security. Email is sent through Resend SMTP. |
 | App lock | Optional. Uses the phone's fingerprint, face or screen lock (expo-local-authentication). Locks on launch and after 5 minutes in the background. |
 | Owner scoping | `owner_id` comes only from the verified token, through `farmer_accounts.auth_user_id`. |
 | Offline | expo-sqlite local copy with an outbox queue, built in Stage 3 and reused by later modules. Client UUIDs and idempotency keys make retries safe. Details are in the [data model](docs/data-model.md#offline-copy-on-the-phone-expo-sqlite). |
@@ -85,11 +85,13 @@ computer's LAN address (e.g. `http://192.168.1.20:3000`), not `localhost`. The p
 1. **Authentication › Sign In / Providers › Email:** turn on *Confirm email*. Set *Minimum password length* to 8.
 2. **Authentication › Emails › SMTP Settings:** turn on custom SMTP with Resend. Host `smtp.resend.com`,
    port `465`, user `resend`, password = your Resend API key, sender = an address on your verified Resend domain.
-3. **Authentication › URL Configuration:** add `https://xgdhqmlkjfhcfjkmrqrx.supabase.co/functions/v1/api/email-confirmed` to *Redirect URLs* (and you may set it as the *Site URL*).
-   After the farmer taps the sign-up link, Supabase confirms the address and opens that page, which says to go back to the app.
+3. **Authentication › URL Configuration › Redirect URLs:** add all three:
+   * `https://xgdhqmlkjfhcfjkmrqrx.supabase.co/functions/v1/api/email-confirmed`: the sign-up link lands here ("go back to the app"). You may also set it as the *Site URL*.
+   * `exp://**`: the reset link reopens the app in Expo Go (its address changes with your Wi-Fi, hence the wildcard).
+   * `dairyfarm://**`: the reset link reopens the installed app (EAS builds).
 4. **Authentication › Emails › Templates:**
    * *Confirm signup*: keep Supabase's default (it contains the `{{ .ConfirmationURL }}` link). Optionally set the subject to `Confirm your Dairy Farm account`.
-   * *Reset password*: the app needs the code (`{{ .Token }}`), not a link: subject `Your Dairy Farm reset code`, body `<p>Your password reset code is <strong>{{ .Token }}</strong>. If you did not ask for this, ignore this email.</p>`
+   * *Reset password*: keep Supabase's default (the `{{ .ConfirmationURL }}` link). Optionally set the subject to `Reset your Dairy Farm password` and add "Open this on the phone where you asked for it".
 5. **Authentication › Rate Limits:** keep the defaults. They limit sign-in, sign-up and code requests per IP.
 
 Use `npx expo install <pkg>` to add packages, so versions match the Expo SDK.

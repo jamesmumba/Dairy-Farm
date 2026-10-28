@@ -118,7 +118,7 @@ Five-destination bottom navigation; less frequent tools under **More**.
 
 ### Sign-in and onboarding
 
-* The app mark (cow on deep green) above the title, a one-line explanation and a focused form. Sign-up is confirmed by Supabase's email link; password reset by 6-digit code.
+* The app mark (cow on deep green) above the title, a one-line explanation and a focused form. Sign-up and password reset both use Supabase's email links; the reset link reopens the app to choose a new password.
 * No farm role choice: there is one farmer account.
 * Short stepper: profile, farm (optional), units and currency (ZMW default), reminders, app lock, first action.
 * Ends with **Add your first animal** or **Record today's milk**. Setup can be paused and resumed.

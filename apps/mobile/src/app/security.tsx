@@ -1,8 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text } from 'react-native';
-import { authMessage } from '../lib/authErrors';
-import { supabase } from '../lib/supabase';
 import { useAppLock } from '../state/appLock';
 import { useAuth } from '../state/auth';
 import { useSyncStatus } from '../sync/engine';
@@ -24,12 +22,8 @@ export default function Security() {
     if (!result.ok) setMessage(result.message);
   }
 
-  async function changePassword() {
-    if (!email) return;
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) return setMessage(authMessage(error));
-    router.push({ pathname: '/reset-password', params: { email } });
-  }
+  // Already signed in, so no email is needed: the reset screen sets the new password directly.
+  const changePassword = () => router.push('/reset-password');
 
   function confirmSignOut(scope: 'local' | 'global') {
     Alert.alert(
@@ -52,7 +46,7 @@ export default function Security() {
         <Toggle label="App lock" hint="Fingerprint, face or screen lock when opening the app" value={lock.enabled} onChange={toggleLock} />
       </Card>
       <ListGroup>
-        <ListRow icon="key-outline" title="Change password" subtitle="We email you a 6-digit code" onPress={changePassword} />
+        <ListRow icon="key-outline" title="Change password" subtitle="Choose a new one on the next screen" onPress={changePassword} />
         <ListRow icon="logout" title="Sign out" onPress={() => confirmSignOut('local')} />
         <ListRow icon="cellphone-remove" tint="red" title="Sign out on all devices" onPress={() => confirmSignOut('global')} />
       </ListGroup>

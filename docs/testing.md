@@ -85,7 +85,7 @@ Fill in on real phones before release. Record the device, OS version, date, resu
 
 | # | Check | Android (device, OS) | iPhone (device, iOS) |
 |---|---|---|---|
-| M1 | Sign up with email code, sign in, wrong password, password reset by code, sign out; a new phone sees the same data | | |
+| M1 | Sign up with the email link, sign in, wrong password, password reset by link (opened on the same phone, and once on another device to see the clear refusal), change password in Security, sign out; a new phone sees the same data | | |
 | M2 | **End to end against the deployed API**: register cows, milk round, treatment with withdrawal, sale with part payment, later payment, export a PDF. Then run `npm run integrity` on the database | | |
 | M3 | TalkBack / VoiceOver: every screen readable, buttons announced, errors read out | | |
 | M4 | Largest system text size: nothing cut off on Home, New sale, Milking round and Reports | | |

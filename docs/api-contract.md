@@ -113,7 +113,8 @@ Body `{ reason?: string (≤500) }`. Sets `deletion_requested_at` (once) and aud
 |---|---|
 | Sign up | `auth.signUp({ email, password, options: { emailRedirectTo: <API>/email-confirmed } })` → the farmer taps the link in the email → back in the app, *I've confirmed my email* signs in with what they just typed (held in memory only) |
 | Sign in | `auth.signInWithPassword`. If the error is `email_not_confirmed`, the app resends the confirmation email and opens the "check your email" screen |
-| Reset or change password | `auth.resetPasswordForEmail(email)` → code → `verifyOtp({ type: 'recovery' })` → `auth.updateUser({ password })` |
+| Reset password | `auth.resetPasswordForEmail(email, { redirectTo: Linking.createURL('/reset-password') })` → the farmer opens the link on the same phone → the app opens on `/reset-password?code=…` → `auth.exchangeCodeForSession(code)` (PKCE) → `auth.updateUser({ password })` |
+| Change password (signed in) | Security › Change password → `auth.updateUser({ password })` |
 | Sign out | `auth.signOut({ scope: 'local' | 'global' })`. Local farm data is wiped from the phone |
 
 The session is stored in the iOS Keychain or Android Keystore (expo-secure-store, chunked), never in plain storage.
