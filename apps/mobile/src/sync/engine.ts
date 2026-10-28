@@ -137,6 +137,15 @@ async function cycle() {
 /** 2 s, 4 s, 8 s … capped at 5 minutes. */
 const backoff = (attempts: number) => Math.min(5 * 60_000, 2000 * 2 ** Math.max(0, attempts - 1));
 
+/**
+ * Share of a photo upload done, 0 to 1. The native side reports byte counts as BigInt (typed as number),
+ * and BigInt arithmetic with numbers throws, so both are made plain numbers first.
+ */
+export function uploadFraction(sent: number | bigint, total: number | bigint): number {
+  const t = Number(total);
+  return t > 0 ? Math.min(1, Number(sent) / t) : 0;
+}
+
 async function push() {
   // Ops for one record are sent strictly in order; a failed op blocks the ones after it.
   // Backoff only paces the automatic retry timer: an explicit sync (farmer tap, connectivity
@@ -197,8 +206,7 @@ async function sendPhoto(op: Op) {
       httpMethod: 'PUT',
       uploadType: UploadType.BINARY_CONTENT,
       headers: { 'Content-Type': 'image/jpeg' },
-      onProgress: ({ bytesSent, totalBytes }) =>
-        setStatus({ photo: { recordId: op.record_id, fraction: totalBytes ? bytesSent / totalBytes : 0 } }),
+      onProgress: ({ bytesSent, totalBytes }) => setStatus({ photo: { recordId: op.record_id, fraction: uploadFraction(bytesSent, totalBytes) } }),
     });
   } catch {
     throw new NetworkError('Photo upload interrupted.');

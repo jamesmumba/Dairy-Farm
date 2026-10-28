@@ -257,3 +257,13 @@ describe('records created by another queued change', () => {
     expect(app.store.getRecord('milk_sales', 'new-sale')?.sync_state).toBe('synced');
   });
 });
+
+describe('photo upload progress', () => {
+  it('works with the BigInt byte counts the phone reports', async () => {
+    const { engine } = await startApp();
+    expect(engine.uploadFraction(BigInt(50), BigInt(200))).toBe(0.25);
+    expect(engine.uploadFraction(BigInt(300), BigInt(200))).toBe(1);
+    expect(engine.uploadFraction(10, 0)).toBe(0);
+    expect(Math.round(engine.uploadFraction(BigInt(1), BigInt(3)) * 100)).toBe(33);
+  });
+});

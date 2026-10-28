@@ -8,7 +8,7 @@ Recorded on **27 Oct 2026** (Stage 8). Automated tests run with `npm test` in `a
 |---|---|---|---|
 | API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **194** | **194 passed, 0 failed** |
 | API through postgres.js (`npm run test:postgres`) | The same tests, with PGlite reached over a Postgres socket by postgres.js, the driver the Edge Function uses | **194** | **194 passed, 0 failed** |
-| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **148** | **148 passed, 0 failed** |
+| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **149** | **149 passed, 0 failed** |
 
 Mutation checks: for each critical rule, the code was broken on purpose to confirm a test fails. All were caught, and the code was then restored.
 * Breeding counted as pregnancy.
@@ -41,7 +41,7 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 | `devices.test.ts` | 3 | "New phone signed in" only for phones that joined after this one, in the last week; last-used wording; platform names |
 | `twoPhones.test.ts` | 8 | Two phones on one account: duplicate customers by name or phone (any spacing, phone format), untagged animals by name/sex/birth date, inactive and dismissed pairs ignored; settings three-way merge keeps both phones' changes, never undoes the other phone's field, asks only on a real clash |
 | `palette.test.ts` | 42 | WCAG AA contrast of every text/background pair in the light and dark palettes, and 3:1 for chart marks |
-| `sync.test.ts` | 15 | Offline save, then one sync with no duplicates. A lost response plus an app restart. Resending an in-flight op. Folding edits. Version chaining. Rejections blocking only their own record. Conflicts (keep mine / use saved). Pull never overwriting unsent edits. Remote deletions |
+| `sync.test.ts` | 16 | Photo upload progress from BigInt byte counts. Offline save, then one sync with no duplicates. A lost response plus an app restart. Resending an in-flight op. Folding edits. Version chaining. Rejections blocking only their own record. Conflicts (keep mine / use saved). Pull never overwriting unsent edits. Remote deletions |
 | `calc.test.ts` | 14 | Exact litres, periods, totals, averages, breeds, high/low, decline rule |
 | `finance.test.ts` | 13 | Sale totals, price lookup, balances, unsynced payments, stock ledger and oversell, reconciliation, duplicate customers, money summary |
 | `reminders.test.ts` / `plan.test.ts` | 10 / 10 | Vaccination due in 7 days, overdue, withdrawal until the vet's time, clearance, pregnancy checks, calving, follow-ups. Notification times, preferences and the 60-notification limit. Problems (unpaid balance, falling milk, sync) notify once at the reminder time or within a minute, are not repeated, notify again only after clearing, and respect the switches |
