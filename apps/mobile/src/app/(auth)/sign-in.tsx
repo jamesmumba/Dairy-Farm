@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { takeSignedOutElsewhere } from '../../lib/api';
 import { authMessage, isEmail } from '../../lib/authErrors';
 import { EMAIL_CONFIRMED_URL } from '../../lib/pendingSignUp';
 import { supabase } from '../../lib/supabase';
@@ -10,6 +11,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [signedOutElsewhere] = useState(takeSignedOutElsewhere);
 
   async function submit() {
     if (!isEmail(email) || !password) return setError('Enter your email and password.');
@@ -27,6 +29,7 @@ export default function SignIn() {
 
   return (
     <FormScreen card standalone title="Sign in" intro="Keep your herd, milk, health and sales records in one place.">
+      {signedOutElsewhere && !error ? <Notice tone="attention" title="Signed out from another phone">This phone was signed out of your account. Sign in again to keep using it here.</Notice> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
       <TextField label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
       <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" onSubmitEditing={submit} />

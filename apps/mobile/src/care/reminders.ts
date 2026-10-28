@@ -13,7 +13,8 @@ export type ReminderKind =
   | 'stock_discrepancy'
   | 'production_decline'
   | 'sync_problem'
-  | 'possible_duplicate';
+  | 'possible_duplicate'
+  | 'new_device';
 
 export type Urgency = 'overdue' | 'today' | 'upcoming' | 'active';
 

@@ -260,6 +260,30 @@ Keys are the phone's stable item keys, e.g. `vaccination:<record id>`, `unpaid:<
 `sync:<operation id>`. The phone sends marks when the inbox is opened (or with the next sync if offline) and fetches
 them after each sync.
 
+## Signed-in phones
+
+Each phone makes up a device id on first launch and sends these headers with every `/v1` request:
+
+| Header | Value |
+|---|---|
+| `X-Device-Id` | UUID, kept on the phone across sign-outs. Without it (or if it is not a UUID) the request works as before, untracked |
+| `X-Device-Name` | URI-encoded, up to 60 characters (`Galaxy A14`, or the farmer's own name for it). Default `Phone` |
+| `X-Device-Platform` | `android`, `ios` or `web` (anything else is stored as `other`) |
+| `X-App-Version` | Up to 20 characters |
+
+The API records the phone in `devices` (last seen written at most once a minute) together with the Supabase Auth
+`session_id` from the token, and stamps `device_id` on every audit entry the request writes. `GET /v1/audit` returns
+`device_name` for each entry.
+
+| Endpoint | Body → result |
+|---|---|
+| `GET /v1/devices` | → `200 [{ device_id, name, platform, app_version, first_seen, last_seen, this_device }]`, signed-in phones only, most recently used first |
+| `POST /v1/devices/:id/sign-out` | → `200 { signed_out: 1 }`. Ends that phone's Supabase Auth session (its refresh token stops working). `400 this_device` for the calling phone, `404` for a phone not signed in to this account |
+| `POST /v1/devices/sign-out-others` | → `200 { signed_out }`. Every phone except the caller, including sessions from app versions that never sent a device id. `400 device_required` without `X-Device-Id` |
+
+A signed-out phone that still uses its old session gets `401 signed_out`; the app then signs itself out and the sign-in
+screen says why. Signing in again starts a new session and clears the mark.
+
 ## Public pages
 
 | Endpoint | Result |

@@ -1,3 +1,5 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
+
 // Minimal database interface. pg.Pool satisfies it; tests use an in-process PGlite adapter.
 export interface DbClient {
   query<T = any>(text: string, params?: unknown[]): Promise<{ rows: T[] }>;
@@ -38,11 +40,14 @@ export interface AuditEntry {
   after?: unknown;
 }
 
+/** The phone behind the request being handled (set by the API's auth middleware), for the audit trail. */
+export const requestDevice = new AsyncLocalStorage<{ deviceId: string | null }>();
+
 /** JSON values are sent as text and cast in SQL (`::text::jsonb`), so every driver stores them the same way. */
 export async function audit(client: DbClient, e: AuditEntry) {
   await client.query(
-    `insert into public.audit_logs (owner_id, actor_user_id, action, entity_table, entity_id, reason, before_data, after_data)
-     values ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8::text::jsonb)`,
+    `insert into public.audit_logs (owner_id, actor_user_id, action, entity_table, entity_id, reason, before_data, after_data, device_id)
+     values ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8::text::jsonb, $9)`,
     [
       e.ownerId,
       e.actorUserId,
@@ -52,6 +57,7 @@ export async function audit(client: DbClient, e: AuditEntry) {
       e.reason ?? null,
       e.before === undefined ? null : JSON.stringify(e.before),
       e.after === undefined ? null : JSON.stringify(e.after),
+      requestDevice.getStore()?.deviceId ?? null,
     ],
   );
 }

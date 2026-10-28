@@ -38,6 +38,8 @@ beforeAll(async () => {
   ids.payment = await created(await post('/v1/payments', { customer_id: ids.customer, kind: 'payment', amount: '10', currency: 'ZMW', method: 'cash', paid_at: '2026-10-06T10:00:00Z' }));
   ids.movement = await created(await post('/v1/stock/movements', { kind: 'spoilage', quantity: '1', movement_date: '2026-10-05' }));
   ids.expense = await created(await post('/v1/expenses', { expense_date: '2026-10-05', category: 'feed', amount: '100', currency: 'ZMW' }));
+  ids.device = randomUUID();
+  await A.call('GET', '/v1/me', undefined, { 'x-device-id': ids.device, 'x-device-name': 'A phone' });
   expect((await post('/v1/exports', { report: 'herd', format: 'pdf', row_count: 1, generated_at: '2026-10-28T10:00:00Z' })).statusCode).toBe(201);
   before = { cow: (await A.call('GET', `/v1/cattle/${ids.cow}`)).json(), statement: (await A.call('GET', `/v1/customers/${ids.customer}/statement`)).json() };
 });
@@ -79,6 +81,7 @@ const ATTEMPTS: Attempt[] = [
   ['POST', () => `/v1/expenses/${ids.expense}/void`, { reason: 'mine' }, v1],
   ['POST', () => `/v1/expenses/${ids.expense}/receipt-upload`],
   ['POST', () => `/v1/expenses/${ids.expense}/receipt`, { path: `x/${ids.expense}/r.jpg` }],
+  ['POST', () => `/v1/devices/${ids.device}/sign-out`],
   ['GET', () => `/v1/expenses/${ids.expense}/receipt-url`],
 ];
 

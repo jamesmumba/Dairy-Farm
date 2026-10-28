@@ -29,7 +29,9 @@ export const account = (id: string): FarmerAccount => ({
 // Fake token "valid-<user>" maps to auth user <user>; anything else is rejected.
 export const verifyToken = async (token: string) => {
   if (!token.startsWith('valid-')) throw new Error('bad token');
-  return { authUserId: token.slice(6) };
+  // 'valid-<user>~<session>' stands for a sign-in on one phone.
+  const [authUserId, sessionId] = token.slice(6).split('~');
+  return { authUserId, sessionId };
 };
 
 // For tests that never touch farm records.

@@ -5,6 +5,7 @@ import { Hono as Hono2 } from "npm:hono@4.13.14";
 import postgres from "npm:postgres@3.4.9";
 
 // src/db.ts
+import { AsyncLocalStorage } from "node:async_hooks";
 async function inTransaction(db2, fn) {
   const client = await db2.connect();
   try {
@@ -19,10 +20,11 @@ async function inTransaction(db2, fn) {
     client.release();
   }
 }
+var requestDevice = new AsyncLocalStorage();
 async function audit(client, e) {
   await client.query(
-    `insert into public.audit_logs (owner_id, actor_user_id, action, entity_table, entity_id, reason, before_data, after_data)
-     values ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8::text::jsonb)`,
+    `insert into public.audit_logs (owner_id, actor_user_id, action, entity_table, entity_id, reason, before_data, after_data, device_id)
+     values ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8::text::jsonb, $9)`,
     [
       e.ownerId,
       e.actorUserId,
@@ -31,7 +33,8 @@ async function audit(client, e) {
       e.entityId,
       e.reason ?? null,
       e.before === void 0 ? null : JSON.stringify(e.before),
-      e.after === void 0 ? null : JSON.stringify(e.after)
+      e.after === void 0 ? null : JSON.stringify(e.after),
+      requestDevice.getStore()?.deviceId ?? null
     ]
   );
 }
@@ -140,7 +143,7 @@ function pgAccounts(pool) {
 // src/app.ts
 import { Hono } from "npm:hono@4.13.14";
 import { bodyLimit } from "npm:hono@4.13.14/body-limit";
-import { z as z15 } from "npm:zod@4.6.7";
+import { z as z16 } from "npm:zod@4.6.7";
 
 // src/profile.ts
 import { z } from "npm:zod@4.6.7";
@@ -2057,9 +2060,10 @@ function financeRoutes(v1, { db: db2, receipts }) {
       req.query
     );
     const { rows } = await db2.query(
-      `select id, action, entity_table, entity_id, reason, before_data, after_data, occurred_at from public.audit_logs
-       where owner_id = $1 and ($2::text is null or entity_table = $2) and ($3::uuid is null or entity_id = $3) and ($4::bigint is null or id < $4)
-       order by id desc limit ${q.limit}`,
+      `select a.id, a.action, a.entity_table, a.entity_id, a.reason, a.before_data, a.after_data, a.occurred_at, d.name as device_name
+       from public.audit_logs a left join public.devices d on d.owner_id = a.owner_id and d.device_id = a.device_id
+       where a.owner_id = $1 and ($2::text is null or a.entity_table = $2) and ($3::uuid is null or a.entity_id = $3) and ($4::bigint is null or a.id < $4)
+       order by a.id desc limit ${q.limit}`,
       [who(req).owner, q.entity_table ?? null, q.entity_id ?? null, q.before_id ?? null]
     );
     return rows;
@@ -2094,6 +2098,94 @@ function notificationRoutes(v1, { db: db2 }) {
     await db2.query(`delete from public.notification_reads where owner_id = $1 and read_at < now() - make_interval(days => $2)`, [owner, KEEP_DAYS]);
     return { saved: keys.length };
   });
+}
+
+// src/deviceRoutes.ts
+import { z as z15 } from "npm:zod@4.6.7";
+var Id = z15.uuid();
+function readDevice(header) {
+  const id = Id.safeParse(header("x-device-id"));
+  if (!id.success) return null;
+  let name = "";
+  try {
+    name = decodeURIComponent(header("x-device-name") ?? "").trim();
+  } catch {
+  }
+  const platform = header("x-device-platform") ?? "";
+  return {
+    id: id.data,
+    name: name.slice(0, 60) || "Phone",
+    platform: ["android", "ios", "web"].includes(platform) ? platform : "other",
+    appVersion: header("x-app-version")?.slice(0, 20) || null
+  };
+}
+var SEEN_EVERY_SECONDS = 60;
+async function recordDevice(db2, owner, sessionId, d) {
+  const session = sessionId ?? null;
+  const { rows } = await db2.query(
+    `select name, platform, app_version, session_id, signed_out_at,
+            last_seen > now() - make_interval(secs => $3) as fresh
+     from public.devices where owner_id = $1 and device_id = $2`,
+    [owner, d.id, SEEN_EVERY_SECONDS]
+  );
+  const row = rows[0];
+  if (row?.signed_out_at && row.session_id === session) return "signed_out";
+  const unchanged = row && !row.signed_out_at && row.name === d.name && row.platform === d.platform && row.app_version === d.appVersion && row.session_id === session;
+  if (unchanged && row.fresh) return "ok";
+  await db2.query(
+    `insert into public.devices (owner_id, device_id, name, platform, app_version, session_id)
+     values ($1, $2, $3, $4, $5, $6)
+     on conflict (owner_id, device_id) do update
+       set name = excluded.name, platform = excluded.platform, app_version = excluded.app_version,
+           session_id = excluded.session_id, last_seen = now(), signed_out_at = null`,
+    [owner, d.id, d.name, d.platform, d.appVersion, session]
+  );
+  return "ok";
+}
+function deviceRoutes(v1, { db: db2 }) {
+  v1.get("/devices", async (req) => {
+    const { rows } = await db2.query(
+      `select device_id, name, platform, app_version, first_seen, last_seen from public.devices
+       where owner_id = $1 and signed_out_at is null order by last_seen desc limit 50`,
+      [req.farmer.account.id]
+    );
+    return rows.map((r) => ({ ...r, this_device: r.device_id === req.farmer.deviceId }));
+  });
+  v1.post("/devices/:id/sign-out", async (req) => {
+    const id = parse(Id, req.params.id);
+    if (id === req.farmer.deviceId) throw new HttpError(400, "this_device", "To sign out this phone, use Sign out.");
+    const { rows } = await db2.query(
+      `update public.devices set signed_out_at = now()
+       where owner_id = $1 and device_id = $2 and signed_out_at is null returning session_id`,
+      [req.farmer.account.id, id]
+    );
+    if (!rows.length) throw new HttpError(404, "not_found", "That phone is not signed in.");
+    await endSessions(db2, req.farmer.authUserId, { only: rows.map((r) => r.session_id).filter(Boolean) }, req.log);
+    return { signed_out: 1 };
+  });
+  v1.post("/devices/sign-out-others", async (req) => {
+    const { deviceId, sessionId } = req.farmer;
+    if (!deviceId || !sessionId) throw new HttpError(400, "device_required", "Update the app to sign out other phones.");
+    const { rows } = await db2.query(
+      `update public.devices set signed_out_at = now()
+       where owner_id = $1 and device_id <> $2 and signed_out_at is null returning device_id`,
+      [req.farmer.account.id, deviceId]
+    );
+    await endSessions(db2, req.farmer.authUserId, { except: sessionId }, req.log);
+    return { signed_out: rows.length };
+  });
+}
+async function endSessions(db2, authUserId, which, log2) {
+  try {
+    if ("only" in which) {
+      if (!which.only.length) return;
+      await db2.query(`delete from auth.sessions where user_id = $1 and id::text = any($2::text[])`, [authUserId, which.only]);
+    } else {
+      await db2.query(`delete from auth.sessions where user_id = $1 and id::text <> $2`, [authUserId, which.except]);
+    }
+  } catch (err) {
+    log2.warn("could not end auth sessions", err);
+  }
 }
 
 // src/router.ts
@@ -2138,7 +2230,7 @@ function router(app) {
 }
 
 // src/app.ts
-var DeletionRequest = z15.object({ reason: z15.string().trim().max(500).optional() }).strict();
+var DeletionRequest = z16.object({ reason: z16.string().trim().max(500).optional() }).strict();
 function sendValidationError(reply2, error) {
   const issue = error.issues[0];
   return reply2.status(400).send({ error: "validation_failed", message: issue.message, field: issue.path.join(".") });
@@ -2198,13 +2290,19 @@ Go back to the Dairy Farm app and tap "I've confirmed my email" (or sign in).
     const token = header?.startsWith("Bearer ") ? header.slice(7) : void 0;
     if (!token) return c.json({ error: "unauthorized", message: "Sign in required." }, 401);
     let authUserId;
+    let sessionId;
     try {
-      ({ authUserId } = await verifyToken(token));
+      ({ authUserId, sessionId } = await verifyToken(token));
     } catch {
       return c.json({ error: "unauthorized", message: "Session expired. Please sign in again." }, 401);
     }
-    c.set("farmer", { authUserId, account: await accounts.getOrCreate(authUserId) });
-    await next();
+    const account = await accounts.getOrCreate(authUserId);
+    const device = readDevice((name) => c.req.header(name));
+    if (device && await recordDevice(db2, account.id, sessionId, device) === "signed_out") {
+      return c.json({ error: "signed_out", message: "This phone was signed out from another phone. Sign in again to continue." }, 401);
+    }
+    c.set("farmer", { authUserId, account, sessionId, deviceId: device?.id });
+    await requestDevice.run({ deviceId: device?.id ?? null }, next);
   });
   const r = router(v1);
   r.get("/me", async (req) => req.farmer.account);
@@ -2241,6 +2339,7 @@ Go back to the Dairy Farm app and tap "I've confirmed my email" (or sign in).
   careRoutes(r, { db: db2 });
   financeRoutes(r, { db: db2, receipts });
   notificationRoutes(r, { db: db2 });
+  deviceRoutes(r, { db: db2 });
   app.route("/v1", v1);
   return app;
 }
@@ -2253,7 +2352,7 @@ function supabaseTokenVerifier(supabaseUrl2, keys) {
   return async (token) => {
     const { payload } = await jwtVerify(token, jwks2, { issuer, audience: "authenticated" });
     if (!payload.sub) throw new Error("token has no subject");
-    return { authUserId: payload.sub };
+    return { authUserId: payload.sub, sessionId: typeof payload.session_id === "string" ? payload.session_id : void 0 };
   };
 }
 

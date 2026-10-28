@@ -171,9 +171,10 @@ export function financeRoutes(v1: Router, { db, receipts }: { db: Db; receipts: 
       req.query,
     );
     const { rows } = await db.query(
-      `select id, action, entity_table, entity_id, reason, before_data, after_data, occurred_at from public.audit_logs
-       where owner_id = $1 and ($2::text is null or entity_table = $2) and ($3::uuid is null or entity_id = $3) and ($4::bigint is null or id < $4)
-       order by id desc limit ${q.limit}`,
+      `select a.id, a.action, a.entity_table, a.entity_id, a.reason, a.before_data, a.after_data, a.occurred_at, d.name as device_name
+       from public.audit_logs a left join public.devices d on d.owner_id = a.owner_id and d.device_id = a.device_id
+       where a.owner_id = $1 and ($2::text is null or a.entity_table = $2) and ($3::uuid is null or a.entity_id = $3) and ($4::bigint is null or a.id < $4)
+       order by a.id desc limit ${q.limit}`,
       [who(req).owner, q.entity_table ?? null, q.entity_id ?? null, q.before_id ?? null],
     );
     return rows;

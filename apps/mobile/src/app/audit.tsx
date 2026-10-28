@@ -41,7 +41,7 @@ const time = (iso: string) => {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-function Entry({ d, at }: { d: Described; at: string }) {
+function Entry({ d, at, device }: { d: Described; at: string; device?: string | null }) {
   const t = useTheme();
   const tint = d.important ? (/voided|removed|deleted/.test(d.title) ? 'red' : 'straw') : 'green';
   const body = (
@@ -58,11 +58,12 @@ function Entry({ d, at }: { d: Described; at: string }) {
           </Text>
         ))}
         {d.reason ? <Text style={{ color: t.text, fontSize: 14, fontStyle: 'italic' }}>“{d.reason}”</Text> : null}
+        {device ? <Text style={{ color: t.textMuted, fontSize: 13 }}>On {device}</Text> : null}
       </View>
       {d.href ? <MaterialCommunityIcons name="chevron-right" size={22} color={t.textMuted} style={{ alignSelf: 'center' }} importantForAccessibility="no" /> : null}
     </View>
   );
-  const label = [d.title, ...d.lines, d.reason ? `Reason: ${d.reason}` : null, `at ${time(at)}`].filter(Boolean).join('. ');
+  const label = [d.title, ...d.lines, d.reason ? `Reason: ${d.reason}` : null, device ? `On ${device}` : null, `at ${time(at)}`].filter(Boolean).join('. ');
   return d.href ? (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint="Opens the record" onPress={() => router.push(d.href as Href)} style={({ pressed }) => ({ backgroundColor: pressed ? t.primarySoft : 'transparent' })}>
       {body}
@@ -141,6 +142,8 @@ export default function AuditHistory() {
   );
 
   // Newest first, grouped by day.
+  // Which phone made a change is only worth saying when more than one phone did.
+  const manyPhones = useMemo(() => new Set(entries.map((e) => e.device_name).filter(Boolean)).size > 1, [entries]);
   const days = useMemo(() => {
     const out: { day: string; items: typeof shown }[] = [];
     for (const x of shown) {
@@ -172,7 +175,7 @@ export default function AuditHistory() {
             {items.map(({ e, d }, i) => (
               <View key={e.id}>
                 {i ? <View style={{ height: 1, backgroundColor: t.border, marginLeft: 68 }} /> : null}
-                <Entry d={d} at={e.occurred_at} />
+                <Entry d={d} at={e.occurred_at} device={manyPhones ? e.device_name : null} />
               </View>
             ))}
           </View>

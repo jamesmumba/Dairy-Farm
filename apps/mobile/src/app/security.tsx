@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text } from 'react-native';
 import { useAppLock } from '../state/appLock';
+import { useDevices } from '../lib/devicesStore';
 import { useAuth } from '../state/auth';
 import { useSyncStatus } from '../sync/engine';
 import { FormScreen, Notice, Toggle } from '../ui/form';
@@ -13,6 +14,7 @@ export default function Security() {
   const { email, signOut } = useAuth();
   const lock = useAppLock();
   const sync = useSyncStatus();
+  const devices = useDevices();
   const [message, setMessage] = useState<string | null>(null);
 
   async function toggleLock(on: boolean) {
@@ -47,6 +49,12 @@ export default function Security() {
       </Card>
       <ListGroup>
         <ListRow icon="key-outline" title="Change password" subtitle="Choose a new one on the next screen" onPress={changePassword} />
+        <ListRow
+          icon="cellphone-link"
+          title="Signed-in phones"
+          subtitle={devices.length > 1 ? `${devices.length} phones use this account` : 'See and sign out other phones'}
+          href="/devices"
+        />
         <ListRow icon="logout" title="Sign out" onPress={() => confirmSignOut('local')} />
         <ListRow icon="cellphone-remove" tint="red" title="Sign out on all devices" onPress={() => confirmSignOut('global')} />
       </ListGroup>

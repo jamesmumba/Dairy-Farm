@@ -14,4 +14,5 @@ export const REMINDER_ICON: Record<ReminderKind, IconName> = {
   production_decline: 'chart-line-variant',
   sync_problem: 'cloud-alert',
   possible_duplicate: 'content-duplicate',
+  new_device: 'cellphone-link',
 };

@@ -1,4 +1,5 @@
 import { config } from '../config';
+import { deviceHeaders } from './device';
 import { supabase } from './supabase';
 
 export class ApiError extends Error {
@@ -10,6 +11,15 @@ export class ApiError extends Error {
   ) {
     super(message);
   }
+}
+
+let signedOutElsewhere = false;
+
+/** True once after another phone signed this one out (the sign-in screen explains why). */
+export function takeSignedOutElsewhere() {
+  const was = signedOutElsewhere;
+  signedOutElsewhere = false;
+  return was;
 }
 
 /** The request never reached the server (offline, timeout, DNS). Safe to retry later. */
@@ -37,6 +47,7 @@ export async function api<T>(path: string, { method = 'GET', body, ifMatch, idem
       signal: controller.signal,
       headers: {
         Authorization: `Bearer ${token}`,
+        ...deviceHeaders(),
         ...(body !== undefined && { 'Content-Type': 'application/json' }),
         ...(ifMatch !== undefined && { 'If-Match': String(ifMatch) }),
         ...(idempotencyKey && { 'Idempotency-Key': idempotencyKey }),
@@ -50,6 +61,11 @@ export async function api<T>(path: string, { method = 'GET', body, ifMatch, idem
   }
 
   const json = await res.json().catch(() => ({}));
+  if (res.status === 401 && json.error === 'signed_out') {
+    // Another phone on the account signed this one out: leave the account here too.
+    signedOutElsewhere = true;
+    void supabase.auth.signOut({ scope: 'local' });
+  }
   if (!res.ok) throw new ApiError(res.status, json.error ?? 'error', json.message ?? 'Request failed.', json);
   return json as T;
 }

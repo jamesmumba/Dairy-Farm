@@ -1,6 +1,7 @@
 import { createLocalJWKSet, createRemoteJWKSet, type JSONWebKeySet, jwtVerify } from 'jose';
 
-export type VerifyToken = (token: string) => Promise<{ authUserId: string }>;
+/** sessionId: the Supabase Auth session the token belongs to (one per sign-in on a phone). */
+export type VerifyToken = (token: string) => Promise<{ authUserId: string; sessionId?: string }>;
 
 /**
  * Verifies Supabase Auth access tokens against the project's signing keys: the given key set
@@ -13,6 +14,6 @@ export function supabaseTokenVerifier(supabaseUrl: string, keys?: JSONWebKeySet)
   return async (token) => {
     const { payload } = await jwtVerify(token, jwks, { issuer, audience: 'authenticated' });
     if (!payload.sub) throw new Error('token has no subject');
-    return { authUserId: payload.sub };
+    return { authUserId: payload.sub, sessionId: typeof payload.session_id === 'string' ? payload.session_id : undefined };
   };
 }

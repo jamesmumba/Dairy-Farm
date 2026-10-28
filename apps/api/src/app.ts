@@ -9,7 +9,8 @@ import { milkRoutes } from './milkRoutes.js';
 import { careRoutes } from './careRoutes.js';
 import { financeRoutes } from './financeRoutes.js';
 import { notificationRoutes } from './notificationRoutes.js';
-import type { Db } from './db.js';
+import { deviceRoutes, readDevice, recordDevice } from './deviceRoutes.js';
+import { type Db, requestDevice } from './db.js';
 import { HttpError } from './http.js';
 import type { Photos } from './photos.js';
 import { type ApiEnv, BadJson, type Reply, router } from './router.js';
@@ -98,13 +99,20 @@ export async function buildApp({ verifyToken, accounts, db, photos, receipts, tr
     const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
     if (!token) return c.json({ error: 'unauthorized', message: 'Sign in required.' }, 401);
     let authUserId: string;
+    let sessionId: string | undefined;
     try {
-      ({ authUserId } = await verifyToken(token));
+      ({ authUserId, sessionId } = await verifyToken(token));
     } catch {
       return c.json({ error: 'unauthorized', message: 'Session expired. Please sign in again.' }, 401);
     }
-    c.set('farmer', { authUserId, account: await accounts.getOrCreate(authUserId) });
-    await next();
+    const account = await accounts.getOrCreate(authUserId);
+    const device = readDevice((name) => c.req.header(name));
+    if (device && (await recordDevice(db, account.id, sessionId, device)) === 'signed_out') {
+      return c.json({ error: 'signed_out', message: 'This phone was signed out from another phone. Sign in again to continue.' }, 401);
+    }
+    c.set('farmer', { authUserId, account, sessionId, deviceId: device?.id });
+    // Changes made in this request are recorded against this phone in the audit history.
+    await requestDevice.run({ deviceId: device?.id ?? null }, next);
   });
   const r = router(v1);
 
@@ -147,6 +155,7 @@ export async function buildApp({ verifyToken, accounts, db, photos, receipts, tr
   careRoutes(r, { db });
   financeRoutes(r, { db, receipts });
   notificationRoutes(r, { db });
+  deviceRoutes(r, { db });
 
   app.route('/v1', v1);
   return app;

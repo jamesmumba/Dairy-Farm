@@ -6,9 +6,9 @@ Recorded on **27 Oct 2026** (Stage 8). Automated tests run with `npm test` in `a
 
 | Suite | What it runs against | Tests | Result |
 |---|---|---|---|
-| API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **187** | **187 passed, 0 failed** |
-| API through postgres.js (`npm run test:postgres`) | The same tests, with PGlite reached over a Postgres socket by postgres.js, the driver the Edge Function uses | **187** | **187 passed, 0 failed** |
-| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **145** | **145 passed, 0 failed** |
+| API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **194** | **194 passed, 0 failed** |
+| API through postgres.js (`npm run test:postgres`) | The same tests, with PGlite reached over a Postgres socket by postgres.js, the driver the Edge Function uses | **194** | **194 passed, 0 failed** |
+| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **148** | **148 passed, 0 failed** |
 
 Mutation checks: for each critical rule, the code was broken on purpose to confirm a test fails. All were caught, and the code was then restored.
 * Breeding counted as pregnancy.
@@ -21,6 +21,7 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 | API file | Tests | Covers |
 |---|---|---|
 | `app.test.ts` | 8 | Health check, token required, forged token, owner taken only from the token, no internal details in errors, cache and nosniff headers, oversized bodies and invalid JSON refused, rate limit per client |
+| `devices.test.ts` | 6 | Signed-in phones: recorded from request headers and listed with this phone marked; signing one out refuses its old session (`401 signed_out`) and ends it, until it signs in again; sign out every other phone (including untracked sessions); not this phone, not another farmer's; the audit history names the phone; requests without a device id still work |
 | `notifications.test.ts` | 4 | Inbox read marks: shared across phones, safe to send twice, one farmer only, `since` filter, bad input refused, sign-in required |
 | `auth.test.ts` | 5 | Supabase token verification: a valid token is accepted; tokens from another project, for a non-user audience, expired, or signed with another key are refused |
 | `account.test.ts` | 2 | Settings stored as JSON objects (not strings), with a version bump and audit; default breeds created once |
@@ -30,13 +31,14 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 | `milk.test.ts` | 17 | Sessions and the daily sum, duplicates, limits, corrections and voids with stock, withdrawal restriction, timeline |
 | `care.test.ts` | 22 | Withdrawal re-check, breeding → pregnancy only by exam, calving with calf, vaccination next dose and groups, removal, isolation |
 | `finance.test.ts` | 18 | The four spec money and stock scenarios, idempotent sales, overrides, currencies, oversell (including back-dated), oldest-first allocation and credit, refunds and write-offs, voids, stock reversals, expenses and receipts, export log |
-| `isolation.test.ts` | 68 | Farmer B tries **every** route that takes an id, every link to A's records, every sync pull and every list. All denied, and A's records are left unchanged |
+| `isolation.test.ts` | 69 | Farmer B tries **every** route that takes an id, every link to A's records, every sync pull and every list. All denied, and A's records are left unchanged |
 | `erasure.test.ts` | 3 | Deletion refused without a request. Erasure removes everything of one farmer (append-only tables included), leaves other farmers untouched and keeps an anonymous receipt. Guards stay on afterwards |
 | `integrity.test.ts` | 3 | A month of real use (corrections, voids, re-checks, refunds, reversals) passes every cross-table check, and a tampered ledger is detected |
 
 | Mobile file | Tests | Covers |
 |---|---|---|
 | `audit.test.ts` | 8 | Audit history in plain words: names instead of ids, units and the farmer's date format, money with currency, settings as sentences (no JSON), setup steps hidden, new records routine and changes worth reviewing, care records and exports. No ids, true/false or internal codes reach the farmer |
+| `devices.test.ts` | 3 | "New phone signed in" only for phones that joined after this one, in the last week; last-used wording; platform names |
 | `twoPhones.test.ts` | 8 | Two phones on one account: duplicate customers by name or phone (any spacing, phone format), untagged animals by name/sex/birth date, inactive and dismissed pairs ignored; settings three-way merge keeps both phones' changes, never undoes the other phone's field, asks only on a real clash |
 | `palette.test.ts` | 42 | WCAG AA contrast of every text/background pair in the light and dark palettes, and 3:1 for chart marks |
 | `sync.test.ts` | 15 | Offline save, then one sync with no duplicates. A lost response plus an app restart. Resending an in-flight op. Folding edits. Version chaining. Rejections blocking only their own record. Conflicts (keep mine / use saved). Pull never overwriting unsent edits. Remote deletions |
@@ -96,5 +98,6 @@ Fill in on real phones before release. Record the device, OS version, date, resu
 | M7 | Airplane mode: milking round, sale, payment. Kill the app, reopen, reconnect. Records sync once and the status updates | | |
 | M8 | Denied camera, photos and notification permissions: the app explains and keeps working | | |
 | M9 | Two phones with the same account editing the same animal: the conflict appears in Sync issues | | |
+| M12 | Sign in on a second phone: the first shows *New phone signed in* and both appear under Security › Signed-in phones. Sign the second out from the first: within a sync it returns to the sign-in screen with *Signed out from another phone* | | |
 | M10 | App lock: turn on, background more than 5 minutes, unlock with biometrics or passcode | | |
 | M11 | CSV opens in Excel / Google Sheets with correct columns. The PDF is readable when printed | | |

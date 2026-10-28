@@ -4,6 +4,7 @@ import type { FarmerAccount, ProfilePatch } from '../lib/account';
 import { api, ApiError } from '../lib/api';
 import { clearLocalData, getJson, setJson } from '../lib/localDb';
 import { supabase } from '../lib/supabase';
+import { forgetDevices, refreshDevicesQuietly } from '../lib/devicesStore';
 import { forgetAppLock } from './appLock';
 import { addPullHook, resetSyncStatus, runSync, startSyncTriggers } from '../sync/engine';
 
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearLocalData();
         resetSyncStatus();
         void forgetAppLock();
+        forgetDevices();
         setFetched(null);
       }
     });
@@ -93,10 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!userId) return;
     const removeHook = addPullHook(async () => storeAccount(await api<FarmerAccount>('/v1/me')));
+    const removeDevicesHook = addPullHook(refreshDevicesQuietly);
     const stopTriggers = startSyncTriggers();
     void runSync();
     return () => {
       removeHook();
+      removeDevicesHook();
       stopTriggers();
     };
   }, [userId, storeAccount]);

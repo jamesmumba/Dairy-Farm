@@ -62,6 +62,6 @@ export function remove(key: string): void {
 
 /** Removes this farmer's data from the phone (used on sign-out). */
 export function clearLocalData(): void {
-  // Farm data goes; the phone's own look (light or dark) stays.
-  db.execSync("delete from kv where key <> 'appearance'; delete from records; delete from outbox;");
+  // Farm data goes; the phone's own look (light or dark) and its device id and name stay.
+  db.execSync("delete from kv where key not in ('appearance', 'device.id', 'device.name'); delete from records; delete from outbox;");
 }

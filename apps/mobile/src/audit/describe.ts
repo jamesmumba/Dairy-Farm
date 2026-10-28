@@ -19,6 +19,8 @@ export interface AuditEntry {
   before_data: Record<string, unknown> | null;
   after_data: Record<string, unknown> | null;
   occurred_at: string;
+  /** The phone that made the change, when known. */
+  device_name?: string | null;
 }
 
 export type AuditGroup = 'milk' | 'animals' | 'money' | 'settings';

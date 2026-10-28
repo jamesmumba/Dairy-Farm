@@ -22,6 +22,7 @@ const SUPABASE_STUBS = `
   create role anon; create role authenticated;
   create schema auth;
   create table auth.users (id uuid primary key, email text);
+  create table auth.sessions (id uuid primary key, user_id uuid not null);
   create schema storage;
   create table storage.buckets (
     id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]

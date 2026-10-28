@@ -7,6 +7,9 @@ import type { FarmerAccount } from './accounts.js';
 export interface Farmer {
   authUserId: string;
   account: FarmerAccount;
+  /** The sign-in (Supabase Auth session) and phone the request came from, when known. */
+  sessionId?: string;
+  deviceId?: string;
 }
 
 export type ApiEnv = { Variables: { farmer: Farmer } };

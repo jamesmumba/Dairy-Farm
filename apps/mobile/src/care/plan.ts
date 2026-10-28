@@ -25,6 +25,7 @@ const PREF: Record<ReminderKind, keyof NotificationPrefs> = {
   production_decline: 'health',
   sync_problem: 'sync_problems',
   possible_duplicate: 'sync_problems', // shown in the app only (no phone notification)
+  new_device: 'sync_problems', // shown in the app only
 };
 
 /** "ZM-001 · Daisy: …" for an animal; the reminder's own title for farm-wide items (customers, stock, sync). */
