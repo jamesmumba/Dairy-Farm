@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { authMessage, isEmail, MIN_PASSWORD } from '../../lib/authErrors';
+import { EMAIL_CONFIRMED_URL, setPendingSignUp } from '../../lib/pendingSignUp';
 import { supabase } from '../../lib/supabase';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 
@@ -20,15 +21,16 @@ export default function SignUp() {
     if (Object.keys(next).length) return;
 
     setBusy(true);
-    const { error } = await supabase.auth.signUp({ email: email.trim(), password });
+    const { error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: EMAIL_CONFIRMED_URL } });
     setBusy(false);
     if (error) return setErrors({ form: authMessage(error) });
+    setPendingSignUp(email.trim(), password);
     // Same next step whether or not the email is already registered (no account enumeration).
     router.push({ pathname: '/verify-email', params: { email: email.trim() } });
   }
 
   return (
-    <FormScreen standalone title="Create your account" intro="We will email you a 6-digit code to confirm your address. Your email is used to sign in and to recover your account.">
+    <FormScreen card standalone title="Create your account" intro="We will email you a link to confirm your address. Your email is used to sign in and to recover your account.">
       {errors.form ? <Notice tone="error">{errors.form}</Notice> : null}
       <TextField label="Email" value={email} onChangeText={setEmail} error={errors.email} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
       <TextField label="Password" hint={`At least ${MIN_PASSWORD} characters`} value={password} onChangeText={setPassword} error={errors.password} secureTextEntry autoComplete="new-password" textContentType="newPassword" />

@@ -16,11 +16,11 @@ export default function EditAnimal() {
   const animal = useLocal(() => getAnimal(id), id);
   const animals = useLocal(listAnimals);
   const breeds = useLocal(listBreeds);
-  if (!animal) return <FormScreen title="Edit animal"><Notice tone="error">This animal is no longer in your herd.</Notice></FormScreen>;
+  if (!animal) return <FormScreen card title="Edit animal"><Notice tone="error">This animal is no longer in your herd.</Notice></FormScreen>;
 
   const initial = Object.fromEntries(FIELDS.map((k) => [k, animal.data[k]])) as CattleFields;
   return (
-    <FormScreen title="Edit animal">
+    <FormScreen card title="Edit animal">
       <AnimalForm
         draftKey={`animal-edit-${id}`}
         initial={initial}

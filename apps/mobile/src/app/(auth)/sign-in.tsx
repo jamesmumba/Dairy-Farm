@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { authMessage, isEmail } from '../../lib/authErrors';
+import { EMAIL_CONFIRMED_URL } from '../../lib/pendingSignUp';
 import { supabase } from '../../lib/supabase';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 
@@ -18,14 +19,14 @@ export default function SignIn() {
     setBusy(false);
     if (!err) return; // the layout moves on once the session exists
     if (err.code === 'email_not_confirmed') {
-      await supabase.auth.resend({ type: 'signup', email: email.trim() });
+      await supabase.auth.resend({ type: 'signup', email: email.trim(), options: { emailRedirectTo: EMAIL_CONFIRMED_URL } });
       return router.push({ pathname: '/verify-email', params: { email: email.trim() } });
     }
     setError(authMessage(err));
   }
 
   return (
-    <FormScreen standalone title="Sign in" intro="Keep your herd, milk, health and sales records in one place.">
+    <FormScreen card standalone title="Sign in" intro="Keep your herd, milk, health and sales records in one place.">
       {error ? <Notice tone="error">{error}</Notice> : null}
       <TextField label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
       <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" onSubmitEditing={submit} />

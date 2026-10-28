@@ -53,7 +53,7 @@ export default function NewStockRecord() {
   }
 
   return (
-    <FormScreen title="Stock record" intro="Record milk that leaves stock without being sold, or correct stock with a reason. Adjustments are kept in the history.">
+    <FormScreen card title="Stock record" intro="Record milk that leaves stock without being sold, or correct stock with a reason. Adjustments are kept in the history.">
       {error ? <Notice tone="error">{error}</Notice> : null}
       <Chips label="What happened" value={kind} options={KIND_OPTIONS} onChange={(v) => v && setKind(v)} allowClear={false} />
       {kind === 'adjustment' ? (

@@ -15,7 +15,7 @@ function NotificationScheduler() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="dark" />
+      <StatusBar style="auto" />
       <Gate />
     </AuthProvider>
   );

@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { minTouch, radius, shadow, spacing, type, useTheme } from './theme';
+import { minTouch, OnCard, radius, shadow, spacing, type, useFieldFill, useTheme } from './theme';
 
 /** The app's mark: a cow in a deep green rounded square. Used where there is no navigation header. */
 export function BrandMark({ size = 64 }: { size?: number }) {
@@ -30,7 +30,20 @@ export function BrandMark({ size = 64 }: { size?: number }) {
  * Scrolling screen for forms and detail pages. Inside the app the title goes in the navigation header
  * (shown once, not twice); `standalone` screens without a header (sign-in, onboarding) show it as a heading.
  */
-export function FormScreen({ title, intro, children, standalone = false }: { title: string; intro?: string; children: ReactNode; standalone?: boolean }) {
+export function FormScreen({
+  title,
+  intro,
+  children,
+  standalone = false,
+  card = false,
+}: {
+  title: string;
+  intro?: string;
+  children: ReactNode;
+  standalone?: boolean;
+  /** Put the form in one white card, so it reads as a single sheet on the milk-white page. */
+  card?: boolean;
+}) {
   const t = useTheme();
   const navigation = useNavigation();
   useLayoutEffect(() => {
@@ -49,7 +62,13 @@ export function FormScreen({ title, intro, children, standalone = false }: { tit
             </View>
           ) : null}
           {intro ? <Text style={{ color: t.textMuted, fontSize: 15 }}>{intro}</Text> : null}
-          {children}
+          {card ? (
+            <View style={{ backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap: spacing.md, ...shadow }}>
+              <OnCard.Provider value>{children}</OnCard.Provider>
+            </View>
+          ) : (
+            children
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -63,6 +82,7 @@ export function TextField({
   ...input
 }: TextInputProps & { label: string; hint?: string; error?: string | null }) {
   const t = useTheme();
+  const fill = useFieldFill();
   return (
     <View style={{ gap: spacing.xs }}>
       <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{label}</Text>
@@ -79,7 +99,7 @@ export function TextField({
           paddingHorizontal: spacing.md,
           fontSize: 17,
           color: t.text,
-          backgroundColor: t.surface,
+          backgroundColor: fill,
         }}
         {...input}
       />
@@ -144,7 +164,7 @@ export function Button({
   const inactive = disabled || busy;
   const filled = variant === 'primary' || variant === 'danger';
   const bg = variant === 'primary' ? t.primary : variant === 'danger' ? t.danger : 'transparent';
-  const fg = filled ? t.onPrimary : t.primary;
+  const fg = variant === 'danger' ? t.onDanger : filled ? t.onPrimary : t.primary;
   return (
     <Pressable
       accessibilityRole="button"
@@ -189,6 +209,7 @@ export function Choice<V extends string>({
   onChange: (value: V) => void;
 }) {
   const t = useTheme();
+  const fill = useFieldFill();
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ gap: spacing.xs }}>
       <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{label}</Text>
@@ -210,7 +231,7 @@ export function Choice<V extends string>({
               borderRadius: radius.control,
               borderWidth: selected ? 2 : 1,
               borderColor: selected ? t.primary : t.border,
-              backgroundColor: selected ? t.primarySoft : t.surface,
+              backgroundColor: selected ? t.primarySoft : fill,
             }}
           >
             <Text style={{ color: selected ? t.primary : t.textMuted, fontSize: 18 }}>{selected ? '◉' : '○'}</Text>

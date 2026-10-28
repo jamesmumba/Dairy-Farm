@@ -6,9 +6,9 @@ Recorded on **27 Oct 2026** (Stage 8). Automated tests run with `npm test` in `a
 
 | Suite | What it runs against | Tests | Result |
 |---|---|---|---|
-| API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **182** | **182 passed, 0 failed** |
-| API through postgres.js (`npm run test:postgres`) | The same tests, with PGlite reached over a Postgres socket by postgres.js, the driver the Edge Function uses | **182** | **182 passed, 0 failed** |
-| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **123** | **123 passed, 0 failed** |
+| API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **187** | **187 passed, 0 failed** |
+| API through postgres.js (`npm run test:postgres`) | The same tests, with PGlite reached over a Postgres socket by postgres.js, the driver the Edge Function uses | **187** | **187 passed, 0 failed** |
+| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **129** | **129 passed, 0 failed** |
 
 Mutation checks: for each critical rule, the code was broken on purpose to confirm a test fails. All were caught, and the code was then restored.
 * Breeding counted as pregnancy.
@@ -20,7 +20,8 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 
 | API file | Tests | Covers |
 |---|---|---|
-| `app.test.ts` | 7 | Health check, token required, forged token, owner taken only from the token, no internal details in errors, cache and nosniff headers, oversized bodies and invalid JSON refused, rate limit per client |
+| `app.test.ts` | 8 | Health check, token required, forged token, owner taken only from the token, no internal details in errors, cache and nosniff headers, oversized bodies and invalid JSON refused, rate limit per client |
+| `notifications.test.ts` | 4 | Inbox read marks: shared across phones, safe to send twice, one farmer only, `since` filter, bad input refused, sign-in required |
 | `auth.test.ts` | 5 | Supabase token verification: a valid token is accepted; tokens from another project, for a non-user audience, expired, or signed with another key are refused |
 | `account.test.ts` | 2 | Settings stored as JSON objects (not strings), with a version bump and audit; default breeds created once |
 | `edgeBundle.test.ts` | 3 | The built Edge Function file itself, under a stand-in for Deno, over postgres.js: health, readiness, 401s, and account, animal, milk, customer, price and sale end to end with a safe retry |
@@ -35,7 +36,7 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 
 | Mobile file | Tests | Covers |
 |---|---|---|
-| `palette.test.ts` | 36 | WCAG AA contrast of every text/background pair in the light and dark palettes, and 3:1 for chart marks |
+| `palette.test.ts` | 42 | WCAG AA contrast of every text/background pair in the light and dark palettes, and 3:1 for chart marks |
 | `sync.test.ts` | 15 | Offline save, then one sync with no duplicates. A lost response plus an app restart. Resending an in-flight op. Folding edits. Version chaining. Rejections blocking only their own record. Conflicts (keep mine / use saved). Pull never overwriting unsent edits. Remote deletions |
 | `calc.test.ts` | 14 | Exact litres, periods, totals, averages, breeds, high/low, decline rule |
 | `finance.test.ts` | 13 | Sale totals, price lookup, balances, unsynced payments, stock ledger and oversell, reconciliation, duplicate customers, money summary |

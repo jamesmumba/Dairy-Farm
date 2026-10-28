@@ -122,7 +122,7 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
                       paddingHorizontal: spacing.md,
                       fontSize: 18,
                       color: t.text,
-                      backgroundColor: t.surface,
+                      backgroundColor: t.background,
                       textAlign: 'right',
                     }}
                   />

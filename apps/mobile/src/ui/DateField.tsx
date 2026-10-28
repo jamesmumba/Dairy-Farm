@@ -1,17 +1,17 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FieldError } from './form';
-import { minTouch, radius, spacing, useTheme } from './theme';
+import { minTouch, radius, spacing, useFieldFill, useTheme } from './theme';
 import { formatDate, formatDateTime, fromDateString, toDateString } from '../lib/dates';
 
 export { formatDate, formatDateTime, fromDateString, toDateString };
 
 /**
  * iOS bottom sheet around the native calendar. The choice is a draft until Done, so picking today
- * (already highlighted) still counts, and Cancel leaves the field as it was. The picker is forced to
- * the light look: with the phone in dark mode it would otherwise draw white text on the light sheet.
+ * (already highlighted) still counts, and Cancel leaves the field as it was. The picker's look follows the
+ * phone's light or dark setting, matching the sheet behind it.
  */
 function IosPickerSheet({
   initial,
@@ -48,7 +48,7 @@ function IosPickerSheet({
           value={draft}
           mode={mode}
           display="inline"
-          themeVariant="light"
+          themeVariant={useColorScheme() === 'dark' ? 'dark' : 'light'}
           accentColor={t.primary}
           textColor={t.text}
           maximumDate={maximumDate}
@@ -77,6 +77,7 @@ export function DateField({
   optional?: boolean;
 }) {
   const t = useTheme();
+  const fill = useFieldFill();
   const [iosOpen, setIosOpen] = useState(false);
   const current = value ? fromDateString(value) : new Date();
   const maximumDate = allowFuture ? undefined : new Date();
@@ -113,7 +114,7 @@ export function DateField({
             borderRadius: radius.control,
             borderWidth: error ? 2 : 1,
             borderColor: error ? t.danger : t.border,
-            backgroundColor: t.surface,
+            backgroundColor: fill,
           }}
         >
           <Text style={{ color: value ? t.text : t.textMuted, fontSize: 17 }}>{value ? formatDate(value) : 'Choose a date'}</Text>
@@ -162,6 +163,7 @@ export function DateTimeField({
   hint?: string;
 }) {
   const t = useTheme();
+  const fill = useFieldFill();
   const [iosOpen, setIosOpen] = useState(false);
   const current = value ? new Date(value) : new Date();
   const maximumDate = allowFuture ? undefined : new Date();
@@ -208,7 +210,7 @@ export function DateTimeField({
             borderRadius: radius.control,
             borderWidth: error ? 2 : 1,
             borderColor: error ? t.danger : t.border,
-            backgroundColor: t.surface,
+            backgroundColor: fill,
           }}
         >
           <Text style={{ color: value ? t.text : t.textMuted, fontSize: 17 }}>{value ? formatDateTime(value) : 'Choose date and time'}</Text>

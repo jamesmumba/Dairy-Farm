@@ -21,7 +21,7 @@ export function InboxBell() {
       <MaterialCommunityIcons name={unread ? 'bell-badge-outline' : 'bell-outline'} size={24} color={t.text} />
       {unread ? (
         <View style={{ position: 'absolute', top: 0, right: 2, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: t.danger, alignItems: 'center', justifyContent: 'center' }}>
-          <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700' }}>
+          <Text maxFontSizeMultiplier={1.2} style={{ color: t.onDanger, fontSize: 11, fontWeight: '700' }}>
             {unread > 9 ? '9+' : unread}
           </Text>
         </View>

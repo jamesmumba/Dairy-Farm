@@ -20,7 +20,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <FormScreen standalone title="Reset your password" intro="Enter your account email. If an account exists, we will send a 6-digit code to reset your password.">
+    <FormScreen card standalone title="Reset your password" intro="Enter your account email. If an account exists, we will send a 6-digit code to reset your password.">
       {error ? <Notice tone="error">{error}</Notice> : null}
       <TextField label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" onSubmitEditing={submit} />
       <Button label="Send code" onPress={submit} busy={busy} />

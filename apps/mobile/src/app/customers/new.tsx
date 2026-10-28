@@ -35,7 +35,7 @@ export default function NewCustomer() {
   }
 
   return (
-    <FormScreen title="New customer">
+    <FormScreen card title="New customer">
       {error ? <Notice tone="error">{error}</Notice> : null}
       <TextField label="Name" value={name} onChangeText={setName} autoCapitalize="words" />
       <TextField label="Phone (optional)" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />

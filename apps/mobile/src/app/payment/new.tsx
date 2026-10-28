@@ -62,7 +62,7 @@ export default function NewPayment() {
   }
 
   return (
-    <FormScreen title="Record a payment" intro="Payments are applied to the customer’s oldest unpaid sales first; anything extra is kept as credit for their next sales.">
+    <FormScreen card title="Record a payment" intro="Payments are applied to the customer’s oldest unpaid sales first; anything extra is kept as credit for their next sales.">
       {error ? <Notice tone="error">{error}</Notice> : null}
       {customer ? (
         <Text style={{ color: t.text, fontSize: 18, fontWeight: '600' }}>{customer.name}</Text>

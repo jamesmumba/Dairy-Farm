@@ -7,7 +7,7 @@ import { FormScreen } from '../../ui/form';
 export default function NewExpense() {
   const f = useFinance();
   return (
-    <FormScreen title="New expense">
+    <FormScreen card title="New expense">
       <ExpenseForm
         initial={{ expense_date: f.today, category: 'feed', amount: '', currency: f.currency, payee: null, payment_method: 'cash', payment_status: 'paid', notes: null }}
         submitLabel="Save expense"

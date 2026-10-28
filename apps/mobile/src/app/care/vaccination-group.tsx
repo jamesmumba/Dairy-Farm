@@ -96,7 +96,7 @@ export default function GroupVaccination() {
   }
 
   return (
-    <FormScreen title="Group vaccination" intro="Record one vaccination for several animals. Each animal gets its own record, and the group as it was today is kept with it.">
+    <FormScreen card title="Group vaccination" intro="Record one vaccination for several animals. Each animal gets its own record, and the group as it was today is kept with it.">
       {error ? <Notice tone="error">{error}</Notice> : null}
       <Chips label="Group" value={group} options={GROUPS.map(({ value, label }) => ({ value, label }))} onChange={(v) => { if (v) { setGroup(v); setExcluded(new Set()); } }} allowClear={false} />
       {group === 'breed' ? <Chips label="Breed" value={breed} options={breeds.map((b) => ({ value: b.id, label: b.name }))} onChange={setBreed} /> : null}

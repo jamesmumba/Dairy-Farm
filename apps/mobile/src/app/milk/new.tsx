@@ -39,7 +39,7 @@ export default function NewMilkEntry() {
   }
 
   return (
-    <FormScreen title="Milk entry">
+    <FormScreen card title="Milk entry">
       {error ? <Notice tone="error">{error}</Notice> : null}
       <ParentPicker label="Cow" sex="female" value={cattleId} animals={cows} onChange={setCattleId} />
       <DateField label="Date" value={date} onChange={(d) => d && setDate(d)} optional={false} />

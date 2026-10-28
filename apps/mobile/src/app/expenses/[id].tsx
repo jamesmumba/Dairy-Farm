@@ -52,7 +52,7 @@ export default function ExpenseScreen() {
 
   if (mode === 'edit') {
     return (
-      <FormScreen title="Correct expense" intro="The old values are kept in the audit history.">
+      <FormScreen card title="Correct expense" intro="The old values are kept in the audit history.">
         <ExpenseForm
           initial={e as ExpenseFields}
           submitLabel="Save correction"

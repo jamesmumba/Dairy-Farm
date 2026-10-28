@@ -9,12 +9,12 @@ import { FormScreen, Notice } from '../../../ui/form';
 export default function NewCareRecord() {
   const { kind, cattle_id } = useLocalSearchParams<{ kind: CareKind; cattle_id?: string }>();
   const ctx = useCareContext();
-  if (!(kind in CARE_KINDS)) return <FormScreen title="Record"><Notice tone="error">Unknown record type.</Notice></FormScreen>;
+  if (!(kind in CARE_KINDS)) return <FormScreen card title="Record"><Notice tone="error">Unknown record type.</Notice></FormScreen>;
   const config = CARE_FORMS[kind];
   const animalKey = config.fields.find((f) => f.type === 'animal')?.key;
 
   return (
-    <FormScreen title={CARE_KINDS[kind].label}>
+    <FormScreen card title={CARE_KINDS[kind].label}>
       <CareForm
         kind={kind}
         draftKey={`care-new-${kind}-${cattle_id ?? ''}`}

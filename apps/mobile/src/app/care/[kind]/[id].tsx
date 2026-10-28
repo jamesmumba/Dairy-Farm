@@ -75,19 +75,21 @@ export default function CareRecord() {
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {mode === 'edit' ? (
-        <CareForm
-          kind={kind}
-          draftKey={`care-edit-${kind}-${id}`}
-          initial={fromRecord(config, r)}
-          ctx={ctx}
-          creating={false}
-          submitLabel="Save changes"
-          onSubmit={(body) => {
-            const changes = Object.fromEntries(Object.entries(body).filter(([k, v]) => JSON.stringify(v ?? null) !== JSON.stringify(r[k] ?? null)));
-            if (Object.keys(changes).length) updateCare(kind, record, changes);
-            setMode('view');
-          }}
-        />
+        <FormCard>
+          <CareForm
+            kind={kind}
+            draftKey={`care-edit-${kind}-${id}`}
+            initial={fromRecord(config, r)}
+            ctx={ctx}
+            creating={false}
+            submitLabel="Save changes"
+            onSubmit={(body) => {
+              const changes = Object.fromEntries(Object.entries(body).filter(([k, v]) => JSON.stringify(v ?? null) !== JSON.stringify(r[k] ?? null)));
+              if (Object.keys(changes).length) updateCare(kind, record, changes);
+              setMode('view');
+            }}
+          />
+        </FormCard>
       ) : (
         <>
           <Details

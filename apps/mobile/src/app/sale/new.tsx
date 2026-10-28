@@ -85,15 +85,15 @@ export default function NewSale() {
       router.replace({ pathname: '/customers/[id]', params: { id: customer.id, saved: `${quantity} L, ${money(totalCents, currency)}` } });
     };
 
-    // An ordinary sale saves at once; only an unusual one is shown for a second look.
+    // Every sale is confirmed before saving (spec 12.1): quantity, price, total, payment, balance and stock.
+    // Anything unusual is named first so it gets a second look.
     const unusual = [
       override && 'a special price',
       paidCents < totalCents && (paidCents === 0 ? 'nothing paid now' : 'part payment'),
       currency !== f.currency && `${currency}, not your usual currency`,
       quantityCl * 2 > stockCl && 'more than half the milk in stock',
     ].filter(Boolean);
-    if (!unusual.length) return finish();
-    Alert.alert('Check this sale', [`This sale has ${unusual.join(', ')}.`, '', ...summary].join('\n'), [
+    Alert.alert('Confirm sale', [...(unusual.length ? [`Note: ${unusual.join(', ')}.`, ''] : []), ...summary].join('\n'), [
       { text: 'Go back', style: 'cancel' },
       { text: 'Save sale', onPress: finish },
     ]);

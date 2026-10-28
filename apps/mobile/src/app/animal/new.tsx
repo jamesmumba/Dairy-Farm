@@ -11,7 +11,7 @@ export default function NewAnimal() {
   const breeds = useLocal(listBreeds);
 
   return (
-    <FormScreen title="Register an animal" intro="Only sex is required. Everything else can be added later. Works offline: the animal is saved on this phone and synced when you are connected.">
+    <FormScreen card title="Register an animal" intro="Only sex is required. Everything else can be added later. Works offline: the animal is saved on this phone and synced when you are connected.">
       <AnimalForm
         draftKey="animal-new"
         initial={emptyFields(account?.currency ?? 'ZMW')}

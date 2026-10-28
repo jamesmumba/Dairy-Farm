@@ -23,7 +23,7 @@ export default function ChangeStatus() {
   const [details, setDetails] = useState('');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
-  if (!animal) return <FormScreen title="Change status"><Notice tone="error">This animal is no longer in your herd.</Notice></FormScreen>;
+  if (!animal) return <FormScreen card title="Change status"><Notice tone="error">This animal is no longer in your herd.</Notice></FormScreen>;
 
   const reactivating = status === 'active';
 
@@ -49,7 +49,7 @@ export default function ChangeStatus() {
   }
 
   return (
-    <FormScreen title="Change status" intro={`${displayName(animal.data)} is currently ${STATUS_LABELS[animal.data.status].toLowerCase()}.`}>
+    <FormScreen card title="Change status" intro={`${displayName(animal.data)} is currently ${STATUS_LABELS[animal.data.status].toLowerCase()}.`}>
       {error ? <Notice tone="error">{error}</Notice> : null}
       <Choice
         label="New status"

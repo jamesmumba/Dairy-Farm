@@ -9,9 +9,9 @@ WCAG AA contrast.
 | Topic | Decision |
 |---|---|
 | Input borders | Stay `line-200`; the error state uses a 2 pt `red-700` border |
-| Dark mode | The app is light-only for now (`userInterfaceStyle: light`), so every phone shows this design. The dark palette stays in `palette.ts` (and its contrast is tested) for the dark design to come |
+| Dark mode | Follows the phone. A pasture-at-night palette (deep green-black surfaces, light pasture green for actions); headline cards stay deep green (`hero`). Contrast tested for both |
 | Charts | One hue per chart (`green-700`); series are compared in separate small charts on one scale, never by two similar hues |
-| Sale confirmation | Only for an unusual sale: a special price, part or no payment, a currency other than the farm's, or more than half the milk in stock. An ordinary sale saves at once and shows a "Sale saved" notice |
+| Sale confirmation | Every sale is confirmed before saving, as specification 12.1 requires: quantity, unit price, total, payment, balance after and stock impact. A special price, part or no payment, another currency, or more than half the stock is named first in the confirmation |
 | Stock reconciliation task | Dropped. Stock is a ledger with reasoned adjustments; negative-stock days are shown as a notice on the stock screen |
 | Sync status | A compact indicator in every screen header; Home also shows the full status with the last sync time |
 | Backend names | Never shown to the farmer ("your account", "Can’t connect right now", not "Supabase" or "server") |
@@ -118,7 +118,7 @@ Five-destination bottom navigation; less frequent tools under **More**.
 
 ### Sign-in and onboarding
 
-* Wordmark, one-line explanation, focused sign-in form; email verification and password reset by 6-digit code.
+* The app mark (cow on deep green) above the title, a one-line explanation and a focused form. Sign-up is confirmed by Supabase's email link; password reset by 6-digit code.
 * No farm role choice: there is one farmer account.
 * Short stepper: profile, farm (optional), units and currency (ZMW default), reminders, app lock, first action.
 * Ends with **Add your first animal** or **Record today's milk**. Setup can be paused and resumed.
@@ -170,7 +170,7 @@ cash received, customer debt and stock are never combined into one number.
 2. Litres shortcut or another amount.
 3. Listed price (or a special price), calculated total, stock for the date.
 4. Paid in full, part, or on credit, with the method; the balance is calculated.
-5. **Save sale.** An unusual sale (see decisions) shows a check summary first.
+5. **Save sale** shows the confirmation (quantity, price, total, payment, balance, stock), naming anything unusual first.
 6. The customer statement opens with a **Sale saved** notice.
 
 Totals and balances are never typed. Saving is refused, with the fix explained, when values are invalid or stock is
@@ -229,7 +229,9 @@ Screen patterns:
 * **Animal profile**: a header card (photo or initials, name, ID, status), **Add record** (opens the list of
   record types) and **Edit details**, then Overview, Care, Milk and History as one choice.
 * **Sales**: one card with milk for sale, price and **New sale**; four grouped links; customers.
-* **Sale form**: customer, litres, payment, total, Save. Date, currency, special price and note under one link.
+* **Sale form**: customer, litres, payment, total, Save, then the confirmation. Date, currency, special price and note under one link.
+* **Forms**: each form sits in one white card; fields inside a card use the milk-white fill so they stand out (`OnCard`).
+* **App icon and splash**: the white cow on pasture green (`apps/mobile/scripts/make-icons.py` draws them from the icon font).
 * **More**: a farm card, then grouped rows for records, account and data.
 * **Production**: one headline card (total, change on the period before, per cow a day, cows milked, not for sale),
   the chart in a card, then Falling milk and By cow as grouped rows.

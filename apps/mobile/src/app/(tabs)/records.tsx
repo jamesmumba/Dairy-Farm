@@ -24,12 +24,12 @@ export default function Records() {
         accessibilityLabel={`Milking round. Today so far ${L(todaySummary.totalCl)}`}
         accessibilityHint="Enter litres for every cow in one session"
         onPress={() => router.push('/milk/round')}
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.card + 4, backgroundColor: t.primary, opacity: pressed ? 0.9 : 1, ...shadow })}
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.card + 4, backgroundColor: t.hero, opacity: pressed ? 0.9 : 1, ...shadow })}
       >
         <IconBadge icon="water-outline" size={48} />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ color: t.onPrimary, fontSize: 20, fontWeight: '600' }}>Milking round</Text>
-          <Text style={{ color: t.primarySoft, fontSize: 14 }}>Today so far: {L(todaySummary.totalCl)}</Text>
+          <Text style={{ color: t.onHero, fontSize: 20, fontWeight: '600' }}>Milking round</Text>
+          <Text style={{ color: t.heroMuted, fontSize: 14 }}>Today so far: {L(todaySummary.totalCl)}</Text>
         </View>
       </Pressable>
       <ListGroup>

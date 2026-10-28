@@ -34,6 +34,9 @@ const TEXT: [Key, Key][] = [
   ['text', 'attentionSoft'],
   ['info', 'infoSoft'],
   ['text', 'infoSoft'],
+  ['onHero', 'hero'],
+  ['heroMuted', 'hero'],
+  ['onDanger', 'danger'],
 ];
 
 describe.each([

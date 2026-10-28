@@ -140,7 +140,7 @@ function pgAccounts(pool) {
 // src/app.ts
 import { Hono } from "npm:hono@4.13.14";
 import { bodyLimit } from "npm:hono@4.13.14/body-limit";
-import { z as z14 } from "npm:zod@4.6.7";
+import { z as z15 } from "npm:zod@4.6.7";
 
 // src/profile.ts
 import { z } from "npm:zod@4.6.7";
@@ -2066,6 +2066,36 @@ function financeRoutes(v1, { db: db2, receipts }) {
   });
 }
 
+// src/notificationRoutes.ts
+import { z as z14 } from "npm:zod@4.6.7";
+var Key = z14.string().min(1).max(200);
+var MarkRead = z14.object({ keys: z14.array(Key).min(1).max(200) }).strict();
+var ReadQuery = z14.object({ since: z14.iso.datetime({ offset: true }).optional() }).strict();
+var KEEP_DAYS = 120;
+function notificationRoutes(v1, { db: db2 }) {
+  v1.get("/notifications/read", async (req) => {
+    const owner = req.farmer.account.id;
+    const { since } = parse(ReadQuery, req.query);
+    const { rows } = await db2.query(
+      `select key from public.notification_reads
+       where owner_id = $1 and read_at > coalesce($2::timestamptz, now() - make_interval(days => $3))
+       order by read_at desc limit 2000`,
+      [owner, since ?? null, KEEP_DAYS]
+    );
+    return { keys: rows.map((r) => r.key) };
+  });
+  v1.post("/notifications/read", async (req) => {
+    const owner = req.farmer.account.id;
+    const { keys } = parse(MarkRead, req.body);
+    await db2.query(
+      `insert into public.notification_reads (owner_id, key) select $1, unnest($2::text[]) on conflict do nothing`,
+      [owner, [...new Set(keys)]]
+    );
+    await db2.query(`delete from public.notification_reads where owner_id = $1 and read_at < now() - make_interval(days => $2)`, [owner, KEEP_DAYS]);
+    return { saved: keys.length };
+  });
+}
+
 // src/router.ts
 var SENT = /* @__PURE__ */ Symbol("sent");
 var reply = { status: (status) => ({ send: (body) => ({ [SENT]: true, status, body }) }) };
@@ -2108,7 +2138,7 @@ function router(app) {
 }
 
 // src/app.ts
-var DeletionRequest = z14.object({ reason: z14.string().trim().max(500).optional() }).strict();
+var DeletionRequest = z15.object({ reason: z15.string().trim().max(500).optional() }).strict();
 function sendValidationError(reply2, error) {
   const issue = error.issues[0];
   return reply2.status(400).send({ error: "validation_failed", message: issue.message, field: issue.path.join(".") });
@@ -2155,6 +2185,13 @@ async function buildApp({ verifyToken, accounts, db: db2, photos, receipts, trus
     await db2.query("select 1");
     return c.json({ status: "ok", database: "ok" });
   });
+  app.get(
+    "/email-confirmed",
+    (c) => c.text(`Your email is confirmed.
+
+Go back to the Dairy Farm app and tap "I've confirmed my email" (or sign in).
+`)
+  );
   const v1 = new Hono();
   v1.use("*", async (c, next) => {
     const header = c.req.header("authorization");
@@ -2203,6 +2240,7 @@ async function buildApp({ verifyToken, accounts, db: db2, photos, receipts, trus
   milkRoutes(r, { db: db2 });
   careRoutes(r, { db: db2 });
   financeRoutes(r, { db: db2, receipts });
+  notificationRoutes(r, { db: db2 });
   app.route("/v1", v1);
   return app;
 }

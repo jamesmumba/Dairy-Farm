@@ -22,6 +22,13 @@ describe('API foundation', () => {
     expect(res.json()).toEqual({ status: 'ok' });
   });
 
+  it('tells the farmer to go back to the app after the email confirmation link', async () => {
+    const res = await (await app()).inject({ url: '/email-confirmed' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('Your email is confirmed');
+    expect(res.headers['content-type']).toContain('text/plain');
+  });
+
   it('rejects /v1 requests without a token', async () => {
     const res = await (await app()).inject({ url: '/v1/me' });
     expect(res.statusCode).toBe(401);

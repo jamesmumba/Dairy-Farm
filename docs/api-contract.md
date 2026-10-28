@@ -111,8 +111,8 @@ Body `{ reason?: string (≤500) }`. Sets `deletion_requested_at` (once) and aud
 
 | Flow | Calls |
 |---|---|
-| Sign up | `auth.signUp({ email, password })` → email code → `auth.verifyOtp({ email, token, type: 'email' })` |
-| Sign in | `auth.signInWithPassword`. If the error is `email_not_confirmed`, the app resends the code and opens verification |
+| Sign up | `auth.signUp({ email, password, options: { emailRedirectTo: <API>/email-confirmed } })` → the farmer taps the link in the email → back in the app, *I've confirmed my email* signs in with what they just typed (held in memory only) |
+| Sign in | `auth.signInWithPassword`. If the error is `email_not_confirmed`, the app resends the confirmation email and opens the "check your email" screen |
 | Reset or change password | `auth.resetPasswordForEmail(email)` → code → `verifyOtp({ type: 'recovery' })` → `auth.updateUser({ password })` |
 | Sign out | `auth.signOut({ scope: 'local' | 'global' })`. Local farm data is wiped from the phone |
 
@@ -244,6 +244,26 @@ The phone builds every report and file. The server only records that an export h
 | `POST /v1/exports` | Idempotency-Key | `{ id, report, format ('csv'\|'pdf'), filters: { name: value }, row_count, generated_at }` → `201`. Writes an `export.csv` or `export.pdf` audit entry (`entity_table: 'exports'`, `reason` = report id). A retry logs once |
 
 The phone queues this call like any other change, so an export made offline is logged when the phone next syncs. Exports appear under `GET /v1/audit?entity_table=exports`.
+
+## Notifications inbox: read marks
+
+The phone works out every notification from the records. The server only remembers which ones the farmer has read, so
+every phone on the account agrees (table `notification_reads`, kept 120 days).
+
+| Endpoint | Body → result |
+|---|---|
+| `GET /v1/notifications/read[?since=ISO time]` | → `200 { keys: string[] }`, newest first, at most 2000 |
+| `POST /v1/notifications/read` | `{ keys: string[] }` (1–200 keys, each 1–200 characters) → `200 { saved }`. Marking twice keeps the first time, so retries need no Idempotency-Key |
+
+Keys are the phone's stable item keys, e.g. `vaccination:<record id>`, `unpaid:<customer id>:ZMW`, `decline:<animal id>`,
+`sync:<operation id>`. The phone sends marks when the inbox is opened (or with the next sync if offline) and fetches
+them after each sync.
+
+## Public pages
+
+| Endpoint | Result |
+|---|---|
+| `GET /email-confirmed` | Plain text telling the farmer their email is confirmed and to go back to the app. The sign-up link lands here |
 
 `decline_rule` on `PATCH /v1/me` is `{ recent_days 3–30, baseline_days 3–60, threshold_pct 5–80, min_days ≤ both periods }`.
 The default is `{ 7, 7, 20, 4 }`.

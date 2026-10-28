@@ -16,7 +16,7 @@ export default function DeleteAccount() {
 
   if (account?.deletion_requested_at) {
     return (
-      <FormScreen title="Deletion requested">
+      <FormScreen card title="Deletion requested">
         <Notice>
           We received your request on {new Date(account.deletion_requested_at).toLocaleDateString()}. Your account stays usable until the
           request is processed. We will contact you by email before anything is deleted.
@@ -46,7 +46,7 @@ export default function DeleteAccount() {
   }
 
   return (
-    <FormScreen title="Delete account">
+    <FormScreen card title="Delete account">
       <Text style={{ color: t.text, fontSize: 16 }}>
         Deleting your account erases all your records, photos and your sign-in from our service. Only an anonymous note that a
         deletion happened is kept, and backups containing your data expire within 30 days.

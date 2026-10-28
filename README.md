@@ -4,7 +4,7 @@ A mobile app for one farmer to keep records for a dairy farm in Zambia: herd, mi
 animal health, breeding, vaccination, sales, stock, expenses and reports. It works offline and
 syncs when there is a connection.
 
-**Status:** All 8 stages are built and tested (182 API and 123 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
+**Status:** All 8 stages are built and tested (187 API and 129 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
 
 ## Repository layout
 
@@ -23,7 +23,7 @@ syncs when there is a connection.
 |---|---|
 | Backend | The API holds all business rules. Supabase provides managed Postgres, Auth and private Storage, and runs the API as an Edge Function, so there is one platform to operate. |
 | Data access | Only the API reaches the tables. The Supabase Data API is locked out (RLS on, no policies, grants revoked). |
-| Sign-in | Supabase Auth with email and password. Email verification and password reset use 6-digit codes typed in the app (no deep links). Email is sent through Resend SMTP. |
+| Sign-in | Supabase Auth with email and password. Sign-up is confirmed with Supabase's email link; the link lands on a short "go back to the app" page and the farmer taps *I've confirmed my email*. Password reset uses a 6-digit code typed in the app. No deep links. Email is sent through Resend SMTP. |
 | App lock | Optional. Uses the phone's fingerprint, face or screen lock (expo-local-authentication). Locks on launch and after 5 minutes in the background. |
 | Owner scoping | `owner_id` comes only from the verified token, through `farmer_accounts.auth_user_id`. |
 | Offline | expo-sqlite local copy with an outbox queue, built in Stage 3 and reused by later modules. Client UUIDs and idempotency keys make retries safe. Details are in the [data model](docs/data-model.md#offline-copy-on-the-phone-expo-sqlite). |
@@ -85,10 +85,12 @@ computer's LAN address (e.g. `http://192.168.1.20:3000`), not `localhost`. The p
 1. **Authentication › Sign In / Providers › Email:** turn on *Confirm email*. Set *Minimum password length* to 8.
 2. **Authentication › Emails › SMTP Settings:** turn on custom SMTP with Resend. Host `smtp.resend.com`,
    port `465`, user `resend`, password = your Resend API key, sender = an address on your verified Resend domain.
-3. **Authentication › Emails › Templates:** the app needs the code (`{{ .Token }}`), not a link:
-   * *Confirm signup*: subject `Your Dairy Farm code`, body `<p>Your confirmation code is <strong>{{ .Token }}</strong>. It expires in 1 hour.</p>`
-   * *Reset password*: subject `Your Dairy Farm reset code`, body `<p>Your password reset code is <strong>{{ .Token }}</strong>. If you did not ask for this, ignore this email.</p>`
-4. **Authentication › Rate Limits:** keep the defaults. They limit sign-in, sign-up and code requests per IP.
+3. **Authentication › URL Configuration:** add `https://xgdhqmlkjfhcfjkmrqrx.supabase.co/functions/v1/api/email-confirmed` to *Redirect URLs* (and you may set it as the *Site URL*).
+   After the farmer taps the sign-up link, Supabase confirms the address and opens that page, which says to go back to the app.
+4. **Authentication › Emails › Templates:**
+   * *Confirm signup*: keep Supabase's default (it contains the `{{ .ConfirmationURL }}` link). Optionally set the subject to `Confirm your Dairy Farm account`.
+   * *Reset password*: the app needs the code (`{{ .Token }}`), not a link: subject `Your Dairy Farm reset code`, body `<p>Your password reset code is <strong>{{ .Token }}</strong>. If you did not ask for this, ignore this email.</p>`
+5. **Authentication › Rate Limits:** keep the defaults. They limit sign-in, sign-up and code requests per IP.
 
 Use `npx expo install <pkg>` to add packages, so versions match the Expo SDK.
 

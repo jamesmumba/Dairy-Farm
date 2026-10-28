@@ -8,6 +8,7 @@ import { animalRoutes } from './animalRoutes.js';
 import { milkRoutes } from './milkRoutes.js';
 import { careRoutes } from './careRoutes.js';
 import { financeRoutes } from './financeRoutes.js';
+import { notificationRoutes } from './notificationRoutes.js';
 import type { Db } from './db.js';
 import { HttpError } from './http.js';
 import type { Photos } from './photos.js';
@@ -83,6 +84,13 @@ export async function buildApp({ verifyToken, accounts, db, photos, receipts, tr
     await db.query('select 1');
     return c.json({ status: 'ok', database: 'ok' });
   });
+  /**
+   * Where Supabase's sign-up confirmation link lands once the address is confirmed. Plain text on purpose:
+   * Supabase serves function responses as text, and the farmer only needs to know to go back to the app.
+   */
+  app.get('/email-confirmed', (c) =>
+    c.text('Your email is confirmed.\n\nGo back to the Dairy Farm app and tap "I\'ve confirmed my email" (or sign in).\n'),
+  );
 
   const v1 = new Hono<ApiEnv>();
   v1.use('*', async (c, next) => {
@@ -138,6 +146,7 @@ export async function buildApp({ verifyToken, accounts, db, photos, receipts, tr
   milkRoutes(r, { db });
   careRoutes(r, { db });
   financeRoutes(r, { db, receipts });
+  notificationRoutes(r, { db });
 
   app.route('/v1', v1);
   return app;

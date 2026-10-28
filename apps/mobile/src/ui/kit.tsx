@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { type Href, router } from 'expo-router';
 import { Children, type ComponentProps, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { minTouch, radius, shadow, spacing, type, useCardBasis, useTheme } from './theme';
+import { minTouch, OnCard, radius, shadow, spacing, type, useCardBasis, useTheme } from './theme';
 import type { Theme } from './theme';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -237,7 +237,7 @@ export function Pill({ label, tint = 'green' }: { label: string; tint?: Tint }) 
 export function Card({ children, gap = spacing.md, href, label }: { children: ReactNode; gap?: number; href?: Href; label?: string }) {
   const t = useTheme();
   const style = { backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap, ...shadow };
-  if (!href) return <View style={style}>{children}</View>;
+  if (!href) return <View style={style}><OnCard.Provider value>{children}</OnCard.Provider></View>;
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint="Opens the details" onPress={() => router.push(href)} style={({ pressed }) => [style, pressed && { backgroundColor: t.primarySoft }]}>
       {children}
@@ -316,7 +316,7 @@ export function FormCard({ title, children }: { title?: string; children: ReactN
   return (
     <View style={{ backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap: spacing.md, ...shadow }}>
       {title ? <Text style={{ color: t.text, ...type.cardTitle, fontSize: 17 }}>{title}</Text> : null}
-      {children}
+      <OnCard.Provider value>{children}</OnCard.Provider>
     </View>
   );
 }

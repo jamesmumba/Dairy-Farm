@@ -88,7 +88,7 @@ export default function Onboarding() {
   }
 
   return (
-    <FormScreen standalone title={TITLES[step]}>
+    <FormScreen card standalone title={TITLES[step]}>
       <Text style={{ color: t.textMuted, fontSize: 15 }} accessibilityLabel={`Step ${index + 1} of ${ONBOARDING_STEPS.length}`}>
         Step {index + 1} of {ONBOARDING_STEPS.length}
       </Text>

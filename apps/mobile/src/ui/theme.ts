@@ -1,5 +1,6 @@
-import { useWindowDimensions } from 'react-native';
-import { light } from './palette';
+import { createContext, useContext } from 'react';
+import { useColorScheme, useWindowDimensions } from 'react-native';
+import { dark, light } from './palette';
 
 export type Theme = typeof light;
 
@@ -22,10 +23,9 @@ export const type = {
 /** Minimum touch target (dp), per Android and iOS accessibility guidance. */
 export const minTouch = 48;
 
-// The app is light-only until the dark design is done (docs/design.md); the dark palette
-// in palette.ts is kept and tested for that.
+/** Follows the phone's light or dark setting. */
 export function useTheme() {
-  return light;
+  return useColorScheme() === 'dark' ? dark : light;
 }
 
 /** Soft card shadow, tinted green so it reads as depth rather than grey dirt. */
@@ -44,4 +44,12 @@ export const shadow = {
 export function useCardBasis(): '47%' | '100%' {
   const { width, fontScale } = useWindowDimensions();
   return width / Math.max(1, fontScale) < 340 ? '100%' : '47%';
+}
+
+/** True inside a white card: fields there use the milk-white fill so they still stand out from the card. */
+export const OnCard = createContext(false);
+
+export function useFieldFill() {
+  const t = useTheme();
+  return useContext(OnCard) ? t.background : t.surface;
 }

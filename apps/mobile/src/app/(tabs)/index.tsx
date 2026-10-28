@@ -38,22 +38,22 @@ function TodayCard({ name, today, milkToday, cows, forSale }: { name?: string | 
   const t = useTheme();
   const figure = (label: string, value: string, note: string) => (
     <View style={{ flex: 1, gap: 2 }} accessible accessibilityLabel={`${label}: ${value}. ${note}`}>
-      <Text style={{ color: t.primarySoft, fontSize: 14 }}>{label}</Text>
-      <Text style={{ color: t.onPrimary, fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
+      <Text style={{ color: t.heroMuted, fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: t.onHero, fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
-      <Text style={{ color: t.primarySoft, fontSize: 13 }}>{note}</Text>
+      <Text style={{ color: t.heroMuted, fontSize: 13 }}>{note}</Text>
     </View>
   );
   return (
-    <View style={{ backgroundColor: t.primary, borderRadius: radius.card + 4, padding: spacing.lg, gap: spacing.lg, overflow: 'hidden', ...shadow }}>
-      <MaterialCommunityIcons name="cow" size={72} color="#FFFFFF" style={{ position: 'absolute', right: 12, top: 8, opacity: 0.1 }} importantForAccessibility="no" />
+    <View style={{ backgroundColor: t.hero, borderRadius: radius.card + 4, padding: spacing.lg, gap: spacing.lg, overflow: 'hidden', ...shadow }}>
+      <MaterialCommunityIcons name="cow" size={72} color={t.onHero} style={{ position: 'absolute', right: 12, top: 8, opacity: 0.1 }} importantForAccessibility="no" />
       <View style={{ gap: 2 }}>
-        <Text accessibilityRole="header" style={{ color: t.onPrimary, ...type.screenTitle, fontSize: 24 }}>
+        <Text accessibilityRole="header" style={{ color: t.onHero, ...type.screenTitle, fontSize: 24 }}>
           {greeting()}
           {name ? `, ${name}` : ''}
         </Text>
-        <Text style={{ color: t.primarySoft, fontSize: 15 }}>{dayLabel(today)}</Text>
+        <Text style={{ color: t.heroMuted, fontSize: 15 }}>{dayLabel(today)}</Text>
       </View>
       <View style={{ flexDirection: 'row', gap: spacing.md }}>
         {figure('Milk today', milkToday, `from ${cows} cow${cows === 1 ? '' : 's'}`)}

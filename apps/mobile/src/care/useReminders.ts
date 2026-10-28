@@ -6,7 +6,9 @@ import { listAnimals } from '../animals/repo';
 import { DEFAULT_NOTIFICATION_PREFS } from '../lib/account';
 import { getJson, setJson } from '../lib/localDb';
 import { useAuth } from '../state/auth';
+import { addPullHook } from '../sync/engine';
 import { failedOps, useLocal } from '../sync/store';
+import { syncInboxReads } from './inbox';
 import { type AlertLog, MAX_NOTIFICATIONS, planAlerts, planNotifications } from './plan';
 import { computeReminders, type Reminder } from './reminders';
 import { loadCareData } from './repo';
@@ -102,6 +104,13 @@ export const useNotificationStatus = () => {
  */
 export function useNotificationScheduler() {
   const { account } = useAuth();
+  // Read marks for the inbox travel with each sync, so other phones on the account agree.
+  useEffect(() => {
+    const remove = addPullHook(syncInboxReads);
+    return () => {
+      remove();
+    };
+  }, []);
   const { reminders, names } = useReminders();
   const prefs = { ...DEFAULT_NOTIFICATION_PREFS, ...account?.notification_prefs };
   const now = new Date();
