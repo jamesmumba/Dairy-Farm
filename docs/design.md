@@ -9,7 +9,7 @@ WCAG AA contrast.
 | Topic | Decision |
 |---|---|
 | Input borders | Stay `line-200`; the error state uses a 2 pt `red-700` border |
-| Dark mode | Follows the phone. A pasture-at-night palette (deep green-black surfaces, light pasture green for actions); headline cards stay deep green (`hero`). Contrast tested for both |
+| Dark mode | The farmer chooses in More › Appearance: *Phone setting* (default), *Light* or *Dark*, saved on the phone and kept after sign-out. A pasture-at-night palette (deep green-black surfaces, light pasture green for actions); headline cards stay deep green (`hero`). Contrast tested for both |
 | Charts | One hue per chart (`green-700`); series are compared in separate small charts on one scale, never by two similar hues |
 | Sale confirmation | Every sale is confirmed before saving, as specification 12.1 requires: quantity, unit price, total, payment, balance after and stock impact. A special price, part or no payment, another currency, or more than half the stock is named first in the confirmation |
 | Stock reconciliation task | Dropped. Stock is a ledger with reasoned adjustments; negative-stock days are shown as a notice on the stock screen |

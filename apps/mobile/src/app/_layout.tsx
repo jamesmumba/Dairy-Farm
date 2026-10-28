@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { AppLockProvider } from '../state/appLock';
 import { AuthProvider, useAuth } from '../state/auth';
+import { applySavedAppearance } from '../ui/appearance';
 import { SyncHeader } from '../ui/SyncHeader';
 import { useTheme } from '../ui/theme';
 import { useNotificationScheduler } from '../care/useReminders';
@@ -11,6 +12,9 @@ function NotificationScheduler() {
   useNotificationScheduler();
   return null;
 }
+
+// The farmer's light/dark choice, before anything draws.
+applySavedAppearance();
 
 export default function RootLayout() {
   return (
