@@ -60,6 +60,7 @@ export const CHECKS: Check[] = [
             union all select owner_id, id, 'vaccination_records', cattle_id from public.vaccination_records
             union all select owner_id, id, 'breeding_records', cattle_id from public.breeding_records
             union all select owner_id, id, 'pregnancy_checks', cattle_id from public.pregnancy_checks
+            union all select owner_id, id, 'alert_actions', cattle_id from public.alert_actions
           ) x join public.cattle c on c.id = x.ref where c.owner_id <> x.owner_id
           union all
           select s.owner_id, s.id, 'milk_sales' from public.milk_sales s join public.customers c on c.id = s.customer_id where c.owner_id <> s.owner_id

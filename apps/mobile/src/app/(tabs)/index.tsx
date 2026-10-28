@@ -95,6 +95,7 @@ export default function Home() {
   const { today, animals, milk } = input;
   const attention = useMemo(() => needingAttention(input), [input]);
   const withdrawals = reminders.filter((r) => r.kind === 'withdrawal').length;
+  const missingMilk = reminders.filter((r) => r.kind === 'missing_milk');
   const milkDay = summarize(milk, today, today);
   const range = choice === 'today' ? { from: today, to: today } : periodRange(choice, today);
   const to = range.to > today ? today : range.to;
@@ -134,13 +135,16 @@ export default function Home() {
         ))}
       </View>
 
-      {withdrawals > 0 || attentionRows.length > 0 ? (
+      {withdrawals > 0 || missingMilk.length > 0 || attentionRows.length > 0 ? (
         <View style={{ gap: spacing.sm }}>
           <SectionHeader title="Needs attention" action={attention.size > 3 ? `All ${attention.size}` : undefined} onAction={() => router.push('/reminders')} />
           <ListGroup>
             {withdrawals > 0 ? (
               <ListRow icon="water-off-outline" tint="red" title={`${withdrawals} milk withdrawal${withdrawals === 1 ? '' : 's'}`} subtitle="This milk is not for sale" href="/reminders" />
             ) : null}
+            {missingMilk.map((r) => (
+              <ListRow key={r.key} icon={REMINDER_ICON.missing_milk} tint="straw" title={r.title} subtitle="Tap to record them" href={r.href as Href} />
+            ))}
             {attentionRows.map(([id, reasons]) => {
               const a = animals.find((x) => x.id === id);
               return a ? (
@@ -246,6 +250,7 @@ export default function Home() {
           <StatementLine first label="Money received" value={money(moneyPeriod.receiptsCents, f.currency)} />
           <StatementLine label="Customers owe now" value={money(moneyPeriod.outstandingCents, f.currency)} tone={moneyPeriod.outstandingCents > 0 ? 'danger' : undefined} />
           <StatementLine label="Expenses" value={money(moneyPeriod.expensesCents, f.currency)} />
+          <StatementLine label="Sales left after feed" value={money(moneyPeriod.afterFeedCents, f.currency)} tone={moneyPeriod.afterFeedCents < 0 ? 'danger' : undefined} />
         </View>
         <BarChart title="Sales per day" bars={salesBars} format={fmtMoney} height={64} max={moneyMax} />
         <BarChart title="Payments received per day" bars={payBars} format={fmtMoney} height={64} max={moneyMax} />

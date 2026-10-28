@@ -18,7 +18,9 @@ import { computeReminders, type Reminder } from './reminders';
 import { loadCareData } from './repo';
 import { loadFinance } from '../finance/repo';
 import { financeReminders } from '../finance/reminders';
-import { decline, DEFAULT_DECLINE_RULE } from '../production/calc';
+import { milkAlerts, missingMilkings } from '../production/alerts';
+import { DEFAULT_DECLINE_RULE } from '../production/calc';
+import { SESSION_LABELS } from '../production/format';
 import { listMilk } from '../production/repo';
 import { farmDateOf } from '../lib/dates';
 
@@ -45,29 +47,33 @@ export function useReminders() {
     const names = new Map(animals.map((a) => [a.data.id, displayName(a.data)]));
     const order = { active: 0, overdue: 1, today: 2, upcoming: 3 };
     const today = farmDate(now.toISOString());
-    // Falling milk, by the farmer's own rule: one problem per cow while it lasts.
-    const declines: Reminder[] = animals
-      .map((a) => a.data)
-      .filter((a) => a.status === 'active' && a.sex === 'female')
-      .flatMap((a) => {
-        const d = decline(milk, a.id, today, rule);
-        return d.state === 'decline'
-          ? [
-              {
-                key: `decline:${a.id}`,
-                kind: 'production_decline' as const,
-                urgency: 'active' as const,
-                due: today,
-                cattleId: a.id,
-                title: `Milk down ${Math.abs(d.changePct)}%`,
-                detail: `Last ${rule.recent_days} days against the ${rule.baseline_days} before`,
-                href: `/animal/${a.id}`,
-                notifyOffsets: [],
-                alert: 'next_reminder' as const,
-              },
-            ]
-          : [];
-      });
+    // Early warning: a sudden drop or falling milk, one per cow while it lasts and until the farmer acts on it.
+    const cows = animals.map((a) => a.data);
+    const declines: Reminder[] = milkAlerts(milk, cows, care, today, rule).map((m) => ({
+      // A drop is one event (a new one alerts again); a decline lasts, so it keeps one key while it does.
+      key: m.type === 'milk_drop' ? `drop:${m.cattleId}:${m.since}` : `decline:${m.cattleId}`,
+      kind: 'production_decline',
+      urgency: 'active',
+      due: today,
+      cattleId: m.cattleId,
+      title: m.title,
+      detail: m.reason,
+      href: `/alert/${m.cattleId}`,
+      notifyOffsets: [],
+      alert: 'next_reminder',
+    }));
+    // Milkings already over where cows in milk have no entry: shown in the app, never notified.
+    const missing: Reminder[] = missingMilkings(milk, cows, today, now).map((m) => ({
+      key: `missing:${m.date}:${m.session}`,
+      kind: 'missing_milk',
+      urgency: 'today',
+      due: m.date,
+      cattleId: '',
+      title: `${SESSION_LABELS[m.session]} milk ${m.date === today ? 'today' : 'yesterday'}: ${m.cattleIds.length} of ${m.of} cows not recorded`,
+      detail: 'Record them, or check the cows marked as in milk',
+      href: `/milk/round?date=${m.date}&session=${m.session}`,
+      notifyOffsets: [],
+    }));
     // Changes the account did not accept. The key follows the newest failure, so a new one alerts again.
     const sync: Reminder[] = failed.length
       ? [
@@ -87,7 +93,7 @@ export function useReminders() {
       : [];
     // Two phones adding the same customer or untagged animal while offline.
     const duplicates = findDuplicates(finance.customers, animals.map((a) => a.data), dismissedDuplicates, today);
-    const reminders = [...sync, ...duplicates, ...newDeviceReminders(devices, now, today), ...computeReminders(care, active, now), ...declines, ...financeReminders(finance, milk, today, farmDate)].sort(
+    const reminders = [...sync, ...duplicates, ...newDeviceReminders(devices, now, today), ...computeReminders(care, active, now), ...declines, ...missing, ...financeReminders(finance, milk, today, farmDate)].sort(
       (a, b) => order[a.urgency] - order[b.urgency] || a.due.localeCompare(b.due),
     );
     return { reminders, names };

@@ -13,6 +13,7 @@ const ctx: FormContext = {
     checks: [],
     calvings: [],
     vaccinations: [],
+    actions: [],
     breeding: [
       { id: 'b1', cattle_id: 'cow', event_type: 'artificial_insemination', event_at: '2026-01-10T08:00:00Z', bull_or_semen_id: null, performed_by: null, notes: null, deleted_at: null, delete_reason: null, version: 1 },
     ],
@@ -70,5 +71,14 @@ describe('calving form', () => {
     expect(CARE_FORMS.calving.createOnly!(values('calving', { dam_id: 'cow', outcome: 'stillborn' }))).toEqual({});
     // The calf fields are not columns of the calving record.
     expect(Object.keys(toBody(CARE_FORMS.calving, values('calving', { dam_id: 'cow' })))).not.toContain('calf_sex');
+  });
+});
+
+describe('action on an alert form', () => {
+  it('asks when to check on her again while watching, and when it was resolved', () => {
+    expect(validate(CARE_FORMS.action, values('action', { cattle_id: 'cow', follow_up_on: '' }))?.[0]).toBe('follow_up_on');
+    expect(validate(CARE_FORMS.action, values('action', { cattle_id: 'cow', status: 'resolved' }))?.[0]).toBe('resolved_on');
+    expect(validate(CARE_FORMS.action, values('action', { cattle_id: 'cow', status: 'resolved', resolved_on: '2026-10-01', action_on: '2026-10-05' }))?.[0]).toBe('resolved_on');
+    expect(validate(CARE_FORMS.action, values('action', { cattle_id: 'cow' }))).toBeNull();
   });
 });

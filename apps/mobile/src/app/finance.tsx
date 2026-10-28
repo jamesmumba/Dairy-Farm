@@ -78,6 +78,15 @@ export default function FinanceSummary() {
               </View>
             </Card>
             <Card gap={0}>
+              <Line label="Milk sales" value={money(s.revenueCents, cur)} />
+              <Line label="Feed" value={money(s.feedCents, cur)} sign="−" note="Expenses recorded as feed" />
+              <View style={{ height: 1, backgroundColor: t.border, marginVertical: spacing.xs }} />
+              <Line label="Left after feed" value={money(s.afterFeedCents, cur)} strong />
+              <Text style={{ color: t.textMuted, fontSize: 13, marginTop: spacing.xs }}>
+                Not profit: labour, vet care, medicines, transport and other costs still come out of this.
+              </Text>
+            </Card>
+            <Card gap={0}>
               <Line label="Sales" value={money(s.revenueCents, cur)} note="Completed sales, paid or not" />
               <Line label="Expenses" value={money(s.expensesCents, cur)} sign="−" />
               <View style={{ height: 1, backgroundColor: t.border, marginVertical: spacing.xs }} />

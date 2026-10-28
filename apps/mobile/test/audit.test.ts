@@ -12,7 +12,7 @@ const ctx: DescribeContext = {
   breedName: () => 'Jersey',
   milkCattle: (id) => (id === MILK ? COW : null),
   careCattle: () => COW,
-  care: { health: [], visits: [], treatments: [], breeding: [], checks: [], calvings: [], vaccinations: [], schedules: [] } as never,
+  care: { health: [], visits: [], treatments: [], breeding: [], checks: [], calvings: [], vaccinations: [], schedules: [], actions: [] } as never,
   currency: 'ZMW',
 };
 

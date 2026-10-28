@@ -8,6 +8,7 @@ import { deleteAnimal, getAnimal, listAnimals, listBreeds, setAnimalPhoto } from
 import { usePhotoUri } from '../../../animals/usePhotoUri';
 import { AnimalMilk } from '../../../production/AnimalMilk';
 import { AnimalCare, WithdrawalBanner } from '../../../care/AnimalCare';
+import { MilkAlertBanner } from '../../../production/MilkAlertBanner';
 import { loadCareData } from '../../../care/repo';
 import { api } from '../../../lib/api';
 import { getJson, setJson } from '../../../lib/localDb';
@@ -214,6 +215,7 @@ export default function AnimalProfile() {
       <SyncBadge state={animal.sync_state} />
       {animal.sync_state === 'attention' ? <Button label="Review sync problem" variant="link" onPress={() => router.push('/sync-issues')} /> : null}
       <WithdrawalBanner care={care} cattleId={a.id} />
+      {a.status === 'active' && female ? <MilkAlertBanner animal={a} /> : null}
       {a.status !== 'active' && a.status_details ? <Notice>{a.status_details}</Notice> : null}
 
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>

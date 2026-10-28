@@ -19,6 +19,9 @@ const PREF: Record<ReminderKind, keyof NotificationPrefs> = {
   vaccination: 'vaccinations',
   pregnancy_check: 'breeding',
   expected_calving: 'breeding',
+  heat_watch: 'breeding',
+  action_follow_up: 'health',
+  missing_milk: 'health', // shown in the app only (no phone notification)
   health_follow_up: 'health',
   unpaid_balance: 'finance',
   stock_discrepancy: 'finance',

@@ -23,7 +23,7 @@ const SECTIONS: { title: string; match: (r: Reminder) => boolean }[] = [
 const tintOf = (r: Reminder) => (r.urgency === 'active' || r.urgency === 'overdue' ? 'red' : r.urgency === 'today' ? 'straw' : 'green') as 'red' | 'straw' | 'green';
 
 const whenOf = (r: Reminder) =>
-  r.kind === 'withdrawal' ? `Until ${formatDateTime(r.due)}` : r.kind === 'sync_problem' || r.kind === 'production_decline' || r.kind === 'possible_duplicate' || r.kind === 'new_device' ? null : `${r.urgency === 'overdue' ? 'Since ' : ''}${formatDate(r.due)}`;
+  r.kind === 'withdrawal' ? `Until ${formatDateTime(r.due)}` : ['sync_problem', 'production_decline', 'possible_duplicate', 'new_device', 'missing_milk'].includes(r.kind) ? null : `${r.urgency === 'overdue' ? 'Since ' : ''}${formatDate(r.due)}`;
 
 export default function Notifications() {
   const t = useTheme();
@@ -51,7 +51,7 @@ export default function Notifications() {
     <ScrollView refreshControl={<RefreshControl {...refresh} />} style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
       {reminders.length === 0 ? (
         <Notice tone="success" title="All clear">
-          Nothing needs you right now. Withdrawals, vaccinations, pregnancy checks, calvings, follow-ups, unpaid balances, falling milk and sync problems appear here.
+          Nothing needs you right now. Withdrawals, vaccinations, pregnancy checks, heat watch, calvings, follow-ups, unpaid balances, milk drops, missing milk records and sync problems appear here.
         </Notice>
       ) : null}
       {SECTIONS.map(({ title, match }) => {

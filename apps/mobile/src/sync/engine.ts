@@ -31,6 +31,7 @@ const PULL_ENTITIES = [
   'pregnancy_checks',
   'calving_records',
   'vaccination_records',
+  'alert_actions',
   // Finance: payments and stock before sales, so a sale's payment and stock movement are
   // never missing while the sale itself is already shown as synced.
   'customers',

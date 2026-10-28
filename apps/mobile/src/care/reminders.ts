@@ -1,6 +1,6 @@
 // Reminders derived from saved records. Pure: no I/O, no clock (callers pass `now`).
 
-import type { CareData, CareKind } from './model';
+import { ACTION_LABELS, ALERT_TYPE_LABELS, type CareData, type CareKind } from './model';
 
 export type ReminderKind =
   | 'withdrawal'
@@ -8,7 +8,10 @@ export type ReminderKind =
   | 'vaccination'
   | 'pregnancy_check'
   | 'expected_calving'
+  | 'heat_watch'
   | 'health_follow_up'
+  | 'action_follow_up'
+  | 'missing_milk'
   | 'unpaid_balance'
   | 'stock_discrepancy'
   | 'production_decline'
@@ -41,7 +44,15 @@ export interface Reminder {
 export const DEFAULT_VACCINE_OFFSETS = [30, 7, 1];
 const UPCOMING_DAYS = { vaccination: 30, pregnancy_check: 7, expected_calving: 30, health_follow_up: 7 };
 const CLEARANCE_DAYS = 7; // ask to confirm clearance for a week after a withdrawal ends
+// A cow that did not conceive usually comes on heat again about 21 days after mating; watch from day 18 to 24.
+const HEAT_RETURN_DAYS = 21;
+const HEAT_WATCH_WINDOW = 3;
 
+const addDays = (date: string, days: number) => {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+};
 const toDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const daysUntil = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 
@@ -149,6 +160,55 @@ export function computeReminders(data: CareData, activeCattle: Set<string>, now:
       detail: u === 'overdue' ? 'Record the calving, or update the pregnancy check' : 'Prepare for calving',
       record: { kind: 'pregnancy-check', id: c.id },
       notifyOffsets: [7, 1],
+    });
+  }
+
+  // Watch for a return to heat after the latest mating or insemination, unless something since
+  // (a heat, another mating, a pregnancy check result or a calving) already answers it.
+  const latestMating = new Map<string, (typeof data.breeding)[number]>();
+  for (const b of live(data.breeding)) {
+    if (b.event_type === 'heat_observed') continue;
+    const prev = latestMating.get(b.cattle_id);
+    if (!prev || b.event_at > prev.event_at) latestMating.set(b.cattle_id, b);
+  }
+  for (const b of latestMating.values()) {
+    if (!activeCattle.has(b.cattle_id)) continue;
+    const bred = b.event_at.slice(0, 10);
+    const answered =
+      live(data.breeding).some((x) => x.cattle_id === b.cattle_id && x.id !== b.id && x.event_at > b.event_at) ||
+      live(data.checks).some((c) => c.cattle_id === b.cattle_id && c.result !== 'pending' && (c.examined_on ?? '') >= bred) ||
+      calvedSince(b.cattle_id, bred);
+    if (answered) continue;
+    const due = addDays(bred, HEAT_RETURN_DAYS);
+    const days = daysUntil(today, due);
+    if (days > HEAT_WATCH_WINDOW || days < -HEAT_WATCH_WINDOW) continue;
+    out.push({
+      key: `heat:${b.id}`,
+      kind: 'heat_watch',
+      urgency: days > 0 ? 'upcoming' : 'today',
+      due,
+      cattleId: b.cattle_id,
+      title: 'Watch for heat',
+      detail: `${daysUntil(bred, today)} days since she was bred. If she comes on heat she has probably not conceived: record the heat`,
+      record: { kind: 'breeding', id: b.id },
+      notifyOffsets: [HEAT_WATCH_WINDOW],
+    });
+  }
+
+  for (const a of live(data.actions)) {
+    if (!activeCattle.has(a.cattle_id) || a.status !== 'monitoring' || !a.follow_up_on) continue;
+    const u = urgency(a.follow_up_on, today, UPCOMING_DAYS.health_follow_up);
+    if (!u) continue;
+    out.push({
+      key: `action:${a.id}:${a.follow_up_on}`,
+      kind: 'action_follow_up',
+      urgency: u,
+      due: a.follow_up_on,
+      cattleId: a.cattle_id,
+      title: `Follow up: ${ALERT_TYPE_LABELS[a.alert_type].toLowerCase()}`,
+      detail: `${ACTION_LABELS[a.action_taken]} on ${a.action_on}. Record how she is now`,
+      record: { kind: 'action', id: a.id },
+      notifyOffsets: [0],
     });
   }
 

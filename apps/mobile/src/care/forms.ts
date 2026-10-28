@@ -2,6 +2,9 @@ import { randomUUID } from 'expo-crypto';
 import type { Cattle } from '../animals/model';
 import { formatDate, formatDateTime } from '../lib/dates';
 import {
+  ACTION_LABELS,
+  type AlertAction,
+  ALERT_TYPE_LABELS,
   type BreedingRecord,
   type CareData,
   type CareKind,
@@ -323,6 +326,39 @@ const schedule: CareFormConfig = {
     `${r.vaccine_name}${r.interval_days ? ` · every ${r.interval_days} days` : ''}${r.active ? '' : ' · not in use'}`,
 };
 
+const ACTION_STATUS = { monitoring: 'Still watching her', resolved: 'Resolved' } as const;
+
+const action: CareFormConfig = {
+  kind: 'action',
+  intro: 'Record what you did about the alert. While you are still watching her, the alert waits until the follow-up date.',
+  fields: [
+    { key: 'cattle_id', label: 'Animal', type: 'animal', required: true },
+    { key: 'alert_type', label: 'Alert', type: 'choice', options: opts(ALERT_TYPE_LABELS), required: true },
+    { key: 'alert_reason', label: 'What the alert said', type: 'text' },
+    { key: 'action_taken', label: 'What you did', type: 'choice', options: opts(ACTION_LABELS), required: true },
+    { key: 'action_on', label: 'Done on', type: 'date', required: true },
+    { key: 'notes', label: 'What you found', type: 'multiline', hint: 'e.g. water trough blocked, udder hot, record was typed wrong' },
+    { key: 'status', label: 'Now', type: 'choice', options: opts(ACTION_STATUS), required: true },
+    { key: 'follow_up_on', label: 'Check on her again on', type: 'date', allowFuture: true, showIf: (v) => v.status !== 'resolved' },
+    { key: 'resolved_on', label: 'Resolved on', type: 'date', showIf: (v) => v.status === 'resolved' },
+    { key: 'outcome', label: 'Outcome', type: 'multiline', showIf: (v) => v.status === 'resolved' },
+  ],
+  defaults: ({ today }) => ({ alert_type: 'other', action_taken: 'observed', action_on: today, status: 'monitoring', follow_up_on: addDays(today, 3) }),
+  onChange: (key, v, { today }): FormValues => (key === 'status' && v.status === 'resolved' && !v.resolved_on ? { resolved_on: today } : {}),
+  check: (v) =>
+    v.status !== 'resolved' && !s(v, 'follow_up_on')
+      ? ['follow_up_on', 'Choose when to check on her again']
+      : v.status === 'resolved' && !s(v, 'resolved_on')
+        ? ['resolved_on', 'Enter when it was resolved']
+        : v.status === 'resolved' && s(v, 'resolved_on') < s(v, 'action_on')
+          ? ['resolved_on', 'It cannot be resolved before the action was taken']
+          : null,
+  summary: (r: AlertAction) =>
+    `${ACTION_LABELS[r.action_taken]} · ${ALERT_TYPE_LABELS[r.alert_type].toLowerCase()} · ${
+      r.status === 'resolved' ? `resolved ${formatDate(r.resolved_on)}` : `follow up ${formatDate(r.follow_up_on)}`
+    }`,
+};
+
 export const CARE_FORMS: Record<CareKind, CareFormConfig> = {
   health,
   'vet-visit': vetVisit,
@@ -332,4 +368,5 @@ export const CARE_FORMS: Record<CareKind, CareFormConfig> = {
   calving,
   vaccination,
   schedule,
+  action,
 };

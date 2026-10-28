@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import { ParentPicker } from '../../animals/ParentPicker';
 import { listAnimals } from '../../animals/repo';
+import { unusualAmount } from '../../production/alerts';
 import { type Session, SESSIONS, sessionFor } from '../../production/calc';
-import { LITRES_HINT, parseLitres, SESSION_LABELS } from '../../production/format';
-import { addMilk, SessionTaken } from '../../production/repo';
+import { L, LITRES_HINT, parseLitres, SESSION_LABELS } from '../../production/format';
+import { addMilk, listMilk, SessionTaken } from '../../production/repo';
 import { useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { DateField, toDateString } from '../../ui/DateField';
@@ -26,6 +27,19 @@ export default function NewMilkEntry() {
     const litres = parseLitres(quantity);
     if (!cattleId) return setError('Choose the cow.');
     if (!litres) return setError(LITRES_HINT);
+    // Far from her usual for this milking: ask before it can set off alerts or skew reports.
+    const odd = unusualAmount(listMilk().map((m) => m.data), cattleId, session, date, litres);
+    if (odd) {
+      const usual = odd.usualCl ? ` Her usual ${SESSION_LABELS[session].toLowerCase()} milk is about ${L(odd.usualCl)}.` : '';
+      return Alert.alert(`${litres} L is unusually ${odd.direction}`, `Check the amount and the cow.${usual}`, [
+        { text: 'Check again', style: 'cancel' },
+        { text: 'Save anyway', onPress: () => store(cattleId, litres) },
+      ]);
+    }
+    store(cattleId, litres);
+  }
+
+  function store(cattleId: string, litres: string) {
     try {
       addMilk({ cattle_id: cattleId, production_date: date, session, quantity: litres, notes: notes.trim() || null });
       router.back();

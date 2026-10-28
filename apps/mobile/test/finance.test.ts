@@ -149,6 +149,8 @@ describe('financial summary', () => {
     const customers = [{ id: 'c1' } as Customer];
     const s = summarize('ZMW', '2026-10-01', '2026-10-31', { sales: [sale()], payments: [payment(), payment({ id: 'r', kind: 'refund', amount: '5.00' })], expenses, customers }, day);
     expect(s).toMatchObject({ revenueCents: 10000, receiptsCents: 6000, refundsCents: 500, expensesCents: 3000, operatingResultCents: 7000, outstandingCents: 4500, litresCl: 1000 });
+    // Milk sales less feed only (voided feed not counted): what is left before other costs.
+    expect(s).toMatchObject({ feedCents: 3000, afterFeedCents: 7000 });
   });
 
   it('parses negative amounts', () => {

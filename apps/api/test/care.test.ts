@@ -223,6 +223,24 @@ describe('health records and common lifecycle', () => {
     expect(titles).not.toContain('Treatment: Mistake');
   });
 
+  it('records an action on an alert, needs a follow-up date while watching, and an outcome date to resolve', async () => {
+    const f = await farmWithCow();
+    const base = { cattle_id: f.cowId, alert_type: 'milk_drop', alert_reason: 'Milk down 39%: 11 L, usually 18 L', action_taken: 'checked_feed_water', action_on: '2026-10-20' };
+    expect((await f.call('POST', '/v1/alert-actions', { id: randomUUID(), ...base })).json().field).toBe('follow_up_on');
+    const act = (await f.call('POST', '/v1/alert-actions', { id: randomUUID(), ...base, follow_up_on: '2026-10-23' })).json();
+    expect(act).toMatchObject({ status: 'monitoring', follow_up_on: '2026-10-23' });
+
+    expect((await f.call('PATCH', `/v1/alert-actions/${act.id}`, { status: 'resolved' }, { 'if-match': '1' })).json().field).toBe('resolved_on');
+    expect((await f.call('PATCH', `/v1/alert-actions/${act.id}`, { status: 'resolved', resolved_on: '2026-10-19' }, { 'if-match': '1' })).json().field).toBe('resolved_on');
+    const done = (await f.call('PATCH', `/v1/alert-actions/${act.id}`, { status: 'resolved', resolved_on: '2026-10-23', outcome: 'Water trough was blocked' }, { 'if-match': '1' })).json();
+    expect(done).toMatchObject({ status: 'resolved', version: 2 });
+
+    expect((await f.call('GET', '/v1/sync/pull?entity=alert_actions')).json().rows).toHaveLength(1);
+    const titles = (await f.call('GET', `/v1/cattle/${f.cowId}/timeline`)).json().map((e: { title: string }) => e.title);
+    expect(titles).toContain('Action: checked feed water (resolved)');
+    expect((await f.call('DELETE', `/v1/cattle/${f.cowId}`, undefined, { 'if-match': '1' })).json().error).toBe('has_history');
+  });
+
   it('keeps every care record away from other farmers', async () => {
     const a = await farmWithCow();
     const b = await h.farmer();

@@ -29,6 +29,7 @@ export function loadCareData(): CareData {
     calvings: d('calving'),
     vaccinations: d('vaccination'),
     schedules: d('schedule'),
+    actions: d('action'),
   };
 }
 

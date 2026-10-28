@@ -4,7 +4,7 @@ import { computeReminders } from '../src/care/reminders';
 
 const NOW = new Date('2026-10-28T09:00:00'); // local time; "today" is 2026-10-28
 const base = { deleted_at: null, delete_reason: null, version: 1 };
-const empty = (): CareData => ({ health: [], visits: [], treatments: [], breeding: [], checks: [], calvings: [], vaccinations: [], schedules: [] });
+const empty = (): CareData => ({ health: [], visits: [], treatments: [], breeding: [], checks: [], calvings: [], vaccinations: [], schedules: [], actions: [] });
 const herd = new Set(['cow']);
 
 const vaccination = (due_on: string, extra = {}) => ({
@@ -143,5 +143,56 @@ describe('health follow-up', () => {
     };
     expect(computeReminders({ ...empty(), health: [record] }, herd, NOW)[0]).toMatchObject({ urgency: 'today', detail: 'Mastitis' });
     expect(computeReminders({ ...empty(), health: [{ ...record, recovery_status: 'recovered' as const }] }, herd, NOW)).toEqual([]);
+  });
+});
+
+describe('watch for heat after breeding', () => {
+  const bred = (event_at: string, extra = {}) => ({ ...base, id: `b-${event_at}`, cattle_id: 'cow', event_type: 'artificial_insemination' as const, event_at, bull_or_semen_id: null, performed_by: null, notes: null, ...extra });
+
+  it('reminds from day 18 to day 24 after the latest insemination', () => {
+    const watch = (date: string) => computeReminders({ ...empty(), breeding: [bred(`${date}T08:00:00Z`)] }, herd, NOW).filter((r) => r.kind === 'heat_watch');
+    expect(watch('2026-10-10')).toEqual([expect.objectContaining({ urgency: 'upcoming', due: '2026-10-31', notifyOffsets: [3] })]); // day 18
+    expect(watch('2026-10-07')[0]).toMatchObject({ urgency: 'today', detail: expect.stringMatching(/^21 days since she was bred/) });
+    expect(watch('2026-10-04')).toHaveLength(1); // day 24
+    expect(watch('2026-10-03')).toEqual([]); // day 25
+    expect(watch('2026-10-11')).toEqual([]); // day 17
+  });
+
+  it('stops once a heat, a check result or a calving answers it', () => {
+    const mating = bred('2026-10-07T08:00:00Z');
+    const heat = { ...mating, id: 'h', event_type: 'heat_observed' as const, event_at: '2026-10-27T06:00:00Z' };
+    expect(computeReminders({ ...empty(), breeding: [mating, heat] }, herd, NOW).filter((r) => r.kind === 'heat_watch')).toEqual([]);
+    const check = { ...base, id: 'c', cattle_id: 'cow', breeding_record_id: mating.id, scheduled_on: null, examined_on: '2026-10-27', result: 'pregnant' as const, examiner: null, expected_calving_on: '2027-07-17', notes: null };
+    expect(computeReminders({ ...empty(), breeding: [mating], checks: [check] }, herd, NOW).filter((r) => r.kind === 'heat_watch')).toEqual([]);
+  });
+});
+
+describe('follow-up of an action on an alert', () => {
+  const action = (extra = {}) => ({
+    ...base,
+    id: 'a1',
+    cattle_id: 'cow',
+    alert_type: 'milk_drop' as const,
+    alert_reason: '11 L, usually 18 L',
+    action_taken: 'checked_feed_water' as const,
+    action_on: '2026-10-25',
+    notes: null,
+    status: 'monitoring' as const,
+    follow_up_on: '2026-10-28',
+    resolved_on: null,
+    outcome: null,
+    ...extra,
+  });
+
+  it('brings the farmer back on the follow-up date until it is resolved', () => {
+    expect(computeReminders({ ...empty(), actions: [action()] }, herd, NOW)).toEqual([
+      expect.objectContaining({ kind: 'action_follow_up', urgency: 'today', title: 'Follow up: sudden milk drop', record: { kind: 'action', id: 'a1' } }),
+    ]);
+    expect(computeReminders({ ...empty(), actions: [action({ status: 'resolved', resolved_on: '2026-10-28' })] }, herd, NOW)).toEqual([]);
+  });
+
+  it('a new follow-up date is a new reminder', () => {
+    const [a, b] = [action(), action({ follow_up_on: '2026-10-30' })].map((x) => computeReminders({ ...empty(), actions: [x] }, herd, NOW)[0].key);
+    expect(a).not.toBe(b);
   });
 });

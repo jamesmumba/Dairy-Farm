@@ -193,6 +193,7 @@ The eight record types share one lifecycle, implemented once in `apps/api/src/ca
 | `calvings` | `calving_records` | Optional `calf: { id, sex, ear_tag?, name? }` on create (live births only) registers the calf, linked to its mother, with birth date, `production_status: calf` and the bull or semen from the last breeding. The mother becomes `lactating` |
 | `vaccination-schedules` | `vaccination_schedules` | Entered by the farmer from vet guidance. Nothing is built in. `reminder_offsets_days` defaults to `[30, 7, 1]` |
 | `vaccinations` | `vaccination_records` | `completed` needs `administered_on`. A completed dose with `next_due_on` schedules the next dose once. A group dose is one record per animal, all sharing `group_batch_id`, `group_label` and `group_definition` |
+| `alert-actions` | `alert_actions` | What the farmer did about an early-warning alert (`alert_type` `milk_drop`, `milk_decline` or `other`; the alert itself is worked out on the phone). `monitoring` needs `follow_up_on`; `resolved` needs `resolved_on`, not before `action_on` |
 
 **Reproductive status** (`cattle.reproductive_status`) is derived after every breeding, check or calving change:
 * It takes the latest of three events: a mating or AI (**bred**), a check result (**pregnant** or **open**), or a calving (**open**).

@@ -32,6 +32,7 @@ beforeAll(async () => {
   ids.calving = await created(await post('/v1/calvings', { dam_id: ids.cow, calved_on: '2026-09-01', outcome: 'live' }));
   ids.schedule = await created(await post('/v1/vaccination-schedules', { vaccine_name: 'FMD' }));
   ids.vaccination = await created(await post('/v1/vaccinations', { cattle_id: ids.cow, vaccine_name: 'FMD', due_on: '2026-11-01' }));
+  ids.action = await created(await post('/v1/alert-actions', { cattle_id: ids.cow, alert_type: 'milk_drop', action_taken: 'observed', action_on: '2026-10-05', follow_up_on: '2026-10-08' }));
   ids.customer = await created(await post('/v1/customers', { name: 'Mrs Phiri' }));
   await created(await post('/v1/milk-prices', { currency: 'ZMW', price_per_litre: '10', effective_from: '2026-01-01T00:00:00Z' }));
   ids.sale = await created(await post('/v1/milk-sales', { customer_id: ids.customer, sale_at: '2026-10-05T10:00:00Z', quantity: '5', currency: 'ZMW', amount_paid: '20', payment_method: 'cash' }));
@@ -62,9 +63,9 @@ const ATTEMPTS: Attempt[] = [
   ['PATCH', () => `/v1/breeds/${ids.breed}`, { active: false }, v1],
   ['POST', () => `/v1/milk-production/${ids.milk}/correct`, { quantity: '1', reason: 'mine' }, v1],
   ['POST', () => `/v1/milk-production/${ids.milk}/void`, { reason: 'mine' }, v1],
-  ...(['health-records', 'vet-visits', 'treatments', 'breeding', 'pregnancy-checks', 'calvings', 'vaccination-schedules', 'vaccinations'] as const).flatMap(
+  ...(['health-records', 'vet-visits', 'treatments', 'breeding', 'pregnancy-checks', 'calvings', 'vaccination-schedules', 'vaccinations', 'alert-actions'] as const).flatMap(
     (path): Attempt[] => {
-      const key = { 'health-records': 'health', 'vet-visits': 'visit', treatments: 'treatment', breeding: 'breeding', 'pregnancy-checks': 'check', calvings: 'calving', 'vaccination-schedules': 'schedule', vaccinations: 'vaccination' }[path];
+      const key = { 'health-records': 'health', 'vet-visits': 'visit', treatments: 'treatment', breeding: 'breeding', 'pregnancy-checks': 'check', calvings: 'calving', 'vaccination-schedules': 'schedule', vaccinations: 'vaccination', 'alert-actions': 'action' }[path];
       return [
         ['PATCH', () => `/v1/${path}/${ids[key]}`, BODY_FOR[path] ?? { notes: 'mine' }, v1],
         ['POST', () => `/v1/${path}/${ids[key]}/remove`, { reason: 'mine' }, v1],
@@ -92,6 +93,7 @@ const LINKS: [url: string, body: () => object][] = [
   ['/v1/treatments', () => ({ cattle_id: ids.cow, medication: 'X', started_on: '2026-10-05' })],
   ['/v1/breeding', () => ({ cattle_id: ids.cow, event_type: 'natural_mating', event_at: '2026-10-05T08:00:00Z' })],
   ['/v1/calvings', () => ({ dam_id: ids.cow, calved_on: '2026-09-01', outcome: 'live' })],
+  ['/v1/alert-actions', () => ({ cattle_id: ids.cow, alert_type: 'other', action_taken: 'observed', action_on: '2026-10-05', follow_up_on: '2026-10-08' })],
   ['/v1/vaccinations', () => ({ cattle_id: ids.cow, vaccine_name: 'FMD', due_on: '2026-11-01' })],
   ['/v1/cattle', () => ({ sex: 'female', dam_id: ids.cow })],
   ['/v1/milk-sales', () => ({ customer_id: ids.customer, sale_at: '2026-10-05T10:00:00Z', quantity: '1', currency: 'ZMW', price_per_litre: '1' })],
@@ -110,6 +112,7 @@ const PULL = [
   'calving_records',
   'vaccination_schedules',
   'vaccination_records',
+  'alert_actions',
   'customers',
   'milk_prices',
   'milk_sales',

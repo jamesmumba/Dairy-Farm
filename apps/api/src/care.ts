@@ -407,7 +407,38 @@ const vaccination: CareEntity = {
   },
 };
 
-export const CARE_ENTITIES = [health, vetVisit, treatment, breeding, pregnancyCheck, calving, vaccinationSchedule, vaccination];
+// What the farmer did about an early-warning alert. The alert is worked out on the phone; this keeps
+// the response, the follow-up date while the cow is watched, and the outcome.
+const alertAction: CareEntity = {
+  table: 'alert_actions',
+  path: 'alert-actions',
+  label: 'Alert action',
+  columns: `id, cattle_id, alert_type, alert_reason, action_taken, action_on::text, notes, status, follow_up_on::text, resolved_on::text,
+    outcome, ${COMMON}`,
+  fields: {
+    cattle_id: z.uuid(),
+    alert_type: z.enum(['milk_drop', 'milk_decline', 'other']),
+    alert_reason: text(300),
+    action_taken: z.enum(['checked_record', 'checked_feed_water', 'observed', 'called_vet', 'treated', 'other']),
+    action_on: pastDate,
+    notes: text(2000),
+    status: z.enum(['monitoring', 'resolved']).optional(),
+    follow_up_on: opt(isoDate),
+    resolved_on: opt(pastDate),
+    outcome: text(1000),
+  },
+  links: [{ field: 'cattle_id', table: 'cattle', label: 'Animal' }],
+  check: (r) =>
+    r.status !== 'resolved' && !r.follow_up_on
+      ? ['follow_up_on', 'Choose when to check on her again']
+      : r.status === 'resolved' && !r.resolved_on
+        ? ['resolved_on', 'Enter when it was resolved']
+        : r.resolved_on && r.resolved_on < r.action_on
+          ? ['resolved_on', 'It cannot be resolved before the action was taken']
+          : null,
+};
+
+export const CARE_ENTITIES = [health, vetVisit, treatment, breeding, pregnancyCheck, calving, vaccinationSchedule, vaccination, alertAction];
 
 // --- Lifecycle -----------------------------------------------------------------
 

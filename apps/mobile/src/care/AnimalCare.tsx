@@ -29,6 +29,7 @@ const dateOf = (kind: CareKind, r: Record<string, any>): string =>
     calving: r.calved_on,
     vaccination: r.administered_on ?? r.due_on,
     schedule: '',
+    action: r.action_on,
   })[kind] ?? '';
 
 const KIND_ICON: Partial<Record<CareKind, IconName>> = {
@@ -39,6 +40,7 @@ const KIND_ICON: Partial<Record<CareKind, IconName>> = {
   'pregnancy-check': 'heart-pulse',
   calving: 'cow',
   vaccination: 'needle',
+  action: 'clipboard-check-outline',
 };
 
 export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; care: CareData; showAdd?: boolean }) {
@@ -70,7 +72,7 @@ export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; c
   const records = (Object.keys(CARE_KINDS) as CareKind[])
     .filter((k) => k !== 'schedule')
     .flatMap((k) => {
-      const list = { health: care.health, 'vet-visit': care.visits, treatment: care.treatments, breeding: care.breeding, 'pregnancy-check': care.checks, calving: care.calvings, vaccination: care.vaccinations }[k as Exclude<CareKind, 'schedule'>];
+      const list = { health: care.health, 'vet-visit': care.visits, treatment: care.treatments, breeding: care.breeding, 'pregnancy-check': care.checks, calving: care.calvings, vaccination: care.vaccinations, action: care.actions }[k as Exclude<CareKind, 'schedule'>];
       return mine(list as { cattle_id?: string; dam_id?: string; id: string }[]).map((r) => ({ kind: k, row: r as Record<string, any> }));
     })
     .sort((a, b) => dateOf(b.kind, b.row).localeCompare(dateOf(a.kind, a.row)))

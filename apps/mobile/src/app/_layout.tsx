@@ -93,6 +93,7 @@ function Gate() {
           <Stack.Screen name="milk/new" options={{ ...header, title: 'Milk entry' }} />
           <Stack.Screen name="milk/[id]" options={{ ...header, title: 'Milk entry' }} />
           <Stack.Screen name="production" options={{ ...header, title: 'Production' }} />
+          <Stack.Screen name="alert/[cattleId]" options={{ ...header, title: 'Milk alert' }} />
           <Stack.Screen name="care/[kind]/new" options={{ ...header, title: 'New record' }} />
           <Stack.Screen name="care/[kind]/[id]" options={{ ...header, title: 'Record' }} />
           <Stack.Screen name="care/vaccination-group" options={{ ...header, title: 'Group vaccination' }} />

@@ -111,6 +111,19 @@ export interface Vaccination extends Common {
   notes: string | null;
 }
 
+export interface AlertAction extends Common {
+  cattle_id: string;
+  alert_type: 'milk_drop' | 'milk_decline' | 'other';
+  alert_reason: string | null;
+  action_taken: 'checked_record' | 'checked_feed_water' | 'observed' | 'called_vet' | 'treated' | 'other';
+  action_on: string;
+  notes: string | null;
+  status: 'monitoring' | 'resolved';
+  follow_up_on: string | null;
+  resolved_on: string | null;
+  outcome: string | null;
+}
+
 /** URL segment and local entity (= table) of each care record type. */
 export const CARE_KINDS = {
   health: { entity: 'animal_health_records', path: 'health-records', label: 'Health concern' },
@@ -121,6 +134,7 @@ export const CARE_KINDS = {
   calving: { entity: 'calving_records', path: 'calvings', label: 'Calving' },
   vaccination: { entity: 'vaccination_records', path: 'vaccinations', label: 'Vaccination' },
   schedule: { entity: 'vaccination_schedules', path: 'vaccination-schedules', label: 'Vaccination schedule' },
+  action: { entity: 'alert_actions', path: 'alert-actions', label: 'Action on an alert' },
 } as const;
 
 export type CareKind = keyof typeof CARE_KINDS;
@@ -136,6 +150,7 @@ export interface CareData {
   calvings: CalvingRecord[];
   vaccinations: Vaccination[];
   schedules: VaccinationSchedule[];
+  actions: AlertAction[];
 }
 
 /** A milk withdrawal still in force at `now` (the vet's end time not yet reached). */
@@ -150,4 +165,13 @@ export const underTreatment = (treatments: Treatment[], cattleId: string, today:
   treatments.some((t) => t.cattle_id === cattleId && !t.deleted_at && t.started_on <= today && (!t.completed_on || t.completed_on >= today));
 
 export const EVENT_LABELS = { heat_observed: 'Heat observed', natural_mating: 'Natural mating', artificial_insemination: 'Artificial insemination' } as const;
+export const ACTION_LABELS = {
+  checked_record: 'Checked the milk record',
+  checked_feed_water: 'Checked feed and water',
+  observed: 'Watched her closely',
+  called_vet: 'Called the vet',
+  treated: 'Treated as the vet advised',
+  other: 'Something else',
+} as const;
+export const ALERT_TYPE_LABELS = { milk_drop: 'Sudden milk drop', milk_decline: 'Falling milk', other: 'Other concern' } as const;
 export const RESULT_LABELS = { pending: 'Not yet examined', pregnant: 'Pregnant', not_pregnant: 'Not pregnant', inconclusive: 'Inconclusive' } as const;

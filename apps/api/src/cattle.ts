@@ -209,6 +209,7 @@ const HISTORY = [
   'select 1 from public.pregnancy_checks where cattle_id = $1',
   'select 1 from public.calving_records where dam_id = $1 or calf_id = $1',
   'select 1 from public.vaccination_records where cattle_id = $1',
+  'select 1 from public.alert_actions where cattle_id = $1',
   'select 1 from public.cattle where (dam_id = $1 or sire_id = $1) and deleted_at is null',
 ];
 
@@ -289,6 +290,10 @@ export async function timeline(client: Queryable, ownerId: string, id: string, l
        union all
        select coalesce(administered_on, due_on)::timestamptz, 'vaccination', vaccine_name || ' (' || status || ')', target_disease
          from public.vaccination_records where owner_id = $1 and cattle_id = $2 and deleted_at is null
+       union all
+       select action_on::timestamptz, 'alert_action', 'Action: ' || replace(action_taken, '_', ' ') || ' (' || status || ')',
+              concat_ws(' · ', alert_reason, outcome)
+         from public.alert_actions where owner_id = $1 and cattle_id = $2 and deleted_at is null
        union all
        select occurred_at, 'audit',
               case action when 'cattle.created' then 'Registered'

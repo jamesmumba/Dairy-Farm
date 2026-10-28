@@ -1,8 +1,9 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { displayName } from '../../animals/model';
 import { listAnimals } from '../../animals/repo';
+import { unusualAmount } from '../../production/alerts';
 import { type Session, SESSIONS, sessionFor, toCl } from '../../production/calc';
 import { dayLabel, L, LITRES_HINT, parseLitres, SESSION_LABELS } from '../../production/format';
 import { findSession, listMilk, recordRound } from '../../production/repo';
@@ -17,8 +18,10 @@ import { Button, FieldError, FormScreen, Notice, Toggle } from '../../ui/form';
 import { minTouch, radius, shadow, spacing, useTheme } from '../../ui/theme';
 
 export default function MilkingRound() {
-  const [date, setDate] = useState(toDateString(new Date()));
-  const [session, setSession] = useState<Session>(sessionFor(new Date()));
+  // Opened from a "not recorded" reminder: that day and milking.
+  const params = useLocalSearchParams<{ date?: string; session?: Session }>();
+  const [date, setDate] = useState(params.date ?? toDateString(new Date()));
+  const [session, setSession] = useState<Session>(params.session && SESSIONS.includes(params.session) ? params.session : sessionFor(new Date()));
   const [showAll, setShowAll] = useState(false);
   const [done, setDone] = useState<string | null>(null);
 
@@ -57,7 +60,14 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
     setErrors(bad);
     if (Object.keys(bad).length) return;
     if (!typed.length) return Alert.alert('Nothing to save', 'Type the litres for at least one cow.');
-    Alert.alert('Save milking round?', `${typed.length} cow${typed.length === 1 ? '' : 's'}, ${L(totalCl)}\n${SESSION_LABELS[session]}, ${dayLabel(date)}`, [
+    // Amounts far from a cow's usual for this milking are listed so a typing mistake is caught here.
+    const rows = milk.map((m) => m.data);
+    const odd = typed.flatMap((c) => {
+      const u = unusualAmount(rows, c.id, session, date, parseLitres(values[c.id])!);
+      return u ? [`${displayName(c)}: ${parseLitres(values[c.id])} L${u.usualCl ? ` (usually about ${L(u.usualCl)})` : ''}`] : [];
+    });
+    const check = odd.length ? `\n\nCheck ${odd.length === 1 ? 'this amount' : 'these amounts'}, far from usual:\n${odd.join('\n')}` : '';
+    Alert.alert(odd.length ? 'Check before saving' : 'Save milking round?', `${typed.length} cow${typed.length === 1 ? '' : 's'}, ${L(totalCl)}\n${SESSION_LABELS[session]}, ${dayLabel(date)}${check}`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Save',

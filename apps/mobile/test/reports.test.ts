@@ -25,7 +25,7 @@ const cow = (id: string, extra: Partial<Cattle> = {}): Cattle =>
     ...extra,
   }) as Cattle;
 
-const emptyCare = (): CareData => ({ health: [], visits: [], treatments: [], breeding: [], checks: [], calvings: [], vaccinations: [], schedules: [] });
+const emptyCare = (): CareData => ({ health: [], visits: [], treatments: [], breeding: [], checks: [], calvings: [], vaccinations: [], schedules: [], actions: [] });
 const emptyFinance = (): FinanceData => ({ customers: [], prices: [], sales: [], payments: [], allocations: [], movements: [], expenses: [] });
 const milk = (cattle_id: string, production_date: string, quantity: string, extra: Partial<MilkRow> = {}): MilkRow => ({
   id: `${cattle_id}${production_date}${quantity}${extra.session ?? ''}`,

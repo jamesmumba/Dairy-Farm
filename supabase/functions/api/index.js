@@ -439,6 +439,7 @@ var HISTORY = [
   "select 1 from public.pregnancy_checks where cattle_id = $1",
   "select 1 from public.calving_records where dam_id = $1 or calf_id = $1",
   "select 1 from public.vaccination_records where cattle_id = $1",
+  "select 1 from public.alert_actions where cattle_id = $1",
   "select 1 from public.cattle where (dam_id = $1 or sire_id = $1) and deleted_at is null"
 ];
 async function deleteCattle(client, ownerId, actor, id, version) {
@@ -505,6 +506,10 @@ async function timeline(client, ownerId, id, limit = 200) {
        union all
        select coalesce(administered_on, due_on)::timestamptz, 'vaccination', vaccine_name || ' (' || status || ')', target_disease
          from public.vaccination_records where owner_id = $1 and cattle_id = $2 and deleted_at is null
+       union all
+       select action_on::timestamptz, 'alert_action', 'Action: ' || replace(action_taken, '_', ' ') || ' (' || status || ')',
+              concat_ws(' \xB7 ', alert_reason, outcome)
+         from public.alert_actions where owner_id = $1 and cattle_id = $2 and deleted_at is null
        union all
        select occurred_at, 'audit',
               case action when 'cattle.created' then 'Registered'
@@ -1095,7 +1100,28 @@ var vaccination = {
     );
   }
 };
-var CARE_ENTITIES = [health, vetVisit, treatment, breeding, pregnancyCheck, calving, vaccinationSchedule, vaccination];
+var alertAction = {
+  table: "alert_actions",
+  path: "alert-actions",
+  label: "Alert action",
+  columns: `id, cattle_id, alert_type, alert_reason, action_taken, action_on::text, notes, status, follow_up_on::text, resolved_on::text,
+    outcome, ${COMMON}`,
+  fields: {
+    cattle_id: z6.uuid(),
+    alert_type: z6.enum(["milk_drop", "milk_decline", "other"]),
+    alert_reason: text(300),
+    action_taken: z6.enum(["checked_record", "checked_feed_water", "observed", "called_vet", "treated", "other"]),
+    action_on: pastDate,
+    notes: text(2e3),
+    status: z6.enum(["monitoring", "resolved"]).optional(),
+    follow_up_on: opt(isoDate),
+    resolved_on: opt(pastDate),
+    outcome: text(1e3)
+  },
+  links: [{ field: "cattle_id", table: "cattle", label: "Animal" }],
+  check: (r) => r.status !== "resolved" && !r.follow_up_on ? ["follow_up_on", "Choose when to check on her again"] : r.status === "resolved" && !r.resolved_on ? ["resolved_on", "Enter when it was resolved"] : r.resolved_on && r.resolved_on < r.action_on ? ["resolved_on", "It cannot be resolved before the action was taken"] : null
+};
+var CARE_ENTITIES = [health, vetVisit, treatment, breeding, pregnancyCheck, calving, vaccinationSchedule, vaccination, alertAction];
 var normalise = (v) => v instanceof Date ? v.toISOString() : v;
 async function getRow(client, e, owner, id, forUpdate = false) {
   const { rows } = await client.query(

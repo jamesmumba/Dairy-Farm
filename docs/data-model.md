@@ -23,6 +23,7 @@ cattle 1─* treatments, veterinary_visits       (health_record_id optional)
 cattle 1─* breeding_records 1─* pregnancy_checks
 cattle (dam) 1─* calving_records *─1 cattle (calf)
 vaccination_schedules 1─* vaccination_records *─1 cattle
+cattle 1─* alert_actions
 
 customers 1─* milk_sales ─ corrects_sale_id ─> milk_sales
 customers 1─* payments 1─* payment_allocations *─1 milk_sales

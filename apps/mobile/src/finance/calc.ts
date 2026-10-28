@@ -152,6 +152,8 @@ export interface FinanceSummary {
   refundsCents: number;
   adjustmentsCents: number; // discounts and write-offs
   expensesCents: number;
+  feedCents: number; // expenses in the feed category (part of expensesCents)
+  afterFeedCents: number; // milk sales − feed: what is left before labour, vet care and other costs; not profit
   operatingResultCents: number; // recorded revenue − recorded expenses; not audited profit
   outstandingCents: number; // what customers owe now (credit balances excluded)
 }
@@ -170,9 +172,9 @@ export function summarize(
   const pays = data.payments.filter((p) => p.currency === currency && p.status === 'completed' && inPeriod(farmDate(p.paid_at), from, to));
   const sum = (kind: Payment['kind']) => pays.filter((p) => p.kind === kind).reduce((s, p) => s + toCents(p.amount), 0);
   const revenue = sales.reduce((s, x) => s + toCents(x.total), 0);
-  const expenses = data.expenses
-    .filter((e) => e.currency === currency && e.status === 'active' && inPeriod(e.expense_date, from, to))
-    .reduce((s, e) => s + toCents(e.amount), 0);
+  const inRange = data.expenses.filter((e) => e.currency === currency && e.status === 'active' && inPeriod(e.expense_date, from, to));
+  const expenses = inRange.reduce((s, e) => s + toCents(e.amount), 0);
+  const feed = inRange.filter((e) => e.category === 'feed').reduce((s, e) => s + toCents(e.amount), 0);
   const outstanding = data.customers.reduce((s, c) => s + Math.max(0, balances(c.id, data.sales, data.payments)[currency] ?? 0), 0);
   return {
     currency,
@@ -183,6 +185,8 @@ export function summarize(
     refundsCents: sum('refund'),
     adjustmentsCents: sum('adjustment'),
     expensesCents: expenses,
+    feedCents: feed,
+    afterFeedCents: revenue - feed,
     operatingResultCents: revenue - expenses,
     outstandingCents: outstanding,
   };
