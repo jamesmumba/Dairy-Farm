@@ -92,6 +92,11 @@ describe('acting on an alert', () => {
     expect(milkAlerts(dropTo11, [cow('daisy')], care({ actions: [older] }), TODAY, DEFAULT_DECLINE_RULE)).toHaveLength(1);
   });
 
+  it('a watch never closed stops hiding new drops after its follow-up date', () => {
+    const forgotten = action({ action_on: '2026-10-10', follow_up_on: '2026-10-13' });
+    expect(milkAlerts(dropTo11, [cow('daisy')], care({ actions: [forgotten] }), TODAY, DEFAULT_DECLINE_RULE)).toHaveLength(1);
+  });
+
   it('a removed action no longer counts', () => {
     expect(milkAlerts(dropTo11, [cow('daisy')], care({ actions: [action({ deleted_at: TODAY })] }), TODAY, DEFAULT_DECLINE_RULE)).toHaveLength(1);
   });
@@ -124,6 +129,11 @@ describe('missing milk records', () => {
   it('does not expect the milking in progress, or sessions the farm never records', () => {
     const early = new Date('2026-10-28T07:00:00');
     expect(missingMilkings(week, herd, TODAY, early).map((m) => `${m.date} ${m.session}`)).toEqual(['2026-10-27 morning', '2026-10-27 evening']);
+  });
+
+  it('does not expect a milking the farm records only now and then', () => {
+    const once = [...week, row('daisy', addDays(TODAY, -4), '3', 'afternoon')];
+    expect(missingMilkings(once, herd, TODAY, new Date('2026-10-28T20:00:00')).some((m) => m.session === 'afternoon')).toBe(false);
   });
 
   it('says nothing for a farm that does not record milk per cow', () => {

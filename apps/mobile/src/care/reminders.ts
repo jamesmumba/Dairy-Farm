@@ -164,7 +164,7 @@ export function computeReminders(data: CareData, activeCattle: Set<string>, now:
   }
 
   // Watch for a return to heat after the latest mating or insemination, unless something since
-  // (a heat, another mating, a pregnancy check result or a calving) already answers it.
+  // (a heat, another mating, a pregnant / not pregnant result or a calving) already answers it.
   const latestMating = new Map<string, (typeof data.breeding)[number]>();
   for (const b of live(data.breeding)) {
     if (b.event_type === 'heat_observed') continue;
@@ -176,7 +176,7 @@ export function computeReminders(data: CareData, activeCattle: Set<string>, now:
     const bred = b.event_at.slice(0, 10);
     const answered =
       live(data.breeding).some((x) => x.cattle_id === b.cattle_id && x.id !== b.id && x.event_at > b.event_at) ||
-      live(data.checks).some((c) => c.cattle_id === b.cattle_id && c.result !== 'pending' && (c.examined_on ?? '') >= bred) ||
+      live(data.checks).some((c) => c.cattle_id === b.cattle_id && (c.result === 'pregnant' || c.result === 'not_pregnant') && (c.examined_on ?? '') >= bred) ||
       calvedSince(b.cattle_id, bred);
     if (answered) continue;
     const due = addDays(bred, HEAT_RETURN_DAYS);

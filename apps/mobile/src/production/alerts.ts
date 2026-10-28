@@ -91,10 +91,17 @@ function steps(missingMilking: string | null, health: string | null): string[] {
   ];
 }
 
-/** Open actions hold an alert back until resolved; a resolved one covers evidence up to the day it was resolved. */
+/**
+ * An action covers the evidence up to the day it was resolved, or, while she is still being watched,
+ * up to the follow-up date: a watch that is never closed does not hide a new drop after that.
+ */
 function covered(actions: AlertAction[], cattleId: string, since: string) {
   return actions.some(
-    (a) => !a.deleted_at && a.cattle_id === cattleId && a.alert_type !== 'other' && (a.status === 'monitoring' || (a.resolved_on ?? a.action_on) >= since),
+    (a) =>
+      !a.deleted_at &&
+      a.cattle_id === cattleId &&
+      a.alert_type !== 'other' &&
+      ((a.status === 'monitoring' ? (a.follow_up_on ?? a.action_on) : (a.resolved_on ?? a.action_on)) >= since),
   );
 }
 
@@ -153,13 +160,16 @@ export interface MissingMilking {
 
 /**
  * Milkings already over (yesterday's, and today's before the current one) where some cows in milk
- * have no entry. Only milkings the farm records are checked: a session no one has recorded in the
- * last two weeks is not expected. A milking with no entries at all is reported too.
+ * have no entry. Only milkings the farm records on most days are expected: one recorded on fewer
+ * than half of the last two weeks' recording days is occasional. A milking with no entries at all
+ * is reported too.
  */
 export function missingMilkings(rows: MilkRow[], animals: Cattle[], today: string, now: Date): MissingMilking[] {
   const valid = rows.filter((r) => r.status === 'valid');
   const recent = valid.filter((r) => r.production_date >= addDays(today, -14) && r.production_date < today);
-  const used = SESSIONS.filter((s) => recent.some((r) => r.session === s));
+  const recordingDays = new Set(recent.map((r) => r.production_date)).size;
+  if (!recordingDays) return [];
+  const used = SESSIONS.filter((s) => new Set(recent.filter((r) => r.session === s).map((r) => r.production_date)).size * 2 >= recordingDays);
   if (!used.length) return [];
   const cows = animals.filter((a) => a.status === 'active' && a.sex === 'female' && a.production_status === 'lactating').map((a) => a.id);
   if (!cows.length) return [];

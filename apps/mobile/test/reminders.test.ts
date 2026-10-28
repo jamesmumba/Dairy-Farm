@@ -164,6 +164,9 @@ describe('watch for heat after breeding', () => {
     expect(computeReminders({ ...empty(), breeding: [mating, heat] }, herd, NOW).filter((r) => r.kind === 'heat_watch')).toEqual([]);
     const check = { ...base, id: 'c', cattle_id: 'cow', breeding_record_id: mating.id, scheduled_on: null, examined_on: '2026-10-27', result: 'pregnant' as const, examiner: null, expected_calving_on: '2027-07-17', notes: null };
     expect(computeReminders({ ...empty(), breeding: [mating], checks: [check] }, herd, NOW).filter((r) => r.kind === 'heat_watch')).toEqual([]);
+    // An inconclusive result does not say whether she conceived: keep watching.
+    const unclear = { ...check, result: 'inconclusive' as const, expected_calving_on: null };
+    expect(computeReminders({ ...empty(), breeding: [mating], checks: [unclear] }, herd, NOW).filter((r) => r.kind === 'heat_watch')).toHaveLength(1);
   });
 });
 
