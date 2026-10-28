@@ -12,7 +12,8 @@ export type ReminderKind =
   | 'unpaid_balance'
   | 'stock_discrepancy'
   | 'production_decline'
-  | 'sync_problem';
+  | 'sync_problem'
+  | 'possible_duplicate';
 
 export type Urgency = 'overdue' | 'today' | 'upcoming' | 'active';
 

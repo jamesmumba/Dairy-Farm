@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { AGE_BANDS, type AnimalFilter, ageLabel, displayName, EMPTY_FILTER, matches, PRODUCTION_LABELS, type ProductionStatus, REPRODUCTIVE_LABELS, type ReproductiveStatus, STATUS_LABELS } from '../../animals/model';
 import { listAnimals, listBreeds } from '../../animals/repo';
 import { useLocal } from '../../sync/store';
@@ -12,10 +12,12 @@ import { Button, TextField } from '../../ui/form';
 import { SyncBadge } from '../../ui/SyncBadge';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Avatar, Pill } from '../../ui/kit';
+import { useSyncRefresh } from '../../ui/useSyncRefresh';
 import { minTouch, radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 export default function Animals() {
   const t = useTheme();
+  const refresh = useSyncRefresh();
   const animals = useLocal(listAnimals);
   const breeds = useLocal(listBreeds);
   const [filter, setFilter] = useState<AnimalFilter>(EMPTY_FILTER);
@@ -49,6 +51,7 @@ export default function Animals() {
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
       <FlatList
+        refreshControl={<RefreshControl {...refresh} />}
         data={shown}
         keyExtractor={(a) => a.data.id}
         contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: 96 }}

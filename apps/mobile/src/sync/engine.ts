@@ -247,6 +247,9 @@ function scheduleRetry() {
 }
 
 /** Sync when connectivity returns and when the app comes to the foreground. */
+/** How often to look for changes made on another phone while the app is on screen. */
+export const PERIODIC_SYNC_MS = 2 * 60_000;
+
 export function startSyncTriggers() {
   const net = NetInfo.addEventListener((s) => {
     if (s.isConnected && s.isInternetReachable !== false) void runSync();
@@ -254,9 +257,15 @@ export function startSyncTriggers() {
   const app = AppState.addEventListener('change', (s) => {
     if (s === 'active') void runSync();
   });
+  // A second phone on the account: its records arrive within a couple of minutes, without reopening the app.
+  // Only while the app is in front, so it costs nothing in the background; each pull fetches only what changed.
+  const tick = setInterval(() => {
+    if (AppState.currentState === 'active') void runSync();
+  }, PERIODIC_SYNC_MS);
   return () => {
     net();
     app.remove();
+    clearInterval(tick);
     if (retryTimer) clearTimeout(retryTimer);
   };
 }

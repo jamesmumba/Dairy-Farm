@@ -1,6 +1,6 @@
 import { type Href, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { markSeen, needsAttention, useSeen } from '../care/inbox';
 import { REMINDER_ICON } from '../care/reminderIcon';
 import type { Reminder } from '../care/reminders';
@@ -8,6 +8,7 @@ import { useNotificationStatus, useReminders } from '../care/useReminders';
 import { formatDate, formatDateTime } from '../lib/dates';
 import { Notice } from '../ui/form';
 import { ListGroup, ListRow, SectionHeader } from '../ui/kit';
+import { useSyncRefresh } from '../ui/useSyncRefresh';
 import { spacing, useTheme } from '../ui/theme';
 
 // The in-app notifications inbox. Everything the app has flagged, worked out from the records on this
@@ -22,10 +23,11 @@ const SECTIONS: { title: string; match: (r: Reminder) => boolean }[] = [
 const tintOf = (r: Reminder) => (r.urgency === 'active' || r.urgency === 'overdue' ? 'red' : r.urgency === 'today' ? 'straw' : 'green') as 'red' | 'straw' | 'green';
 
 const whenOf = (r: Reminder) =>
-  r.kind === 'withdrawal' ? `Until ${formatDateTime(r.due)}` : r.kind === 'sync_problem' || r.kind === 'production_decline' ? null : `${r.urgency === 'overdue' ? 'Since ' : ''}${formatDate(r.due)}`;
+  r.kind === 'withdrawal' ? `Until ${formatDateTime(r.due)}` : r.kind === 'sync_problem' || r.kind === 'production_decline' || r.kind === 'possible_duplicate' ? null : `${r.urgency === 'overdue' ? 'Since ' : ''}${formatDate(r.due)}`;
 
 export default function Notifications() {
   const t = useTheme();
+  const refresh = useSyncRefresh();
   const { reminders, names } = useReminders();
   const status = useNotificationStatus();
   const seenNow = useSeen();
@@ -46,7 +48,7 @@ export default function Notifications() {
           : 'No phone notifications scheduled.';
 
   return (
-    <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
+    <ScrollView refreshControl={<RefreshControl {...refresh} />} style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
       {reminders.length === 0 ? (
         <Notice tone="success" title="All clear">
           Nothing needs you right now. Withdrawals, vaccinations, pregnancy checks, calvings, follow-ups, unpaid balances, falling milk and sync problems appear here.

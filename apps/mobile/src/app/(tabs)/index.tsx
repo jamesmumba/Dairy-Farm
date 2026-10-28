@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { type Href, router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { displayName } from '../../animals/model';
 import { REMINDER_ICON } from '../../care/reminderIcon';
 import { useReminders } from '../../care/useReminders';
@@ -17,6 +17,7 @@ import { BarChart } from '../../ui/BarChart';
 import { HorizontalBars } from '../../ui/HorizontalBars';
 import { Avatar, Card, Figure, Headline, IconBadge, type IconName, ListGroup, ListRow, MetricChip, SectionHeader, Segmented, StatementLine } from '../../ui/kit';
 import { SyncStatus } from '../../ui/SyncStatus';
+import { useSyncRefresh } from '../../ui/useSyncRefresh';
 import { minTouch, radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 // Home leads with what needs the farmer today and what to do next, then the summary the specification
@@ -82,6 +83,7 @@ function QuickAction({ label, hint, icon, href }: (typeof QUICK)[number]) {
 
 export default function Home() {
   const t = useTheme();
+  const refresh = useSyncRefresh();
   const { account } = useAuth();
   const sync = useSyncStatus();
   const input = useReportInput();
@@ -122,7 +124,7 @@ export default function Home() {
   const syncWorthShowing = sync.pending > 0 || sync.failed > 0 || sync.state === 'offline' || sync.state === 'attention';
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl }}>
+    <ScrollView refreshControl={<RefreshControl {...refresh} />} style={{ flex: 1, backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl }}>
       <TodayCard name={account?.display_name} today={today} milkToday={L(milkDay.totalCl)} cows={milkDay.cows} forSale={`${litres(f.available(today))} L`} />
       {syncWorthShowing ? <SyncStatus /> : null}
 

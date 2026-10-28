@@ -1,15 +1,17 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { listPrice, money } from '../../finance/calc';
 import { useFinance } from '../../finance/useFinance';
 import { litres } from '../../production/calc';
 import { Button, TextField } from '../../ui/form';
 import { Avatar, Card, Figure, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
+import { useSyncRefresh } from '../../ui/useSyncRefresh';
 import { radius, shadow, spacing, useTheme } from '../../ui/theme';
 
 export default function Sales() {
   const t = useTheme();
+  const refresh = useSyncRefresh();
   const f = useFinance();
   const [query, setQuery] = useState('');
   const price = listPrice(f.prices, f.currency, new Date().toISOString());
@@ -18,6 +20,7 @@ export default function Sales() {
 
   return (
     <FlatList
+      refreshControl={<RefreshControl {...refresh} />}
       style={{ backgroundColor: t.background }}
       contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl }}
       keyboardShouldPersistTaps="handled"

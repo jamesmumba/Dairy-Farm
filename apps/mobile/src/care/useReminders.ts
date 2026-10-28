@@ -8,6 +8,8 @@ import { getJson, setJson } from '../lib/localDb';
 import { useAuth } from '../state/auth';
 import { addPullHook } from '../sync/engine';
 import { failedOps, useLocal } from '../sync/store';
+import { findDuplicates } from './duplicates';
+import { useDismissedDuplicates } from './duplicatesStore';
 import { syncInboxReads } from './inbox';
 import { type AlertLog, MAX_NOTIFICATIONS, planAlerts, planNotifications } from './plan';
 import { computeReminders, type Reminder } from './reminders';
@@ -30,6 +32,7 @@ export function useReminders() {
   const finance = useLocal(loadFinance);
   const milk = useLocal(() => listMilk().map((m) => m.data));
   const failed = useLocal(failedOps);
+  const dismissedDuplicates = useDismissedDuplicates();
   const timeZone = account?.time_zone;
   const rule = account?.decline_rule ?? DEFAULT_DECLINE_RULE;
   return useMemo(() => {
@@ -79,11 +82,13 @@ export function useReminders() {
           },
         ]
       : [];
-    const reminders = [...sync, ...computeReminders(care, active, now), ...declines, ...financeReminders(finance, milk, today, farmDate)].sort(
+    // Two phones adding the same customer or untagged animal while offline.
+    const duplicates = findDuplicates(finance.customers, animals.map((a) => a.data), dismissedDuplicates, today);
+    const reminders = [...sync, ...duplicates, ...computeReminders(care, active, now), ...declines, ...financeReminders(finance, milk, today, farmDate)].sort(
       (a, b) => order[a.urgency] - order[b.urgency] || a.due.localeCompare(b.due),
     );
     return { reminders, names };
-  }, [care, animals, finance, milk, timeZone, failed, rule]);
+  }, [care, animals, finance, milk, timeZone, failed, rule, dismissedDuplicates]);
 }
 
 export type NotificationStatus = { state: 'scheduled'; count: number; at: string } | { state: 'denied' } | { state: 'off' } | { state: 'none' };

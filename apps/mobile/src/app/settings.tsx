@@ -1,8 +1,10 @@
 import { Chips } from '../ui/Chips';
 import { useState } from 'react';
 import { Alert, Text } from 'react-native';
-import type { FarmerAccount } from '../lib/account';
+import type { FarmerAccount, ProfilePatch } from '../lib/account';
 import { ApiError, NetworkError } from '../lib/api';
+import { getJson, remove, setJson } from '../lib/localDb';
+import { threeWayMerge } from '../lib/merge';
 import { useDraft } from '../lib/useDraft';
 import { useAuth } from '../state/auth';
 import { Button, FormScreen, Notice, TextField } from '../ui/form';
@@ -56,25 +58,52 @@ const TABS: { value: Tab; label: string }[] = [
   { value: 'breeding', label: 'Breeding' },
 ];
 
+const BASE_KEY = 'draft.settings.base';
+
+/** Saves one field; if another phone saved meanwhile, saves again on top of its version (only this field is sent). */
+async function saveOwnField(updateAccount: (patch: ProfilePatch, version?: number) => Promise<FarmerAccount>, patch: ProfilePatch) {
+  try {
+    return await updateAccount(patch);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 409) return updateAccount(patch, (err.body.current as FarmerAccount).version);
+    throw err;
+  }
+}
+
 export default function Settings() {
   const t = useTheme();
   const [tab, setTab] = useState<Tab>('profile');
   const { account, updateAccount } = useAuth();
-  const [form, update, clearDraft] = useDraft('settings', () => formFromAccount(account!));
+  const [form, update, clearForm] = useDraft('settings', () => formFromAccount(account!));
+  // What the form started from, kept with the draft: tells this phone's edits apart from another phone's.
+  const [base, setBase] = useState<ProfileForm>(() => {
+    const kept = getJson<ProfileForm>(BASE_KEY);
+    if (kept) return kept;
+    const start = formFromAccount(account!);
+    setJson(BASE_KEY, start);
+    return start;
+  });
+  const clearDraft = () => {
+    clearForm();
+    remove(BASE_KEY);
+  };
   const [errors, setErrors] = useState<ProfileErrors>({});
   const [message, setMessage] = useState<{ tone: 'info' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function save(version?: number) {
-    const found = validate(form, ALL);
+  async function save(version?: number, values: ProfileForm = form, note = 'Saved.') {
+    const found = validate(values, ALL);
     setErrors(found);
     if (Object.keys(found).length) return;
     setBusy(true);
     setMessage(null);
     try {
-      await updateAccount(patchFor(form, ALL), version);
+      const next = await updateAccount(patchFor(values, ALL), version);
       clearDraft();
-      setMessage({ tone: 'info', text: 'Saved.' });
+      const start = formFromAccount(next);
+      setBase(start);
+      setJson(BASE_KEY, start);
+      setMessage({ tone: 'info', text: note });
     } catch (err) {
       if (err instanceof NetworkError) {
         setMessage({ tone: 'error', text: 'No connection. Your changes are kept on this phone. Save again when you are connected.' });
@@ -90,15 +119,26 @@ export default function Settings() {
 
   function resolveConflict(current: FarmerAccount) {
     const saved = formFromAccount(current);
-    Alert.alert('Changed on another device', `Your settings were changed elsewhere since you opened this screen.\n\n${differences(form, saved).join('\n')}`, [
+    // Another phone saved meanwhile. If it changed other fields than this phone did, keep both sets of changes.
+    const { merged, clashes } = threeWayMerge(base, form, saved);
+    if (!clashes.length) {
+      update(merged);
+      void save(current.version, merged, 'Saved. Changes made on your other phone were kept too.');
+      return;
+    }
+    const clashing = Object.fromEntries(clashes.map((k) => [k, true]));
+    const pick = (o: ProfileForm) => Object.fromEntries(Object.entries(o).filter(([k]) => clashing[k])) as ProfileForm;
+    Alert.alert('Changed on another device', `These were also changed on your other phone:\n\n${differences(pick(form), pick(saved)).join('\n')}`, [
       {
         text: 'Use saved version',
         onPress: () => {
           update(saved);
           clearDraft();
+          setBase(saved);
+          setJson(BASE_KEY, saved);
         },
       },
-      { text: 'Keep my changes', onPress: () => save(current.version) },
+      { text: 'Keep my changes', onPress: () => save(current.version, merged) },
     ]);
   }
 
@@ -141,7 +181,7 @@ function BreedingIntervalsSection() {
       return setMessage({ tone: 'error', text: 'Pregnancy check: 14–120 days. Gestation: 260–300 days.' });
     }
     try {
-      await updateAccount({ breeding_intervals: { pregnancy_check_days: c, gestation_days: g } });
+      await saveOwnField(updateAccount, { breeding_intervals: { pregnancy_check_days: c, gestation_days: g } });
       setMessage({ tone: 'info', text: 'Saved.' });
     } catch (err) {
       setMessage({ tone: 'error', text: err instanceof NetworkError ? 'No connection. Try again when you are connected.' : 'Could not save. Try again.' });
@@ -181,7 +221,7 @@ function DeclineRuleSection() {
       Object.values(rule).some((n) => !Number.isInteger(n));
     if (bad) return setMessage({ tone: 'error', text: 'Use whole numbers: recent 3–30 days, earlier 3–60 days, drop 5–80%, minimum days no more than either period.' });
     try {
-      await updateAccount({ decline_rule: rule });
+      await saveOwnField(updateAccount, { decline_rule: rule });
       setMessage({ tone: 'info', text: 'Saved.' });
     } catch (err) {
       setMessage({ tone: 'error', text: err instanceof NetworkError ? 'No connection. Try again when you are connected.' : 'Could not save. Try again.' });

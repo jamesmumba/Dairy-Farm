@@ -88,6 +88,7 @@ function Gate() {
           <Stack.Screen name="finance" options={{ ...header, title: 'Money summary' }} />
           <Stack.Screen name="prices" options={{ ...header, title: 'Milk prices' }} />
           <Stack.Screen name="audit" options={{ ...header, title: 'Audit history' }} />
+          <Stack.Screen name="duplicate" options={{ ...header, title: 'Possible duplicate' }} />
           <Stack.Screen name="reports/index" options={{ ...header, title: 'Reports' }} />
           <Stack.Screen name="reports/[id]" options={{ ...header, title: 'Report' }} />
         </Stack.Protected>

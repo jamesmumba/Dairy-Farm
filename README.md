@@ -4,7 +4,7 @@ A mobile app for one farmer to keep records for a dairy farm in Zambia: herd, mi
 animal health, breeding, vaccination, sales, stock, expenses and reports. It works offline and
 syncs when there is a connection.
 
-**Status:** All 8 stages are built and tested (187 API and 137 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
+**Status:** All 8 stages are built and tested (187 API and 145 mobile automated tests passing). The API is deployed as a Supabase Edge Function. Before release, run the manual device checks in [docs/testing.md](docs/testing.md). See [Stages](#stages).
 
 ## Repository layout
 
@@ -30,6 +30,7 @@ syncs when there is a connection.
 | Animal ID | Each animal has a permanent UUID. The farmer sees the first 6 characters (e.g. `3F9A2C`), which exist offline and never change. |
 | Photos | One per animal. Resized to 1280 px JPEG on the phone, uploaded separately with progress through signed URLs, and stored in a private bucket. |
 | Conflicts | `version` column with `If-Match`. A mismatch returns 409 and the app shows both versions. Financial and stock rows are append-only. |
+| Two phones, one account | Each phone syncs on opening, on reconnecting, after every save, every 2 minutes while on screen, and on pull-to-refresh. Edits to the same record go to Sync issues with both versions; sales, payments and stock are append-only and re-checked by the account. Customers or untagged animals added twice while offline show as *Possible duplicate* in Notifications (review screen; nothing merged automatically). Settings changed on both phones merge on their own when different fields changed |
 | Milk sessions | morning, afternoon, evening. One valid entry per animal, date and session. |
 | Milk entry | A milking round (one session, the whole herd, saved at once), plus single entries |
 | Corrections | Corrected in place with a required reason, with the old value kept in the audit log. A void keeps the entry but stops it counting |
