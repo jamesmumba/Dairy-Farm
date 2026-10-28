@@ -1459,7 +1459,7 @@ var PaymentCreate = z8.object({
   paid_at: pastDateTime2,
   reference: text(120),
   notes: text(1e3),
-  reason: z8.string().trim().max(500).optional()
+  reason: z8.string().trim().max(500).nullable().optional()
 }).strict().refine((p) => p.kind === "payment" || p.reason && p.reason.length >= 3, { message: "Say why", path: ["reason"] });
 var VoidBody = z8.object({ reason }).strict();
 async function createPayment(client, owner, actor, input) {

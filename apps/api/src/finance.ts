@@ -204,7 +204,7 @@ export const PaymentCreate = z
     paid_at: pastDateTime,
     reference: text(120),
     notes: text(1000),
-    reason: z.string().trim().max(500).optional(),
+    reason: z.string().trim().max(500).nullable().optional(),
   })
   .strict()
   .refine((p) => p.kind === 'payment' || (p.reason && p.reason.length >= 3), { message: 'Say why', path: ['reason'] });

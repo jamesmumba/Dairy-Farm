@@ -166,6 +166,15 @@ describe('payments', () => {
     expect(st.balances.ZMW).toBe('-30.00');
   });
 
+  it('accepts a payment as the phone sends it, with empty fields as null', async () => {
+    const s = await shop();
+    const res = await s.pay({ reference: null, notes: null, reason: null });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ reference: null, notes: null, reason: null });
+    // A refund still needs a reason.
+    expect((await s.pay({ kind: 'refund', amount: '5', reason: null })).json().field).toBe('reason');
+  });
+
   it('refunds only up to the credit and write-offs only up to what is owed, both with a reason', async () => {
     const s = await shop();
     await s.pay({ amount: '50' }); // paid in advance
