@@ -8,6 +8,7 @@ import { useFinance } from '../../finance/useFinance';
 import { formatDateTime } from '../../lib/dates';
 import { getRecord, useLocal } from '../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
+import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
 
@@ -18,7 +19,7 @@ export default function PaymentScreen() {
   const [voiding, setVoiding] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
-  if (!stored) return <FormScreen title="Payment"><Notice tone="error">This payment is not on this phone.</Notice></FormScreen>;
+  if (!stored) return <MissingRecord what="payment" />;
   const p = stored.data;
   const customer = f.customers.find((c) => c.id === p.customer_id);
   const applied = f.allocations.filter((a) => a.payment_id === p.id).reduce((s, a) => s + toCents(a.amount), 0);

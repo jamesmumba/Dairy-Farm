@@ -8,7 +8,7 @@ Recorded on **27 Oct 2026** (Stage 8). Automated tests run with `npm test` in `a
 |---|---|---|---|
 | API (`apps/api`) | The real API, with every migration applied, on PGlite (an in-process PostgreSQL). Only sign-in tokens and file storage are faked | **194** | **194 passed, 0 failed** |
 | API through postgres.js (`npm run test:postgres`) | The same tests, with PGlite reached over a Postgres socket by postgres.js, the driver the Edge Function uses | **194** | **194 passed, 0 failed** |
-| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **149** | **149 passed, 0 failed** |
+| Mobile (`apps/mobile`) | The real sync store, sync engine and calculations, on Node's built-in SQLite. The HTTP API is faked | **153** | **153 passed, 0 failed** |
 
 Mutation checks: for each critical rule, the code was broken on purpose to confirm a test fails. All were caught, and the code was then restored.
 * Breeding counted as pregnancy.
@@ -38,6 +38,7 @@ Mutation checks: for each critical rule, the code was broken on purpose to confi
 | Mobile file | Tests | Covers |
 |---|---|---|
 | `audit.test.ts` | 8 | Audit history in plain words: names instead of ids, units and the farmer's date format, money with currency, settings as sentences (no JSON), setup steps hidden, new records routine and changes worth reviewing, care records and exports. No ids, true/false or internal codes reach the farmer |
+| `errors.test.ts` | 4 | Error messages: technical text from a bug never reaches the farmer; no connection and server trouble say changes are kept; the account's own messages pass through; sign-in expiry, signed out from another phone and rate limits explained; details kept for the crash screen |
 | `devices.test.ts` | 3 | "New phone signed in" only for phones that joined after this one, in the last week; last-used wording; platform names |
 | `twoPhones.test.ts` | 8 | Two phones on one account: duplicate customers by name or phone (any spacing, phone format), untagged animals by name/sex/birth date, inactive and dismissed pairs ignored; settings three-way merge keeps both phones' changes, never undoes the other phone's field, asks only on a real clash |
 | `palette.test.ts` | 42 | WCAG AA contrast of every text/background pair in the light and dark palettes, and 3:1 for chart marks |
@@ -98,6 +99,7 @@ Fill in on real phones before release. Record the device, OS version, date, resu
 | M7 | Airplane mode: milking round, sale, payment. Kill the app, reopen, reconnect. Records sync once and the status updates | | |
 | M8 | Denied camera, photos and notification permissions: the app explains and keeps working | | |
 | M9 | Two phones with the same account editing the same animal: the conflict appears in Sync issues | | |
+| M13 | Open an old notification for a record deleted on another phone: *… not found* with *Check for changes* and *Go back*. In a release build, a screen that fails shows *Something went wrong* with *Try again* while the tab bar still works | | |
 | M12 | Sign in on a second phone: the first shows *New phone signed in* and both appear under Security › Signed-in phones. Sign the second out from the first: within a sync it returns to the sign-in screen with *Signed out from another phone* | | |
 | M10 | App lock: turn on, background more than 5 minutes, unlock with biometrics or passcode | | |
 | M11 | CSV opens in Excel / Google Sheets with correct columns. The PDF is readable when printed | | |

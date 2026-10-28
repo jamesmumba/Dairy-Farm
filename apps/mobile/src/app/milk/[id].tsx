@@ -10,6 +10,7 @@ import { getRecord, useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { DateField } from '../../ui/DateField';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
+import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
 import { useTheme } from '../../ui/theme';
@@ -26,7 +27,7 @@ export default function MilkEntryScreen() {
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  if (!entry) return <FormScreen title="Milk entry"><Notice tone="error">This entry is no longer on this phone.</Notice></FormScreen>;
+  if (!entry) return <MissingRecord what="milk entry" />;
   const e = entry.data;
   const voided = e.status === 'voided';
 

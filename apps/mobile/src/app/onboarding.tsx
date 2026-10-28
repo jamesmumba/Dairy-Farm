@@ -19,6 +19,7 @@ import {
   validate,
 } from '../ui/profileFields';
 import { spacing, useTheme } from '../ui/theme';
+import { friendlyError } from '../lib/errors';
 
 const TITLES: Record<OnboardingStep, string> = {
   profile: 'About you',
@@ -54,7 +55,7 @@ export default function Onboarding() {
     } catch (err) {
       if (err instanceof NetworkError) setMessage('No connection. Your answers are saved on this phone. Try again when you are connected.');
       else if (err instanceof ApiError && err.status === 409) setMessage('Your account was updated on another device. Check your answers and continue.');
-      else setMessage(err instanceof Error ? err.message : 'Could not save. Try again.');
+      else setMessage(friendlyError(err, 'Could not save. Try again.'));
       return false;
     } finally {
       setBusy(false);

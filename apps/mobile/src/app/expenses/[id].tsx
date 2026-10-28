@@ -11,6 +11,7 @@ import { api } from '../../lib/api';
 import { formatDate } from '../../lib/dates';
 import { getRecord, useLocal } from '../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
+import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
 import { radius } from '../../ui/theme';
@@ -31,7 +32,7 @@ export default function ExpenseScreen() {
       .catch(() => {});
   }, [id, receiptPath]);
 
-  if (!stored) return <FormScreen title="Expense"><Notice tone="error">This expense is not on this phone.</Notice></FormScreen>;
+  if (!stored) return <MissingRecord what="expense" />;
   const e = stored.data;
   const photo = e.local_receipt_uri ? { uri: e.local_receipt_uri } : receiptUrl && receiptPath ? { uri: receiptUrl, cacheKey: receiptPath } : null;
 

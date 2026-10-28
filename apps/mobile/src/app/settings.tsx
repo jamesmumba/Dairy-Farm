@@ -23,6 +23,7 @@ import {
 import { FormCard } from '../ui/kit';
 import { useTheme } from '../ui/theme';
 import { type DeclineRule, DEFAULT_DECLINE_RULE } from '../production/calc';
+import { friendlyError } from '../lib/errors';
 
 const ALL: Section[] = ['profile', 'farm', 'units', 'reminders'];
 
@@ -110,7 +111,7 @@ export default function Settings() {
       } else if (err instanceof ApiError && err.status === 409) {
         resolveConflict(err.body.current as FarmerAccount);
       } else {
-        setMessage({ tone: 'error', text: err instanceof Error ? err.message : 'Could not save.' });
+        setMessage({ tone: 'error', text: friendlyError(err, 'Could not save. Try again.') });
       }
     } finally {
       setBusy(false);

@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { IconName } from '../../ui/kit';
 import { InboxBell } from '../../ui/InboxBell';
+import { screenLayout } from '../../ui/ScreenErrorBoundary';
 import { SyncHeader } from '../../ui/SyncHeader';
 import { useTheme } from '../../ui/theme';
 
@@ -22,6 +23,7 @@ export default function TabLayout() {
   const bottom = Math.max(insets.bottom, 8) + 8;
   return (
     <Tabs
+      screenLayout={screenLayout}
       screenOptions={{
         tabBarActiveTintColor: t.primary,
         tabBarInactiveTintColor: t.textMuted,

@@ -11,6 +11,7 @@ import { useCareContext } from '../../../care/useCareContext';
 import { formatDate, formatDateTime } from '../../../lib/dates';
 import { useLocal } from '../../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../../ui/form';
+import { MissingRecord } from '../../../ui/ProblemView';
 import { SyncBadge } from '../../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow } from '../../../ui/kit';
 import { useTheme } from '../../../ui/theme';
@@ -27,7 +28,7 @@ export default function CareRecord() {
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  if (!record) return <FormScreen title="Record"><Notice tone="error">This record is no longer on this phone.</Notice></FormScreen>;
+  if (!record) return <MissingRecord what="record" />;
   const config = CARE_FORMS[kind];
   const r = record.data;
   const animalId = (r.cattle_id ?? r.dam_id) as string | undefined;

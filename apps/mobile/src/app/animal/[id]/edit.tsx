@@ -3,7 +3,8 @@ import { AnimalForm } from '../../../animals/AnimalForm';
 import type { CattleFields } from '../../../animals/model';
 import { editAnimal, getAnimal, listAnimals, listBreeds } from '../../../animals/repo';
 import { useLocal } from '../../../sync/store';
-import { FormScreen, Notice } from '../../../ui/form';
+import { FormScreen } from '../../../ui/form';
+import { MissingRecord } from '../../../ui/ProblemView';
 
 const FIELDS: (keyof CattleFields)[] = [
   'ear_tag', 'name', 'breed_id', 'sex', 'birth_date', 'birth_date_estimated', 'acquisition_date', 'acquisition_source',
@@ -16,7 +17,7 @@ export default function EditAnimal() {
   const animal = useLocal(() => getAnimal(id), id);
   const animals = useLocal(listAnimals);
   const breeds = useLocal(listBreeds);
-  if (!animal) return <FormScreen card title="Edit animal"><Notice tone="error">This animal is no longer in your herd.</Notice></FormScreen>;
+  if (!animal) return <MissingRecord what="animal" />;
 
   const initial = Object.fromEntries(FIELDS.map((k) => [k, animal.data[k]])) as CattleFields;
   return (

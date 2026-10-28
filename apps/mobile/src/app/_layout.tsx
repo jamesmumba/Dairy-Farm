@@ -1,10 +1,15 @@
-import { Stack } from 'expo-router';
+import { type ErrorBoundaryProps, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
+import { errorDetails } from '../lib/errors';
+import { installGlobalErrorHandlers } from '../lib/globalErrors';
 import { AppLockProvider } from '../state/appLock';
 import { AuthProvider, useAuth } from '../state/auth';
 import { applySavedAppearance } from '../ui/appearance';
 import { SyncHeader } from '../ui/SyncHeader';
+import { Button } from '../ui/form';
+import { ProblemView } from '../ui/ProblemView';
+import { screenLayout } from '../ui/ScreenErrorBoundary';
 import { useTheme } from '../ui/theme';
 import { useNotificationScheduler } from '../care/useReminders';
 
@@ -15,6 +20,25 @@ function NotificationScheduler() {
 
 // The farmer's light/dark choice, before anything draws.
 applySavedAppearance();
+installGlobalErrorHandlers();
+
+/**
+ * Last resort, for a failure outside any one screen (each screen has its own, see ScreenErrorBoundary).
+ * Says so plainly and keeps the farmer's data.
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return (
+    <ProblemView
+      icon="alert-circle-outline"
+      tint="red"
+      title="Something went wrong"
+      message="The app hit a problem. Everything you saved is safe on this phone. If this keeps happening, close the app and open it again."
+      details={errorDetails(error)}
+    >
+      <Button label="Try again" onPress={retry} />
+    </ProblemView>
+  );
+}
 
 export default function RootLayout() {
   return (
@@ -44,7 +68,7 @@ function Gate() {
   return (
     <AppLockProvider key={signedIn ? 'in' : 'out'} active={signedIn} onSignOut={() => signOut()}>
       {signedIn && onboarded ? <NotificationScheduler /> : null}
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.background } }}>
+      <Stack screenLayout={screenLayout} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.background } }}>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>

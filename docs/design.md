@@ -281,6 +281,10 @@ Other components:
 | Empty list | What will appear here, and one action to create it |
 | No search results | The search term and **Clear search** |
 | Can't connect | Cached data, labelled as possibly out of date, and retry |
+| Screen fails to draw | That screen only (header and tab bar keep working): **Something went wrong**, saved records are safe, **Try again** and **Go back**, technical text under **Show details**. A failure outside any screen gets the same message with **Try again** |
+| Record not on this phone | **Animal not found** (or sale, customer…): may have been removed on another phone or not synced yet; **Check for changes** and **Go back** |
+| Link to nowhere | **Page not found**, **Go to Home** and **Go back** |
+| Error during a save (release builds) | A short alert, never a silent failure; a fatal error still closes the app. Messages are always plain words: no connection, server trouble or an expired sign-in each have their own sentence, and technical text never reaches the farmer |
 
 ## Accessibility
 

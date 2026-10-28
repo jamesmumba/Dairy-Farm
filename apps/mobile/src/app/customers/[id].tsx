@@ -10,6 +10,7 @@ import { litres } from '../../production/calc';
 import { getRecord, useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { Button, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
+import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Card, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
 import { spacing, useTheme } from '../../ui/theme';
@@ -22,7 +23,7 @@ export default function CustomerStatement() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Customer>>({});
 
-  if (!stored) return <FormScreen title="Customer"><Notice tone="error">This customer is not on this phone.</Notice></FormScreen>;
+  if (!stored) return <MissingRecord what="customer" />;
   const c = stored.data;
   const sales = f.sales.filter((s) => s.customer_id === id);
   const payments = f.payments.filter((p) => p.customer_id === id);

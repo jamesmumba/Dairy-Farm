@@ -8,9 +8,11 @@ import { useFinance } from '../../finance/useFinance';
 import { formatDateTime } from '../../lib/dates';
 import { getRecord, useLocal } from '../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
+import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
 import { spacing } from '../../ui/theme';
+import { friendlyError } from '../../lib/errors';
 
 export default function SaleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,7 +24,7 @@ export default function SaleScreen() {
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  if (!stored) return <FormScreen title="Sale"><Notice tone="error">This sale is not on this phone.</Notice></FormScreen>;
+  if (!stored) return <MissingRecord what="sale" />;
   const s = stored.data;
   const customer = f.customers.find((c) => c.id === s.customer_id);
   const due = saleDue([s], f.payments, f.allocations).get(s.id) ?? 0;
@@ -55,7 +57,7 @@ export default function SaleScreen() {
             const newId = correctSale(stored!, changes, reason.trim());
             router.replace({ pathname: '/sale/[id]', params: { id: newId } });
           } catch (err) {
-            setError(err instanceof Error ? err.message : 'Could not correct the sale.');
+            setError(friendlyError(err, 'Could not correct the sale. Try again.'));
           }
         },
       },

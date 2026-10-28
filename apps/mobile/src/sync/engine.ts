@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 import { api, ApiError, NetworkError } from '../lib/api';
 import { db, getJson, setJson } from '../lib/localDb';
+import { friendlyError } from '../lib/errors';
 import {
   applyServerRow,
   markDone,
@@ -130,7 +131,7 @@ async function cycle() {
     });
   } catch (err) {
     if (err instanceof NetworkError) setStatus({ state: 'offline', message: null });
-    else setStatus({ state: 'attention', message: err instanceof Error ? err.message : 'Sync failed. Will retry.' });
+    else setStatus({ state: 'attention', message: friendlyError(err, 'Sync failed. It will try again shortly.') });
   }
 }
 

@@ -17,6 +17,7 @@ import { hasLocalChanges, useLocal } from '../../../sync/store';
 import { Chips } from '../../../ui/Chips';
 import { formatDate } from '../../../ui/DateField';
 import { Button, Notice } from '../../../ui/form';
+import { MissingRecord } from '../../../ui/ProblemView';
 import { Avatar, Card, Figure, ListGroup, ListRow, Pill } from '../../../ui/kit';
 import { SyncBadge } from '../../../ui/SyncBadge';
 import { radius, shadow, spacing, type, useTheme } from '../../../ui/theme';
@@ -76,13 +77,7 @@ export default function AnimalProfile() {
   const [section, setSection] = useState<Section>('overview');
   const [adding, setAdding] = useState(false);
 
-  if (!animal) {
-    return (
-      <View style={{ flex: 1, padding: spacing.md, backgroundColor: t.background }}>
-        <Notice tone="error">This animal is no longer in your herd.</Notice>
-      </View>
-    );
-  }
+  if (!animal) return <MissingRecord what="animal" />;
   const a = animal.data;
   const nameOf = (pid: string | null) => {
     const p = animals.find((x) => x.data.id === pid)?.data;

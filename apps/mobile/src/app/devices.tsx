@@ -7,6 +7,7 @@ import { runSync } from '../sync/engine';
 import { Button, FormScreen, Notice, TextField } from '../ui/form';
 import { Card, ListGroup, ListRow, SectionHeader } from '../ui/kit';
 import { spacing, useTheme } from '../ui/theme';
+import { friendlyError } from '../lib/errors';
 
 // Phones signed in to this account: rename this one, see when the others were last used, and sign
 // out any that should not have access (a lost phone, a worker who has left).
@@ -33,7 +34,7 @@ export default function Devices() {
       await fn();
       setMessage({ tone: 'info', text: done });
     } catch (err) {
-      setMessage({ tone: 'error', text: err instanceof Error ? err.message : 'Something went wrong. Try again.' });
+      setMessage({ tone: 'error', text: friendlyError(err) });
     } finally {
       setBusy(false);
     }

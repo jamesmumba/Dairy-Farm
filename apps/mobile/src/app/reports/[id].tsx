@@ -14,6 +14,7 @@ import { useSyncStatus } from '../../sync/engine';
 import { Chips } from '../../ui/Chips';
 import { DateField } from '../../ui/DateField';
 import { Button, Notice } from '../../ui/form';
+import { MissingRecord } from '../../ui/ProblemView';
 import { Card, SectionHeader } from '../../ui/kit';
 import { radius, shadow, spacing, useCardBasis, useTheme } from '../../ui/theme';
 
@@ -80,7 +81,7 @@ export default function ReportScreen() {
   const f: Filters = { ...filters, from, to };
   const report = useMemo(() => (def ? def.build(input, { ...filters, from, to }) : null), [def, input, filters, from, to]);
 
-  if (!def || !report) return <Notice tone="error">Unknown report.</Notice>;
+  if (!def || !report) return <MissingRecord what="report" message="There is no such report. Open Reports to choose one." />;
   const set = (patch: Partial<Filters>) => setFilters((x) => ({ ...x, ...patch }));
   const hasFilters = def.filters.length > 0 || def.id === 'finance';
   const activeFilters = [filters.cattleId, filters.breedId, filters.customerId, filters.method, filters.paid, filters.category].filter(Boolean).length;

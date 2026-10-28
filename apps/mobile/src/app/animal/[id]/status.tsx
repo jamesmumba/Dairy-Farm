@@ -6,6 +6,7 @@ import { changeAnimalStatus, getAnimal } from '../../../animals/repo';
 import { useLocal } from '../../../sync/store';
 import { DateField, toDateString } from '../../../ui/DateField';
 import { Button, Choice, FormScreen, Notice, TextField } from '../../../ui/form';
+import { MissingRecord } from '../../../ui/ProblemView';
 
 const HINTS: Record<AnimalStatus, string> = {
   active: 'Still on the farm.',
@@ -23,7 +24,7 @@ export default function ChangeStatus() {
   const [details, setDetails] = useState('');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
-  if (!animal) return <FormScreen card title="Change status"><Notice tone="error">This animal is no longer in your herd.</Notice></FormScreen>;
+  if (!animal) return <MissingRecord what="animal" />;
 
   const reactivating = status === 'active';
 
