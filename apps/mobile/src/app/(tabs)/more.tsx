@@ -1,14 +1,13 @@
 import { ScrollView, Text, View } from 'react-native';
 import { useAuth } from '../../state/auth';
-import { setAppearance, useAppearanceChoice } from '../../ui/appearance';
-import { Avatar, Card, ListGroup, ListRow, SectionHeader, Segmented } from '../../ui/kit';
+import { AppearancePicker } from '../../ui/AppearancePicker';
+import { Avatar, Card, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
 import { radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 export default function More() {
   const t = useTheme();
   const { account } = useAuth();
   const farm = account?.farm_name || 'Your farm';
-  const look = useAppearanceChoice();
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.card, backgroundColor: t.surface, ...shadow }}>
@@ -30,17 +29,8 @@ export default function More() {
       </ListGroup>
 
       <SectionHeader title="Appearance" />
-      <Card gap={spacing.sm}>
-        <Segmented
-          label="Appearance"
-          value={look}
-          options={[
-            { value: 'system', label: 'Phone setting' },
-            { value: 'light', label: 'Light' },
-            { value: 'dark', label: 'Dark' },
-          ]}
-          onChange={setAppearance}
-        />
+      <Card gap={spacing.md}>
+        <AppearancePicker />
         <Text style={{ color: t.textMuted, fontSize: 13 }}>Saved on this phone. Light is easiest to read outdoors.</Text>
       </Card>
 
