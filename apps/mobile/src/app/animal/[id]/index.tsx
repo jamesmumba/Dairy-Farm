@@ -22,6 +22,7 @@ import { MissingRecord } from '../../../ui/ProblemView';
 import { Avatar, Card, Figure, ListGroup, ListRow, Pill } from '../../../ui/kit';
 import { SyncBadge } from '../../../ui/SyncBadge';
 import { radius, shadow, spacing, type, useTheme } from '../../../ui/theme';
+import { useOpenOrBack } from '../../../ui/useOpenOrBack';
 
 interface TimelineEvent {
   at: string;
@@ -62,6 +63,7 @@ function useTimeline(id: string, enabled: boolean) {
 }
 
 export default function AnimalProfile() {
+  const open = useOpenOrBack();
   const t = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { account } = useAuth();
@@ -213,7 +215,7 @@ export default function AnimalProfile() {
       </View>
 
       <SyncBadge state={animal.sync_state} />
-      {animal.sync_state === 'attention' ? <Button label="Review sync problem" variant="link" onPress={() => router.push('/sync-issues')} /> : null}
+      {animal.sync_state === 'attention' ? <Button label="Review sync problem" variant="link" onPress={() => open('/sync-issues')} /> : null}
       <WithdrawalBanner care={care} cattleId={a.id} />
       {a.status === 'active' && female ? <MilkAlertBanner animal={a} /> : null}
       {a.status !== 'active' && a.status_details ? <Notice>{a.status_details}</Notice> : null}

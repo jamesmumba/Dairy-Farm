@@ -1,7 +1,7 @@
-import { router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 import { runSync, useSyncStatus } from '../sync/engine';
 import { minTouch, radius, shadow, spacing, useTheme } from './theme';
+import { useOpenOrBack } from './useOpenOrBack';
 
 function ago(iso: string) {
   const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -14,6 +14,7 @@ function ago(iso: string) {
 /** Tells the farmer whether what they see is up to date. Tap to sync, or to review problems. */
 export function SyncStatus() {
   const t = useTheme();
+  const open = useOpenOrBack();
   const s = useSyncStatus();
   const last = s.lastSyncedAt ? `last synced ${ago(s.lastSyncedAt)}` : 'not synced yet';
   const waiting = s.pending ? ` · ${s.pending} saved on this phone, waiting to sync` : '';
@@ -33,7 +34,7 @@ export function SyncStatus() {
       accessibilityRole="button"
       accessibilityLabel={text}
       accessibilityHint={reviewing ? 'Opens the list of changes that need attention' : 'Syncs now'}
-      onPress={() => (reviewing ? router.push('/sync-issues') : void runSync())}
+      onPress={() => (reviewing ? open('/sync-issues') : void runSync())}
       style={{ minHeight: minTouch, justifyContent: 'center', paddingHorizontal: spacing.md, backgroundColor: t.surface, borderRadius: radius.card, ...shadow }}
     >
       <Text style={{ color, fontSize: 15 }}>

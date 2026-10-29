@@ -15,10 +15,12 @@ import { MissingRecord } from '../../../ui/ProblemView';
 import { SyncBadge } from '../../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow } from '../../../ui/kit';
 import { useTheme } from '../../../ui/theme';
+import { useOpenOrBack } from '../../../ui/useOpenOrBack';
 
 type Row = { id: string; version: number; deleted_at: string | null } & Record<string, unknown>;
 
 export default function CareRecord() {
+  const open = useOpenOrBack();
   const t = useTheme();
   const { kind, id } = useLocalSearchParams<{ kind: CareKind; id: string }>();
   const ctx = useCareContext();
@@ -106,7 +108,7 @@ export default function CareRecord() {
             </FormCard>
           ) : (
             <ListGroup>
-              {animal ? <ListRow icon="cow" title={displayName(animal)} subtitle="Open the animal" back href={{ pathname: '/animal/[id]', params: { id: animal.id } }} /> : null}
+              {animal ? <ListRow icon="cow" title={displayName(animal)} subtitle="Open the animal" onPress={() => open({ pathname: '/animal/[id]', params: { id: animal.id } })} /> : null}
               <ListRow icon="pencil-outline" title="Edit" onPress={() => setMode('edit')} />
               <ListRow icon="delete-outline" tint="red" title="Remove" subtitle="Only if entered by mistake" onPress={() => setMode('remove')} />
             </ListGroup>

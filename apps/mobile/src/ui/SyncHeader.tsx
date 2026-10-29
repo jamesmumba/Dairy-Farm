@@ -1,9 +1,9 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { runSync, useSyncStatus } from '../sync/engine';
 import type { IconName } from './kit';
 import { minTouch, useTheme } from './theme';
+import { useOpenOrBack } from './useOpenOrBack';
 
 /**
  * Compact sync state for every screen header: a cloud icon whose shape and colour change, plus a count of
@@ -12,6 +12,7 @@ import { minTouch, useTheme } from './theme';
  */
 export function SyncHeader() {
   const t = useTheme();
+  const open = useOpenOrBack();
   const s = useSyncStatus();
   const attention = s.failed > 0 || s.state === 'attention';
 
@@ -31,7 +32,7 @@ export function SyncHeader() {
       accessibilityRole="button"
       accessibilityLabel={full}
       accessibilityHint={attention ? 'Opens the list of changes that need attention' : 'Syncs now'}
-      onPress={() => (s.failed > 0 ? router.push('/sync-issues') : void runSync())}
+      onPress={() => (s.failed > 0 ? open('/sync-issues') : void runSync())}
       hitSlop={8}
       style={{ minWidth: minTouch - 8, height: 36, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 18, backgroundColor: bg }}
     >

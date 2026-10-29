@@ -11,8 +11,10 @@ import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
+import { useOpenOrBack } from '../../ui/useOpenOrBack';
 
 export default function PaymentScreen() {
+  const open = useOpenOrBack();
   const { id } = useLocalSearchParams<{ id: string }>();
   const f = useFinance();
   const stored = useLocal(() => getRecord<Payment>('payments', id), id);
@@ -54,7 +56,7 @@ export default function PaymentScreen() {
       {error ? <Notice tone="error">{error}</Notice> : null}
       {!voiding ? (
         <ListGroup>
-          {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" back href={{ pathname: '/customers/[id]', params: { id: customer.id } }} /> : null}
+          {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" onPress={() => open({ pathname: '/customers/[id]', params: { id: customer.id } })} /> : null}
           {p.status === 'completed' ? <ListRow icon="close-circle-outline" tint="red" title="Void this payment" onPress={() => setVoiding(true)} /> : null}
         </ListGroup>
       ) : (

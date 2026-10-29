@@ -13,8 +13,10 @@ import { SyncBadge } from '../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
 import { spacing } from '../../ui/theme';
 import { friendlyError } from '../../lib/errors';
+import { useOpenOrBack } from '../../ui/useOpenOrBack';
 
 export default function SaleScreen() {
+  const open = useOpenOrBack();
   const { id } = useLocalSearchParams<{ id: string }>();
   const f = useFinance();
   const stored = useLocal(() => getRecord<Sale>('milk_sales', id), id);
@@ -90,7 +92,7 @@ export default function SaleScreen() {
         <View style={{ gap: spacing.sm }}>
           {due ? <Button label="Record a payment" onPress={() => router.push({ pathname: '/payment/new', params: { customer_id: s.customer_id, currency: s.currency } })} /> : null}
           <ListGroup>
-            {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" back href={{ pathname: '/customers/[id]', params: { id: customer.id } }} /> : null}
+            {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" onPress={() => open({ pathname: '/customers/[id]', params: { id: customer.id } })} /> : null}
             <ListRow
               icon="pencil-outline"
               title="Correct this sale"

@@ -14,8 +14,10 @@ import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
 import { useTheme } from '../../ui/theme';
+import { useOpenOrBack } from '../../ui/useOpenOrBack';
 
 export default function MilkEntryScreen() {
+  const open = useOpenOrBack();
   const t = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const entry = useLocal(() => getRecord<MilkEntry>('milk_production', id), id);
@@ -99,7 +101,7 @@ export default function MilkEntryScreen() {
         </FormCard>
       ) : (
         <ListGroup>
-          {cow ? <ListRow icon="cow" title={displayName(cow.data)} subtitle="Open the animal" back href={{ pathname: '/animal/[id]', params: { id: e.cattle_id } }} /> : null}
+          {cow ? <ListRow icon="cow" title={displayName(cow.data)} subtitle="Open the animal" onPress={() => open({ pathname: '/animal/[id]', params: { id: e.cattle_id } })} /> : null}
           {!voided ? (
             <ListRow
               icon="pencil-outline"

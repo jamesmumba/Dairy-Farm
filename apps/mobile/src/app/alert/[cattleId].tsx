@@ -16,11 +16,13 @@ import { Button, FormScreen, Notice } from '../../ui/form';
 import { ListGroup, ListRow, SectionHeader } from '../../ui/kit';
 import { MissingRecord } from '../../ui/ProblemView';
 import { spacing, useTheme } from '../../ui/theme';
+import { useOpenOrBack } from '../../ui/useOpenOrBack';
 
 // One cow's early-warning alert: what triggered it, what to check, and what has been done so far.
 // Recording an action closes the loop; the follow-up reminder brings the farmer back to it.
 
 export default function AlertScreen() {
+  const openOrBack = useOpenOrBack();
   const t = useTheme();
   const { cattleId } = useLocalSearchParams<{ cattleId: string }>();
   const { account } = useAuth();
@@ -70,7 +72,7 @@ export default function AlertScreen() {
           Her milk is in line with her usual amount, or you have already dealt with the last alert.
         </Notice>
       )}
-      <Button label="Her milk records" variant="secondary" onPress={() => router.dismissTo({ pathname: '/animal/[id]', params: { id: cattleId } })} />
+      <Button label="Her milk records" variant="secondary" onPress={() => openOrBack({ pathname: '/animal/[id]', params: { id: cattleId } })} />
 
       {actions.length ? (
         <>
