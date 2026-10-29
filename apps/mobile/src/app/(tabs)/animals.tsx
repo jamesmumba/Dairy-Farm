@@ -8,7 +8,7 @@ import { activeWithdrawal, underTreatment } from '../../care/model';
 import { loadCareData } from '../../care/repo';
 import { toDateString } from '../../lib/dates';
 import { Chips } from '../../ui/Chips';
-import { Button, TextField } from '../../ui/form';
+import { FilterSheet, SearchBar } from '../../ui/SearchBar';
 import { SyncBadge } from '../../ui/SyncBadge';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Avatar, Pill } from '../../ui/kit';
@@ -58,47 +58,48 @@ export default function Animals() {
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View style={{ gap: spacing.sm, marginBottom: spacing.sm }}>
-            <TextField label="Search" value={filter.query} onChangeText={(query) => set({ query })} placeholder="Ear tag, name or ID" autoCorrect={false} autoCapitalize="none" />
-            <Button
-              label={showFilters ? 'Hide filters' : `Filters${activeFilters ? ` (${activeFilters})` : ''}`}
-              variant="link"
-              onPress={() => setShowFilters((s) => !s)}
-            />
-            {showFilters ? (
-              <View style={{ gap: spacing.sm }}>
-                <Chips
-                  label="Status"
-                  value={filter.status}
-                  options={[
-                    { value: 'active', label: 'Active' },
-                    { value: 'retired', label: 'Sold, dead or gone' },
-                    { value: 'all', label: 'All' },
-                  ]}
-                  onChange={(status) => set({ status: status ?? 'active' })}
-                  allowClear={false}
-                />
-                <Chips label="Sex" value={filter.sex} options={[{ value: 'female', label: 'Female' }, { value: 'male', label: 'Male' }]} onChange={(sex) => set({ sex })} />
-                <Chips label="Breed" value={filter.breedId} options={breeds.map((b) => ({ value: b.id, label: b.name }))} onChange={(breedId) => set({ breedId })} />
-                <Chips label="Production" value={filter.production} options={(Object.keys(PRODUCTION_LABELS) as ProductionStatus[]).map((p) => ({ value: p, label: PRODUCTION_LABELS[p] }))} onChange={(production) => set({ production })} />
-                <Chips label="Reproduction" value={filter.reproductive} options={(Object.keys(REPRODUCTIVE_LABELS) as ReproductiveStatus[]).map((r) => ({ value: r, label: REPRODUCTIVE_LABELS[r] }))} onChange={(reproductive) => set({ reproductive })} />
-                <Chips label="Age" value={filter.age} options={[...AGE_BANDS.map(({ value, label }) => ({ value, label })), { value: 'unknown' as const, label: 'Unknown' }]} onChange={(age) => set({ age })} />
-                <Chips
-                  label="Health"
-                  value={health}
-                  options={[
-                    { value: 'treatment', label: 'Under treatment' },
-                    { value: 'withdrawal', label: 'Milk withdrawal' },
-                    { value: 'follow_up', label: 'Follow-up due' },
-                    { value: 'urgent', label: 'Urgent' },
-                  ]}
-                  onChange={setHealth}
-                />
-                {activeFilters ? <Button label="Clear filters" variant="link" onPress={() => {
+            <SearchBar value={filter.query} onChangeText={(query) => set({ query })} placeholder="Ear tag, name or ID" activeFilters={activeFilters} onFilters={() => setShowFilters(true)} />
+            <FilterSheet
+              visible={showFilters}
+              onClose={() => setShowFilters(false)}
+              onClear={
+                activeFilters
+                  ? () => {
                       setFilter({ ...EMPTY_FILTER, query: filter.query });
                       setHealth(null);
-                    }} /> : null}
-              </View>
-            ) : null}
+                    }
+                  : undefined
+              }
+              showLabel={`Show ${shown.length} animal${shown.length === 1 ? '' : 's'}`}
+            >
+              <Chips
+                label="Status"
+                value={filter.status}
+                options={[
+                  { value: 'active', label: 'Active' },
+                  { value: 'retired', label: 'Sold, dead or gone' },
+                  { value: 'all', label: 'All' },
+                ]}
+                onChange={(status) => set({ status: status ?? 'active' })}
+                allowClear={false}
+              />
+              <Chips label="Sex" value={filter.sex} options={[{ value: 'female', label: 'Female' }, { value: 'male', label: 'Male' }]} onChange={(sex) => set({ sex })} />
+              <Chips label="Breed" value={filter.breedId} options={breeds.map((b) => ({ value: b.id, label: b.name }))} onChange={(breedId) => set({ breedId })} />
+              <Chips label="Production" value={filter.production} options={(Object.keys(PRODUCTION_LABELS) as ProductionStatus[]).map((p) => ({ value: p, label: PRODUCTION_LABELS[p] }))} onChange={(production) => set({ production })} />
+              <Chips label="Reproduction" value={filter.reproductive} options={(Object.keys(REPRODUCTIVE_LABELS) as ReproductiveStatus[]).map((r) => ({ value: r, label: REPRODUCTIVE_LABELS[r] }))} onChange={(reproductive) => set({ reproductive })} />
+              <Chips label="Age" value={filter.age} options={[...AGE_BANDS.map(({ value, label }) => ({ value, label })), { value: 'unknown' as const, label: 'Unknown' }]} onChange={(age) => set({ age })} />
+              <Chips
+                label="Health"
+                value={health}
+                options={[
+                  { value: 'treatment', label: 'Under treatment' },
+                  { value: 'withdrawal', label: 'Milk withdrawal' },
+                  { value: 'follow_up', label: 'Follow-up due' },
+                  { value: 'urgent', label: 'Urgent' },
+                ]}
+                onChange={setHealth}
+              />
+            </FilterSheet>
             <Text style={{ color: t.textMuted, fontSize: 15 }} accessibilityLiveRegion="polite">
               {shown.length} of {animals.length} animal{animals.length === 1 ? '' : 's'}
             </Text>
