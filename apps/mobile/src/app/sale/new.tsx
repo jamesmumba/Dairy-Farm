@@ -21,6 +21,12 @@ export default function NewSale() {
   const params = useLocalSearchParams<{ customer_id?: string }>();
   const f = useFinance();
   const [customerId, setCustomerId] = useState<string | null>(params.customer_id ?? null);
+  // A customer added from this form comes back here already chosen.
+  const [seenCustomerParam, setSeenCustomerParam] = useState(params.customer_id);
+  if (params.customer_id !== seenCustomerParam) {
+    setSeenCustomerParam(params.customer_id);
+    if (params.customer_id) setCustomerId(params.customer_id);
+  }
   const [search, setSearch] = useState('');
   const [quick, setQuick] = useState<string | null>('1');
   const [other, setOther] = useState('');
@@ -82,7 +88,7 @@ export default function NewSale() {
         payment_method: paidCents > 0 ? method : 'credit',
         notes: notes.trim() || null,
       });
-      router.replace({ pathname: '/customers/[id]', params: { id: customer.id, saved: `${quantity} L, ${money(totalCents, currency)}` } });
+      router.dismissTo({ pathname: '/customers/[id]', params: { id: customer.id, saved: `${quantity} L, ${money(totalCents, currency)}` } });
     };
 
     // Every sale is confirmed before saving (spec 12.1): quantity, price, total, payment, balance and stock.
@@ -112,7 +118,7 @@ export default function NewSale() {
         <>
           <TextField label="Customer" value={search} onChangeText={setSearch} placeholder="Search by name" autoCorrect={false} />
           <Chips label="Choose" value={null} options={matches.map((c) => ({ value: c.id, label: c.name }))} onChange={(v) => v && setCustomerId(v)} />
-          <Button label="Add a new customer" variant="link" onPress={() => router.push('/customers/new')} />
+          <Button label="Add a new customer" variant="link" onPress={() => router.push({ pathname: '/customers/new', params: { for: 'sale' } })} />
         </>
       )}
 

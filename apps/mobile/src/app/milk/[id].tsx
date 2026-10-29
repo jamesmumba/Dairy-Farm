@@ -99,7 +99,7 @@ export default function MilkEntryScreen() {
         </FormCard>
       ) : (
         <ListGroup>
-          {cow ? <ListRow icon="cow" title={displayName(cow.data)} subtitle="Open the animal" href={{ pathname: '/animal/[id]', params: { id: e.cattle_id } }} /> : null}
+          {cow ? <ListRow icon="cow" title={displayName(cow.data)} subtitle="Open the animal" back href={{ pathname: '/animal/[id]', params: { id: e.cattle_id } }} /> : null}
           {!voided ? (
             <ListRow
               icon="pencil-outline"

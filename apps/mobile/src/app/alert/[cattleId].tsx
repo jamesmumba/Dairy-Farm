@@ -70,7 +70,7 @@ export default function AlertScreen() {
           Her milk is in line with her usual amount, or you have already dealt with the last alert.
         </Notice>
       )}
-      <Button label="Her milk records" variant="secondary" onPress={() => router.push({ pathname: '/animal/[id]', params: { id: cattleId } })} />
+      <Button label="Her milk records" variant="secondary" onPress={() => router.dismissTo({ pathname: '/animal/[id]', params: { id: cattleId } })} />
 
       {actions.length ? (
         <>

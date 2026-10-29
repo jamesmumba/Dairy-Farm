@@ -106,7 +106,7 @@ export default function CareRecord() {
             </FormCard>
           ) : (
             <ListGroup>
-              {animal ? <ListRow icon="cow" title={displayName(animal)} subtitle="Open the animal" href={{ pathname: '/animal/[id]', params: { id: animal.id } }} /> : null}
+              {animal ? <ListRow icon="cow" title={displayName(animal)} subtitle="Open the animal" back href={{ pathname: '/animal/[id]', params: { id: animal.id } }} /> : null}
               <ListRow icon="pencil-outline" title="Edit" onPress={() => setMode('edit')} />
               <ListRow icon="delete-outline" tint="red" title="Remove" subtitle="Only if entered by mistake" onPress={() => setMode('remove')} />
             </ListGroup>

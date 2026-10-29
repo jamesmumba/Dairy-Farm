@@ -90,7 +90,7 @@ export default function SaleScreen() {
         <View style={{ gap: spacing.sm }}>
           {due ? <Button label="Record a payment" onPress={() => router.push({ pathname: '/payment/new', params: { customer_id: s.customer_id, currency: s.currency } })} /> : null}
           <ListGroup>
-            {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" href={{ pathname: '/customers/[id]', params: { id: customer.id } }} /> : null}
+            {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" back href={{ pathname: '/customers/[id]', params: { id: customer.id } }} /> : null}
             <ListRow
               icon="pencil-outline"
               title="Correct this sale"

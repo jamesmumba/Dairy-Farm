@@ -55,7 +55,7 @@ export default function NewPayment() {
             notes: null,
             reason: kind === 'payment' ? null : reason.trim(),
           });
-          router.replace({ pathname: '/customers/[id]', params: { id: customer.id } });
+          router.dismissTo({ pathname: '/customers/[id]', params: { id: customer.id } });
         },
       },
     ]);

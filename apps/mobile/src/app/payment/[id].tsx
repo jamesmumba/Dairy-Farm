@@ -54,7 +54,7 @@ export default function PaymentScreen() {
       {error ? <Notice tone="error">{error}</Notice> : null}
       {!voiding ? (
         <ListGroup>
-          {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" href={{ pathname: '/customers/[id]', params: { id: customer.id } }} /> : null}
+          {customer ? <ListRow icon="account-outline" title={customer.name} subtitle="Customer statement" back href={{ pathname: '/customers/[id]', params: { id: customer.id } }} /> : null}
           {p.status === 'completed' ? <ListRow icon="close-circle-outline" tint="red" title="Void this payment" onPress={() => setVoiding(true)} /> : null}
         </ListGroup>
       ) : (
