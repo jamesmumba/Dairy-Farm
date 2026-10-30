@@ -63,6 +63,9 @@ function Gate() {
 
   const signedIn = status === 'signedIn';
   const onboarded = !!account?.onboarding_completed_at;
+  // Where a signed-in screen goes once its guard closes. Left to the router, signing out lands on the
+  // (auth) group's bare URL, which has no screen ("Page not found").
+  const outTo = signedIn ? undefined : '/sign-in';
   const header = { headerShown: true, headerBackButtonDisplayMode: 'minimal' as const, headerStyle: { backgroundColor: t.background }, headerShadowVisible: false, headerTintColor: t.text, headerRight: () => <SyncHeader /> };
 
   return (
@@ -72,13 +75,13 @@ function Gate() {
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !account}>
+        <Stack.Protected guard={signedIn && !account} redirectTo={outTo}>
           <Stack.Screen name="connecting" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !!account && !onboarded}>
+        <Stack.Protected guard={signedIn && !!account && !onboarded} redirectTo={outTo}>
           <Stack.Screen name="onboarding" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && onboarded}>
+        <Stack.Protected guard={signedIn && onboarded} redirectTo={outTo}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="settings" options={{ ...header, title: 'Profile and settings' }} />
           <Stack.Screen name="security" options={{ ...header, title: 'Security' }} />
