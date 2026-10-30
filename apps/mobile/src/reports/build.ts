@@ -554,7 +554,7 @@ export function financeReport(input: ReportInput, f: Filters): Report {
       { label: 'Payments received', value: M(sum.receiptsCents) },
       { label: 'Refunds / discounts and write-offs', value: `${M(sum.refundsCents)} / ${M(sum.adjustmentsCents)}` },
       { label: 'Recorded expenses', value: M(sum.expensesCents) },
-      { label: 'Recorded operating result', value: M(sum.operatingResultCents), note: 'Revenue minus expenses. Not audited profit.' },
+      { label: 'Recorded operating result', value: M(sum.operatingResultCents), note: 'Sales less discounts and write-offs, minus expenses. Not audited profit.' },
       { label: 'Customers owe now', value: M(sum.outstandingCents) },
     ],
     tables: [
@@ -647,7 +647,7 @@ export function financeReport(input: ReportInput, f: Filters): Report {
     definitions: [
       'Sales revenue: the amount owed on completed sales in the period, paid or not (accrual basis). Voided sales are excluded.',
       'Payments received: money received in the period; refunds and discounts are shown separately.',
-      'Recorded operating result: sales revenue minus recorded expenses; not audited profit.',
+      'Recorded operating result: sales revenue less discounts and write-offs, minus recorded expenses; not audited profit.',
       'Closing stock = opening + eligible production − sales − milk use ± adjustments. Milk under withdrawal is never in stock.',
       '* after a price: a special price entered for that sale.',
       `Amounts are in ${f.currency}; other currencies are never added in.`,

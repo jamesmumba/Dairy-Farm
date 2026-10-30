@@ -153,6 +153,24 @@ describe('financial summary', () => {
     expect(s).toMatchObject({ feedCents: 3000, afterFeedCents: 7000 });
   });
 
+  it('takes discounts and write-offs off the result, breaks expenses down, and shows cash in and out', () => {
+    const exp = (id: string, category: Expense['category'], amount: string, payment_status: Expense['payment_status']): Expense => ({
+      id, expense_date: '2026-10-04', category, amount, currency: 'ZMW', payee: null, payment_method: 'cash', payment_status, receipt_path: null, notes: null, status: 'active', void_reason: null, version: 1,
+    });
+    const expenses = [exp('f', 'feed', '30.00', 'paid'), exp('l', 'labour', '40.00', 'unpaid'), exp('m', 'medicines', '5.00', 'partially_paid')];
+    const payments = [payment(), payment({ id: 'w', kind: 'adjustment', amount: '20.00' }), payment({ id: 'r', kind: 'refund', amount: '5.00' })];
+    const s = summarize('ZMW', '2026-10-01', '2026-10-31', { sales: [sale()], payments, expenses, customers: [{ id: 'c1' } as Customer] }, day);
+    // ZMW 100 sold, 20 written off: 80 will be paid. Feed 30 → 50 left; all expenses 75 → 5.
+    expect(s).toMatchObject({ netSalesCents: 8000, afterFeedCents: 5000, operatingResultCents: 500 });
+    expect(s.byCategory).toEqual([
+      { category: 'labour', cents: 4000 },
+      { category: 'feed', cents: 3000 },
+      { category: 'medicines', cents: 500 },
+    ]);
+    // Cash: 60 received − 30 feed paid − 5 refunded; the unpaid labour is not cash out, the partly paid medicine is unknown.
+    expect(s).toMatchObject({ paidOutCents: 3000, cashCents: 2500, partlyPaidCount: 1 });
+  });
+
   it('parses negative amounts', () => {
     expect(toCents('-2.5')).toBe(-250);
   });

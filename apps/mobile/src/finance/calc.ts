@@ -150,12 +150,20 @@ export interface FinanceSummary {
   litresCl: number;
   receiptsCents: number; // payments received in the period
   refundsCents: number;
-  adjustmentsCents: number; // discounts and write-offs
+  adjustmentsCents: number; // discounts and write-offs: sales that will not be paid
+  netSalesCents: number; // revenue − discounts and write-offs
   expensesCents: number;
   feedCents: number; // expenses in the feed category (part of expensesCents)
-  afterFeedCents: number; // milk sales − feed: what is left before labour, vet care and other costs; not profit
-  operatingResultCents: number; // recorded revenue − recorded expenses; not audited profit
+  /** Expenses per category, largest first. */
+  byCategory: { category: Expense['category']; cents: number }[];
+  afterFeedCents: number; // net sales − feed: what is left before labour, vet care and other costs; not profit
+  operatingResultCents: number; // net sales − recorded expenses; not audited profit
   outstandingCents: number; // what customers owe now (credit balances excluded)
+  /** Cash: expenses marked paid, and what came in less went out (received − paid expenses − refunds). */
+  paidOutCents: number;
+  cashCents: number;
+  /** Partly paid expenses: how much was paid is not recorded, so they are not in paidOutCents. */
+  partlyPaidCount: number;
 }
 
 const inPeriod = (date: string, from: string, to: string) => date >= from && date <= to;
@@ -175,6 +183,11 @@ export function summarize(
   const inRange = data.expenses.filter((e) => e.currency === currency && e.status === 'active' && inPeriod(e.expense_date, from, to));
   const expenses = inRange.reduce((s, e) => s + toCents(e.amount), 0);
   const feed = inRange.filter((e) => e.category === 'feed').reduce((s, e) => s + toCents(e.amount), 0);
+  const categories = new Map<Expense['category'], number>();
+  for (const e of inRange) categories.set(e.category, (categories.get(e.category) ?? 0) + toCents(e.amount));
+  const paidOut = inRange.filter((e) => e.payment_status === 'paid').reduce((s, e) => s + toCents(e.amount), 0);
+  const adjustments = sum('adjustment');
+  const netSales = revenue - adjustments;
   const outstanding = data.customers.reduce((s, c) => s + Math.max(0, balances(c.id, data.sales, data.payments)[currency] ?? 0), 0);
   return {
     currency,
@@ -183,11 +196,16 @@ export function summarize(
     litresCl: sales.reduce((s, x) => s + toCents(x.quantity), 0),
     receiptsCents: sum('payment'),
     refundsCents: sum('refund'),
-    adjustmentsCents: sum('adjustment'),
+    adjustmentsCents: adjustments,
+    netSalesCents: netSales,
     expensesCents: expenses,
     feedCents: feed,
-    afterFeedCents: revenue - feed,
-    operatingResultCents: revenue - expenses,
+    byCategory: [...categories].map(([category, cents]) => ({ category, cents })).sort((a, b) => b.cents - a.cents),
+    afterFeedCents: netSales - feed,
+    operatingResultCents: netSales - expenses,
     outstandingCents: outstanding,
+    paidOutCents: paidOut,
+    cashCents: sum('payment') - paidOut - sum('refund'),
+    partlyPaidCount: inRange.filter((e) => e.payment_status === 'partially_paid').length,
   };
 }
