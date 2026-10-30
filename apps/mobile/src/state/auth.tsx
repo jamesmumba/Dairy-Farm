@@ -1,10 +1,11 @@
 import type { Session } from '@supabase/supabase-js';
+import * as Notifications from 'expo-notifications';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { FarmerAccount, ProfilePatch } from '../lib/account';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, noteSignedOutHere } from '../lib/api';
 import { clearLocalData, getJson, setJson } from '../lib/localDb';
 import { supabase } from '../lib/supabase';
-import { forgetDevices, refreshDevicesQuietly } from '../lib/devicesStore';
+import { forgetDevices, refreshDevicesQuietly, signOutOtherDevices } from '../lib/devicesStore';
 import { forgetAppLock } from './appLock';
 import { addPullHook, resetSyncStatus, runSync, startSyncTriggers } from '../sync/engine';
 
@@ -20,6 +21,7 @@ interface AuthValue {
   /** Throws NetworkError when offline and ApiError (409 carries `current`) on rejection. */
   updateAccount(patch: ProfilePatch, version?: number): Promise<FarmerAccount>;
   signOut(scope?: 'local' | 'global'): Promise<void>;
+  signingOut: boolean;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -33,6 +35,7 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [fetched, setFetched] = useState<CachedAccount | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
 
   const userId = session?.user.id ?? null;
 
@@ -70,8 +73,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [account, storeAccount],
   );
 
+  /** Throws (NetworkError offline) only when signing out the other phones fails; this phone is then still signed in. */
   const signOut = useCallback(async (scope: 'local' | 'global' = 'local') => {
-    await supabase.auth.signOut({ scope });
+    setSigningOut(true);
+    try {
+      // The other phones need the server, so do them first: offline, nothing changes.
+      if (scope === 'global') await signOutOtherDevices();
+      noteSignedOutHere();
+      // Best effort: take this phone off the account's list of signed-in phones.
+      await api('/v1/devices/sign-out-this', { method: 'POST', timeoutMs: 5000 }).catch(() => {});
+      // Clears the sign-in on this phone even offline; the SIGNED_OUT handler below removes the farm data.
+      await supabase.auth.signOut({ scope: 'local' });
+    } finally {
+      setSigningOut(false);
+    }
   }, []);
 
   // Session lifecycle.
@@ -86,6 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         void forgetAppLock();
         forgetDevices();
         setFetched(null);
+        // Reminders name the animals: none may fire or stay in the tray for the next person.
+        void Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
+        void Notifications.dismissAllNotificationsAsync().catch(() => {});
       }
     });
     return () => data.subscription.unsubscribe();
@@ -111,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     account,
     updateAccount,
     signOut,
+    signingOut,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -84,6 +84,20 @@ describe('phones signed in to the account', () => {
     expect((await a.call('GET', '/v1/me')).statusCode).toBe(200);
   });
 
+  it('leave the list when a phone signs itself out, and come back on its next sign-in', async () => {
+    const { phone } = await farmerWithPhones();
+    const [a, b] = [phone('A'), phone('B')];
+    for (const p of [a, b]) {
+      await p.signIn();
+      await p.call('GET', '/v1/me');
+    }
+    expect((await b.call('POST', '/v1/devices/sign-out-this')).json()).toEqual({ signed_out: 1 });
+    expect((await a.call('GET', '/v1/devices')).json().map((d: { name: string }) => d.name)).toEqual(['A']);
+    await b.signIn();
+    await b.call('GET', '/v1/me');
+    expect((await a.call('GET', '/v1/devices')).json()).toHaveLength(2);
+  });
+
   it('cannot sign out this phone from the list, or a phone on another account', async () => {
     const { phone } = await farmerWithPhones();
     const mine = phone('Mine');

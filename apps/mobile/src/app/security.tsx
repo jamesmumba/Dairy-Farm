@@ -1,19 +1,19 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Text } from 'react-native';
 import { useAppLock } from '../state/appLock';
 import { useDevices } from '../lib/devicesStore';
 import { useAuth } from '../state/auth';
-import { useSyncStatus } from '../sync/engine';
 import { FormScreen, Notice, Toggle } from '../ui/form';
 import { Card, ListGroup, ListRow } from '../ui/kit';
 import { useTheme } from '../ui/theme';
+import { useConfirmSignOut } from '../ui/useConfirmSignOut';
 
 export default function Security() {
   const t = useTheme();
-  const { email, signOut } = useAuth();
+  const { email } = useAuth();
+  const confirmSignOut = useConfirmSignOut();
   const lock = useAppLock();
-  const sync = useSyncStatus();
   const devices = useDevices();
   const [message, setMessage] = useState<string | null>(null);
 
@@ -26,19 +26,6 @@ export default function Security() {
 
   // Already signed in, so no email is needed: the reset screen sets the new password directly.
   const changePassword = () => router.push('/reset-password');
-
-  function confirmSignOut(scope: 'local' | 'global') {
-    Alert.alert(
-      scope === 'global' ? 'Sign out everywhere?' : 'Sign out?',
-      sync.pending + sync.failed > 0
-        ? `${sync.pending + sync.failed} change${sync.pending + sync.failed === 1 ? ' has' : 's have'} not reached your account yet and will be lost if you sign out now. Connect to the internet and let them sync first.`
-        : 'All your records are saved to your account. They will be removed from this phone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign out', style: 'destructive', onPress: () => signOut(scope) },
-      ],
-    );
-  }
 
   return (
     <FormScreen title="Security">
@@ -56,7 +43,7 @@ export default function Security() {
           href="/devices"
         />
         <ListRow icon="logout" title="Sign out" onPress={() => confirmSignOut('local')} />
-        <ListRow icon="cellphone-remove" tint="red" title="Sign out on all devices" onPress={() => confirmSignOut('global')} />
+        <ListRow icon="cellphone-remove" tint="red" title="Sign out on all phones" onPress={() => confirmSignOut('global')} />
       </ListGroup>
     </FormScreen>
   );

@@ -1,6 +1,6 @@
 import { type ErrorBoundaryProps, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { errorDetails } from '../lib/errors';
 import { installGlobalErrorHandlers } from '../lib/globalErrors';
 import { AppLockProvider } from '../state/appLock';
@@ -51,7 +51,7 @@ export default function RootLayout() {
 
 function Gate() {
   const t = useTheme();
-  const { status, account, signOut } = useAuth();
+  const { status, account, signOut, signingOut } = useAuth();
 
   if (status === 'loading') {
     return (
@@ -120,6 +120,13 @@ function Gate() {
         </Stack.Protected>
         <Stack.Screen name="reset-password" />
       </Stack>
+      {signingOut ? (
+        // Covers the app (without closing its screens, in case signing out the other phones fails).
+        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: t.background }}>
+          <ActivityIndicator color={t.primary} />
+          <Text style={{ color: t.text, fontSize: 16 }}>Signing out…</Text>
+        </View>
+      ) : null}
     </AppLockProvider>
   );
 }

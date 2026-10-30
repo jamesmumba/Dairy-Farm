@@ -78,6 +78,9 @@ export function useSyncStatus(): SyncStatus {
   );
 }
 
+/** The status right now, outside a component (e.g. just after awaiting runSync). */
+export const getSyncStatus = () => status;
+
 /** After a local save: show "waiting to sync" at once and try to send it. */
 export function syncSoon() {
   setStatus({});

@@ -13,13 +13,18 @@ export class ApiError extends Error {
   }
 }
 
-let signedOutElsewhere = false;
+let signedOut: 'here' | 'elsewhere' | null = null;
 
-/** True once after another phone signed this one out (the sign-in screen explains why). */
-export function takeSignedOutElsewhere() {
-  const was = signedOutElsewhere;
-  signedOutElsewhere = false;
+/** Why this phone was last signed out, once (the sign-in screen explains it). */
+export function takeSignedOut() {
+  const was = signedOut;
+  signedOut = null;
   return was;
+}
+
+/** The farmer chose Sign out on this phone; a request refused mid-way must not say another phone did it. */
+export function noteSignedOutHere() {
+  signedOut = 'here';
 }
 
 /** The request never reached the server (offline, timeout, DNS). Safe to retry later. */
@@ -63,7 +68,7 @@ export async function api<T>(path: string, { method = 'GET', body, ifMatch, idem
   const json = await res.json().catch(() => ({}));
   if (res.status === 401 && json.error === 'signed_out') {
     // Another phone on the account signed this one out: leave the account here too.
-    signedOutElsewhere = true;
+    signedOut ??= 'elsewhere';
     void supabase.auth.signOut({ scope: 'local' });
   }
   if (!res.ok) throw new ApiError(res.status, json.error ?? 'error', json.message ?? 'Request failed.', json);

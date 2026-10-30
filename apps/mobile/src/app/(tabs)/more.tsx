@@ -3,10 +3,12 @@ import { useAuth } from '../../state/auth';
 import { AppearancePicker } from '../../ui/AppearancePicker';
 import { Avatar, Card, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
 import { radius, shadow, spacing, type, useTheme } from '../../ui/theme';
+import { useConfirmSignOut } from '../../ui/useConfirmSignOut';
 
 export default function More() {
   const t = useTheme();
-  const { account } = useAuth();
+  const { account, email } = useAuth();
+  const confirmSignOut = useConfirmSignOut();
   const farm = account?.farm_name || 'Your farm';
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
@@ -37,8 +39,9 @@ export default function More() {
       <SectionHeader title="Account" />
       <ListGroup>
         <ListRow icon="cog-outline" title="Profile and settings" subtitle="Name, farm, currency, reminders" href="/settings" />
-        <ListRow icon="shield-lock-outline" title="Security" subtitle="App lock, password, sign out" href="/security" />
+        <ListRow icon="shield-lock-outline" title="Security" subtitle="App lock, password, signed-in phones" href="/security" />
         <ListRow icon="sync" tint="sky" title="Sync issues" subtitle="Changes your account did not accept" href="/sync-issues" />
+        <ListRow icon="logout" title="Sign out" subtitle={email ?? undefined} onPress={() => confirmSignOut('local')} />
       </ListGroup>
 
       <SectionHeader title="Your data" />

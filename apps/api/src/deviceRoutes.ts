@@ -88,6 +88,18 @@ export function deviceRoutes(v1: Router, { db }: { db: Db }) {
     return { signed_out: 1 };
   });
 
+  // This phone is signing itself out: take it off the list. The app ends its own sign-in afterwards.
+  v1.post('/devices/sign-out-this', async (req) => {
+    const { deviceId } = req.farmer;
+    if (!deviceId) return { signed_out: 0 };
+    const { rows } = await db.query(
+      `update public.devices set signed_out_at = now()
+       where owner_id = $1 and device_id = $2 and signed_out_at is null returning device_id`,
+      [req.farmer.account.id, deviceId],
+    );
+    return { signed_out: rows.length };
+  });
+
   // Every phone but this one, including any that never reported a device id.
   v1.post('/devices/sign-out-others', async (req) => {
     const { deviceId, sessionId } = req.farmer;

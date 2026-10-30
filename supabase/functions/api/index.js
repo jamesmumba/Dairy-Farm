@@ -2189,6 +2189,16 @@ function deviceRoutes(v1, { db: db2 }) {
     await endSessions(db2, req.farmer.authUserId, { only: rows.map((r) => r.session_id).filter(Boolean) }, req.log);
     return { signed_out: 1 };
   });
+  v1.post("/devices/sign-out-this", async (req) => {
+    const { deviceId } = req.farmer;
+    if (!deviceId) return { signed_out: 0 };
+    const { rows } = await db2.query(
+      `update public.devices set signed_out_at = now()
+       where owner_id = $1 and device_id = $2 and signed_out_at is null returning device_id`,
+      [req.farmer.account.id, deviceId]
+    );
+    return { signed_out: rows.length };
+  });
   v1.post("/devices/sign-out-others", async (req) => {
     const { deviceId, sessionId } = req.farmer;
     if (!deviceId || !sessionId) throw new HttpError(400, "device_required", "Update the app to sign out other phones.");
