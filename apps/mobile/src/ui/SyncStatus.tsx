@@ -1,4 +1,5 @@
 import { Pressable, Text } from 'react-native';
+import { formatDate, toDateString } from '../lib/dates';
 import { runSync, useSyncStatus } from '../sync/engine';
 import { minTouch, radius, shadow, spacing, useTheme } from './theme';
 import { useOpenOrBack } from './useOpenOrBack';
@@ -8,7 +9,7 @@ function ago(iso: string) {
   if (minutes < 1) return 'just now';
   if (minutes < 60) return `${minutes} min ago`;
   if (minutes < 60 * 24) return `${Math.round(minutes / 60)} h ago`;
-  return new Date(iso).toLocaleDateString();
+  return formatDate(toDateString(new Date(iso)));
 }
 
 /** Tells the farmer whether what they see is up to date. Tap to sync, or to review problems. */

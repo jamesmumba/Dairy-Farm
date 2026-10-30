@@ -6,7 +6,7 @@ import { ParentPicker } from '../../animals/ParentPicker';
 import { CATEGORY_LABELS, METHOD_LABELS, type Method } from '../../finance/model';
 import { CURRENCIES } from '../../lib/account';
 import { formatDateTime } from '../../lib/dates';
-import { addDays, type Period, periodRange } from '../../production/calc';
+import { lastMonthRange, type Period, periodRange } from '../../production/calc';
 import { type Filters, REPORTS, type Table } from '../../reports/build';
 import { exportReport } from '../../reports/exportFile';
 import { rangeLabel } from '../../reports/format';
@@ -133,7 +133,7 @@ export default function ReportScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [showHow, setShowHow] = useState(false);
   const range =
-    period === 'custom' ? custom : period === 'last_month' ? periodRange('month', addDays(`${input.today.slice(0, 7)}-01`, -1)) : periodRange(period, input.today);
+    period === 'custom' ? custom : period === 'last_month' ? lastMonthRange(input.today) : periodRange(period, input.today);
   const from = range.from;
   const to = range.to > input.today ? input.today : range.to;
   const backwards = from > to;

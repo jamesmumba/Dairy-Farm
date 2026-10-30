@@ -1,5 +1,6 @@
 // Reminders derived from saved records. Pure: no I/O, no clock (callers pass `now`).
 
+import { formatDateTime } from '../lib/dates';
 import { ACTION_LABELS, ALERT_TYPE_LABELS, type CareData, type CareKind } from './model';
 
 export type ReminderKind =
@@ -85,7 +86,7 @@ export function computeReminders(data: CareData, activeCattle: Set<string>, now:
         due: t.withdrawal_ends_at,
         cattleId: t.cattle_id,
         title: 'Milk withdrawal in force',
-        detail: `${t.medication}: milk is not for sale or human use until ${ends.toLocaleString()}`,
+        detail: `${t.medication}: milk is not for sale or human use until ${formatDateTime(t.withdrawal_ends_at)}`,
         record: { kind: 'treatment', id: t.id },
         notifyOffsets: [0],
       });

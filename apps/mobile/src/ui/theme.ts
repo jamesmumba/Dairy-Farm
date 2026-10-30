@@ -36,6 +36,9 @@ export const shadow = {
   boxShadow: '0px 1px 2px rgba(23, 63, 43, 0.08), 0px 6px 16px -2px rgba(23, 63, 43, 0.10)',
 };
 
+/** For something small raised inside a card (the selected part of a switch). */
+export const subtleShadow = { boxShadow: '0px 1px 3px rgba(23, 63, 43, 0.12)' };
+
 /** For what floats above the page (the Add button): the same layers, stronger. */
 export const raisedShadow = {
   boxShadow: '0px 2px 4px rgba(23, 63, 43, 0.14), 0px 10px 24px -4px rgba(23, 63, 43, 0.28)',

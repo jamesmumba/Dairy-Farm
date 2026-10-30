@@ -10,6 +10,7 @@ import {
   type Period,
   perAnimal,
   perBreed,
+  lastMonthRange,
   periodRange,
   previousRange,
   SESSIONS,
@@ -28,7 +29,7 @@ import { Notice } from '../ui/form';
 import { Avatar, Card, Figure, ListGroup, ListRow, Pill, SectionHeader } from '../ui/kit';
 import { spacing, useTheme } from '../ui/theme';
 
-type Choice = Period | 'custom';
+type Choice = Period | 'last_month' | 'custom';
 
 export default function Production() {
   const t = useTheme();
@@ -42,7 +43,7 @@ export default function Production() {
   const [choice, setChoice] = useState<Choice>('week');
   const [custom, setCustom] = useState({ from: periodRange('month', today).from, to: today });
 
-  const range = choice === 'custom' ? custom : periodRange(choice, today);
+  const range = choice === 'custom' ? custom : choice === 'last_month' ? lastMonthRange(today) : periodRange(choice, today);
   const to = range.to > today ? today : range.to; // nothing recorded in the future
   const name = useMemo(() => new Map(animals.map((a) => [a.data.id, displayName(a.data)])), [animals]);
   const breedOf = useMemo(() => new Map(animals.map((a) => [a.data.id, a.data.breed_id])), [animals]);
@@ -79,6 +80,7 @@ export default function Production() {
           { value: 'today', label: 'Today' },
           { value: 'week', label: 'This week' },
           { value: 'month', label: 'This month' },
+          { value: 'last_month', label: 'Last month' },
           { value: 'year', label: 'This year' },
           { value: 'custom', label: 'Dates…' },
         ]}

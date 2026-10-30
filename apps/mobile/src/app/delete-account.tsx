@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Text } from 'react-native';
 import { api, NetworkError } from '../lib/api';
+import { formatDate, toDateString } from '../lib/dates';
 import type { FarmerAccount } from '../lib/account';
 import { useAuth } from '../state/auth';
 import { runSync } from '../sync/engine';
@@ -18,7 +19,7 @@ export default function DeleteAccount() {
     return (
       <FormScreen card title="Deletion requested">
         <Notice>
-          We received your request on {new Date(account.deletion_requested_at).toLocaleDateString()}. Your account stays usable until the
+          We received your request on {formatDate(toDateString(new Date(account.deletion_requested_at)))}. Your account stays usable until the
           request is processed. We will contact you by email before anything is deleted.
         </Notice>
       </FormScreen>

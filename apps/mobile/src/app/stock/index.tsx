@@ -5,7 +5,8 @@ import { MOVEMENT_LABELS, type Movement } from '../../finance/model';
 import { reverseMovement } from '../../finance/repo';
 import { useFinance } from '../../finance/useFinance';
 import { formatDate } from '../../lib/dates';
-import { litres, type Period, periodRange } from '../../production/calc';
+import { DateField } from '../../ui/DateField';
+import { lastMonthRange, litres, type Period, periodRange } from '../../production/calc';
 import { listMilk } from '../../production/repo';
 import { useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
@@ -34,14 +35,16 @@ export default function Stock() {
   const t = useTheme();
   const f = useFinance();
   const milk = useLocal(() => listMilk().map((m) => m.data));
-  const [period, setPeriod] = useState<Exclude<Period, 'year'>>('week');
+  const [period, setPeriod] = useState<Exclude<Period, 'year'> | 'last_month' | 'custom'>('week');
+  const [custom, setCustom] = useState({ from: periodRange('month', f.today).from, to: f.today });
   const [byDay, setByDay] = useState(false);
   const [reversing, setReversing] = useState<Movement | null>(null);
   const [reason, setReason] = useState('');
 
-  const range = periodRange(period, f.today);
+  const range = period === 'custom' ? custom : period === 'last_month' ? lastMonthRange(f.today) : periodRange(period, f.today);
   const to = range.to > f.today ? f.today : range.to;
-  const days = reconcile(f.movements, milk, range.from, to);
+  const backwards = range.from > to;
+  const days = backwards ? [] : reconcile(f.movements, milk, range.from, to);
   const discrepancies = reconcile(f.movements, milk, '2000-01-01', f.today).filter((d) => d.closing < 0);
   const reversed = new Set(f.movements.map((m) => m.reverses_id).filter(Boolean));
   const recent = [...f.movements]
@@ -96,8 +99,28 @@ export default function Stock() {
 
       <View style={{ gap: spacing.sm }}>
         <SectionHeader title="How stock changed" action={byDay ? 'Totals' : 'Each day'} onAction={() => setByDay((v) => !v)} />
-        <Chips label="Period" value={period} options={[{ value: 'today', label: 'Today' }, { value: 'week', label: 'This week' }, { value: 'month', label: 'This month' }]} onChange={(v) => v && setPeriod(v)} allowClear={false} />
-        {byDay ? (
+        <Chips
+          label="Period"
+          value={period}
+          options={[
+            { value: 'today', label: 'Today' },
+            { value: 'week', label: 'This week' },
+            { value: 'month', label: 'This month' },
+            { value: 'last_month', label: 'Last month' },
+            { value: 'custom', label: 'Dates…' },
+          ]}
+          onChange={(v) => v && setPeriod(v)}
+          allowClear={false}
+        />
+        {period === 'custom' ? (
+          <>
+            <DateField label="From" value={custom.from} onChange={(d) => d && setCustom((c) => ({ ...c, from: d }))} optional={false} />
+            <DateField label="To" value={custom.to} onChange={(d) => d && setCustom((c) => ({ ...c, to: d }))} optional={false} />
+          </>
+        ) : null}
+        {backwards ? (
+          <Notice tone="error">“From” is after “To”. Swap the dates to see how stock changed.</Notice>
+        ) : byDay ? (
           <Card gap={0}>
             <View style={{ flexDirection: 'row', paddingBottom: spacing.xs }}>
               {['Day', 'In', 'Out', 'Close'].map((h, i) => (

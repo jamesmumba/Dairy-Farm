@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { type Href, router } from 'expo-router';
 import { Children, type ComponentProps, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { minTouch, OnCard, radius, shadow, spacing, type, useCardBasis, useTheme } from './theme';
+import { minTouch, OnCard, radius, shadow, spacing, subtleShadow, type, useCardBasis, useTheme } from './theme';
 import type { Theme } from './theme';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -335,7 +335,7 @@ export function Segmented<V extends string>({ label, value, options, onChange }:
             accessibilityState={{ checked: on }}
             accessibilityLabel={`${label}: ${o.label}`}
             onPress={() => onChange(o.value)}
-            style={{ flex: 1, minHeight: minTouch - 10, alignItems: 'center', justifyContent: 'center', borderRadius: radius.chip - 3, backgroundColor: on ? t.surface : 'transparent', ...(on ? shadow : null), shadowOpacity: on ? 0.08 : 0 }}
+            style={{ flex: 1, minHeight: minTouch - 10, alignItems: 'center', justifyContent: 'center', borderRadius: radius.chip - 3, backgroundColor: on ? t.surface : 'transparent', ...(on ? subtleShadow : null) }}
           >
             <Text numberOfLines={1} style={{ color: on ? t.primary : t.textMuted, fontSize: 14, fontWeight: on ? '700' : '500' }}>
               {o.label}

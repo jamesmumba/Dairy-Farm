@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, TextField } from '../ui/form';
+import { Pressable, Text, View } from 'react-native';
+import { BottomSheet } from '../ui/BottomSheet';
+import { Button } from '../ui/form';
 import { Avatar } from '../ui/kit';
+import { SearchBar } from '../ui/SearchBar';
 import { minTouch, radius, spacing, useTheme } from '../ui/theme';
 import { type Cattle, displayName, type Sex, shortCode } from './model';
 
@@ -41,37 +42,30 @@ export function ParentPicker({
         {selected ? <Button label="Clear" variant="link" onPress={() => onChange(null)} /> : null}
       </View>
 
-      <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: t.background, padding: spacing.md, gap: spacing.md }}>
-          <Text accessibilityRole="header" style={{ color: t.text, fontSize: 24, fontWeight: '600' }}>
-            Choose {label.toLowerCase().replace(' (optional)', '')}
-          </Text>
-          <TextField label="Search" value={query} onChangeText={setQuery} placeholder="Ear tag, name or ID" autoCorrect={false} />
-          <FlatList
-            data={options}
-            keyExtractor={(a) => a.id}
-            ListEmptyComponent={<Text style={{ color: t.textMuted, fontSize: 16 }}>No {sex ? `${sex} ` : ''}animals match.</Text>}
-            renderItem={({ item }) => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={displayName(item)}
-                onPress={() => {
-                  onChange(item.id);
-                  setOpen(false);
-                }}
-                style={({ pressed }) => ({ minHeight: minTouch + 12, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm, backgroundColor: pressed ? t.primarySoft : 'transparent', borderRadius: radius.control })}
-              >
-                <Avatar name={displayName(item)} size={40} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{displayName(item)}</Text>
-                  <Text style={{ color: t.textMuted, fontSize: 14 }}>ID {shortCode(item.id)}</Text>
-                </View>
-              </Pressable>
-            )}
-          />
-          <Button label="Cancel" variant="secondary" onPress={() => setOpen(false)} />
-        </SafeAreaView>
-      </Modal>
+      <BottomSheet visible={open} title={`Choose ${label.toLowerCase().replace(' (optional)', '')}`} onClose={() => setOpen(false)} footer={<Button label="Cancel" variant="secondary" onPress={() => setOpen(false)} />}>
+        <SearchBar value={query} onChangeText={setQuery} placeholder="Ear tag, name or ID" />
+        {options.length === 0 ? <Text style={{ color: t.textMuted, fontSize: 16 }}>No {sex ? `${sex} ` : ''}animals match.</Text> : null}
+        <View>
+          {options.map((item) => (
+            <Pressable
+              key={item.id}
+              accessibilityRole="button"
+              accessibilityLabel={displayName(item)}
+              onPress={() => {
+                onChange(item.id);
+                setOpen(false);
+              }}
+              style={({ pressed }) => ({ minHeight: minTouch + 12, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm, backgroundColor: pressed ? t.primarySoft : 'transparent', borderRadius: radius.control })}
+            >
+              <Avatar name={displayName(item)} size={40} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{displayName(item)}</Text>
+                <Text style={{ color: t.textMuted, fontSize: 14 }}>ID {shortCode(item.id)}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      </BottomSheet>
     </View>
   );
 }

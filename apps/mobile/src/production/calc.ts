@@ -58,6 +58,9 @@ export function daysBetween(from: string, to: string): number {
 export type Period = 'today' | 'week' | 'month' | 'year';
 
 /** Calendar periods containing `today`. Weeks run Monday to Sunday. */
+/** The calendar month before the one `today` is in. */
+export const lastMonthRange = (today: string) => periodRange('month', addDays(`${today.slice(0, 7)}-01`, -1));
+
 export function periodRange(period: Period, today: string): { from: string; to: string } {
   const d = utc(today);
   switch (period) {

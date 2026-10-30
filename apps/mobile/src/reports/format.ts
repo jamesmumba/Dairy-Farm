@@ -1,6 +1,6 @@
 // Turns a Report into a CSV file or the HTML of a PDF. Pure, no I/O.
 
-import { formatDate } from '../lib/dates';
+import { formatDate, formatDateTime } from '../lib/dates';
 import type { Report } from './build';
 
 /**
@@ -68,7 +68,7 @@ export function toHtml(report: Report, farmName: string | null): string {
 </style></head><body>
   <h1>${e(report.title)}</h1>
   <div class="meta muted">${farmName ? `${e(farmName)} · ` : ''}${e(period)}${filters ? ` · ${filters}` : ''}<br>
-  Generated ${e(new Date(report.generatedAt).toLocaleString())} from records on this phone · Units: ${e(report.units)}</div>
+  Generated ${e(formatDateTime(report.generatedAt))} from records on this phone · Units: ${e(report.units)}</div>
   <table class="summary"><tbody>${report.summary
     .map((s) => `<tr><td>${e(s.label)}${s.note ? `<br><span class="muted">${e(s.note)}</span>` : ''}</td><td class="n"><strong>${e(s.value)}</strong></td></tr>`)
     .join('')}</tbody></table>

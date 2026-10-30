@@ -4,7 +4,7 @@ import { money, summarize } from '../finance/calc';
 import { CATEGORY_LABELS } from '../finance/model';
 import { useFinance } from '../finance/useFinance';
 import { formatDate } from '../lib/dates';
-import { addDays, litres, type Period, periodRange } from '../production/calc';
+import { lastMonthRange, litres, type Period, periodRange } from '../production/calc';
 import { useSyncStatus } from '../sync/engine';
 import { Chips } from '../ui/Chips';
 import { DateField } from '../ui/DateField';
@@ -37,16 +37,13 @@ function Rule() {
 
 type Choice = Exclude<Period, 'today'> | 'last_month' | 'custom';
 
-/** The month before the one `today` is in. */
-const lastMonth = (today: string) => periodRange('month', addDays(`${today.slice(0, 7)}-01`, -1));
-
 export default function FinanceSummary() {
   const t = useTheme();
   const f = useFinance();
   const sync = useSyncStatus();
   const [choice, setChoice] = useState<Choice>('month');
   const [custom, setCustom] = useState({ from: periodRange('month', f.today).from, to: f.today });
-  const range = choice === 'custom' ? custom : choice === 'last_month' ? lastMonth(f.today) : periodRange(choice, f.today);
+  const range = choice === 'custom' ? custom : choice === 'last_month' ? lastMonthRange(f.today) : periodRange(choice, f.today);
   const backwards = range.from > range.to;
   // Only currencies actually used; never added together.
   const currencies = [...new Set([f.currency, ...f.sales.map((s) => s.currency), ...f.payments.map((p) => p.currency), ...f.expenses.map((e) => e.currency)])];

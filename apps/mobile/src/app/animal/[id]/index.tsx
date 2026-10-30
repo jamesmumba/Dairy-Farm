@@ -17,7 +17,7 @@ import { useAuth } from '../../../state/auth';
 import { useSyncStatus } from '../../../sync/engine';
 import { hasLocalChanges, useLocal } from '../../../sync/store';
 import { Chips } from '../../../ui/Chips';
-import { formatDate } from '../../../ui/DateField';
+import { formatDate, formatDateTime, toDateString } from '../../../lib/dates';
 import { Button, Notice } from '../../../ui/form';
 import { MissingRecord } from '../../../ui/ProblemView';
 import { Avatar, Card, Figure, ListGroup, ListRow, Pill } from '../../../ui/kit';
@@ -170,7 +170,7 @@ export default function AnimalProfile() {
       <View style={{ gap: spacing.xs }}>
         {timeline.offline ? (
           <Text style={{ color: t.textMuted, fontSize: 14 }}>
-            {timeline.savedAt ? `Offline · showing history saved ${new Date(timeline.savedAt).toLocaleString()}` : 'History needs a connection.'}
+            {timeline.savedAt ? `Offline · showing history saved ${formatDateTime(timeline.savedAt, dateFmt)}` : 'History needs a connection.'}
           </Text>
         ) : null}
         {hasLocalChanges('cattle', a.id) ? <Text style={{ color: t.textMuted, fontSize: 14 }}>Changes waiting to sync are not in the history yet.</Text> : null}
@@ -181,7 +181,7 @@ export default function AnimalProfile() {
               <View style={{ flex: 1, width: 2, backgroundColor: t.border }} />
             </View>
             <View style={{ flex: 1, gap: 2, paddingBottom: spacing.md }}>
-              <Text style={{ color: t.textMuted, fontSize: 13 }}>{new Date(e.at).toLocaleDateString()}</Text>
+              <Text style={{ color: t.textMuted, fontSize: 13 }}>{formatDate(toDateString(new Date(e.at)), dateFmt)}</Text>
               <Text style={{ color: t.text, fontSize: 16 }}>{e.title}</Text>
               {e.detail ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{e.detail}</Text> : null}
             </View>
