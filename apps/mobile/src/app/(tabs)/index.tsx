@@ -3,6 +3,8 @@ import { type Href, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { displayName } from '../../animals/model';
+import { groupDoses, isGroup, reminderActions } from '../../care/quick';
+import { ReminderRow, useQuickActions } from '../../care/QuickActions';
 import { REMINDER_ICON } from '../../care/reminderIcon';
 import { useReminders } from '../../care/useReminders';
 import { money, summarize as summarizeMoney, toCents } from '../../finance/calc';
@@ -89,6 +91,7 @@ export default function Home() {
   const input = useReportInput();
   const f = useFinance();
   const { reminders, names } = useReminders();
+  const quick = useQuickActions();
   const [choice, setChoice] = useState<'today' | 'week' | 'month'>('week');
   const [milkChart, setMilkChart] = useState<'daily' | 'cow'>('daily');
 
@@ -120,7 +123,10 @@ export default function Home() {
   const moneyMax = Math.max(0, ...salesBars.map((b) => b.value), ...payBars.map((b) => b.value));
   const fmtMoney = (c: number) => money(c, f.currency);
   const periodName = choice === 'today' ? 'today' : choice === 'week' ? 'this week' : 'this month';
-  const upcoming = reminders.filter((r) => r.urgency === 'overdue' || r.urgency === 'today' || r.urgency === 'upcoming').slice(0, 3);
+  const upcoming = groupDoses(
+    reminders.filter((r) => r.urgency === 'overdue' || r.urgency === 'today' || r.urgency === 'upcoming'),
+    input.care.vaccinations,
+  ).slice(0, 3);
   const attentionRows = [...attention.entries()].slice(0, 3);
   const syncWorthShowing = sync.pending > 0 || sync.failed > 0 || sync.state === 'offline' || sync.state === 'attention';
 
@@ -265,19 +271,35 @@ export default function Home() {
           <Text style={{ color: t.textMuted, fontSize: 15 }}>Nothing due in the coming days.</Text>
         ) : (
           <ListGroup>
-            {upcoming.map((r) => (
-              <ListRow
-                key={r.key}
-                icon={REMINDER_ICON[r.kind]}
-                tint={r.urgency === 'overdue' ? 'red' : 'straw'}
-                title={`${r.cattleId ? `${names.get(r.cattleId) ?? 'Animal'}: ` : ''}${r.title}`}
-                subtitle={`${r.urgency === 'overdue' ? 'Overdue · ' : ''}${dayLabel(r.due.slice(0, 10))}`}
-                href={(r.href ?? { pathname: '/care/[kind]/[id]', params: { kind: r.record!.kind, id: r.record!.id } }) as Href}
-              />
-            ))}
+            {upcoming.map((r) =>
+              isGroup(r) ? (
+                <ReminderRow
+                  key={r.key}
+                  icon={REMINDER_ICON.vaccination}
+                  tint={r.urgency === 'overdue' ? 'red' : 'straw'}
+                  title={`${r.title} · ${r.cattleIds.length} cows`}
+                  subtitle={`${r.urgency === 'overdue' ? 'Overdue · ' : ''}${dayLabel(r.due)}`}
+                  onPress={() => quick.startGroup(r)}
+                  actions={['given']}
+                  onAction={() => quick.startGroup(r)}
+                />
+              ) : (
+                <ReminderRow
+                  key={r.key}
+                  icon={REMINDER_ICON[r.kind]}
+                  tint={r.urgency === 'overdue' ? 'red' : 'straw'}
+                  title={`${r.cattleId ? `${names.get(r.cattleId) ?? 'Animal'}: ` : ''}${r.title}`}
+                  subtitle={`${r.urgency === 'overdue' ? 'Overdue · ' : ''}${dayLabel(r.due.slice(0, 10))}`}
+                  href={(r.href ?? { pathname: '/care/[kind]/[id]', params: { kind: r.record!.kind, id: r.record!.id } }) as Href}
+                  actions={r.record ? reminderActions(r) : []}
+                  onAction={(a) => quick.start(a, { ...r.record!, reminderKey: r.key })}
+                />
+              ),
+            )}
           </ListGroup>
         )}
       </View>
+      {quick.sheet}
     </ScrollView>
   );
 }

@@ -76,7 +76,6 @@ export function ListRow({
   onPress,
   leading,
   unread,
-  back,
 }: {
   icon?: IconName;
   tint?: Tint;
@@ -89,11 +88,9 @@ export function ListRow({
   leading?: ReactNode;
   /** Shown with a dot and a bold title, and announced as new. */
   unread?: boolean;
-  /** The page is usually the one this was opened from: go back to it rather than open another copy. */
-  back?: boolean;
 }) {
   const t = useTheme();
-  const go = onPress ?? (href ? () => (back ? router.dismissTo(href) : router.push(href)) : undefined);
+  const go = onPress ?? (href ? () => router.push(href) : undefined);
   return (
     <Pressable
       accessibilityRole="button"

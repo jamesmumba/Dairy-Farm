@@ -5,6 +5,8 @@ import { displayName } from '../../../animals/model';
 import { listAnimals } from '../../../animals/repo';
 import { CareForm } from '../../../care/CareForm';
 import { CARE_FORMS, fromRecord } from '../../../care/forms';
+import { type QuickAction, recordActions } from '../../../care/quick';
+import { QuickButtons, useQuickActions } from '../../../care/QuickActions';
 import { CARE_KINDS, type CareKind, type Treatment } from '../../../care/model';
 import { getCare, removeCare, updateCare } from '../../../care/repo';
 import { useCareContext } from '../../../care/useCareContext';
@@ -13,11 +15,23 @@ import { useLocal } from '../../../sync/store';
 import { Button, FormScreen, Notice, TextField } from '../../../ui/form';
 import { MissingRecord } from '../../../ui/ProblemView';
 import { SyncBadge } from '../../../ui/SyncBadge';
-import { Details, FormCard, Hero, ListGroup, ListRow } from '../../../ui/kit';
+import { Card, Details, FormCard, Hero, ListGroup, ListRow } from '../../../ui/kit';
 import { useTheme } from '../../../ui/theme';
 import { useOpenOrBack } from '../../../ui/useOpenOrBack';
 
 type Row = { id: string; version: number; deleted_at: string | null } & Record<string, unknown>;
+
+/** The question the record is waiting on, above its answers. */
+const promptFor = (kind: CareKind, actions: QuickAction[]) =>
+  actions[0] === 'record_calving'
+    ? 'Has she calved?'
+    : kind === 'vaccination'
+      ? 'Was this dose given?'
+      : kind === 'treatment'
+        ? 'Update the treatment'
+        : kind === 'pregnancy-check'
+          ? 'What was the result?'
+          : 'How is she now?';
 
 export default function CareRecord() {
   const open = useOpenOrBack();
@@ -29,6 +43,7 @@ export default function CareRecord() {
   const [mode, setMode] = useState<'view' | 'edit' | 'remove'>('view');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const quick = useQuickActions();
 
   if (!record) return <MissingRecord what="record" />;
   const config = CARE_FORMS[kind];
@@ -36,6 +51,7 @@ export default function CareRecord() {
   const animalId = (r.cattle_id ?? r.dam_id) as string | undefined;
   const animal = allAnimals.find((a) => a.id === animalId);
   const treatment = kind === 'treatment' ? (r as unknown as Treatment) : null;
+  const actions = recordActions(kind, r, ctx, new Date());
 
   const show = (key: string, type: string): string | null => {
     const v = r[key];
@@ -95,6 +111,12 @@ export default function CareRecord() {
         </FormCard>
       ) : (
         <>
+          {actions.length && mode === 'view' ? (
+            <Card>
+              <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }}>{promptFor(kind, actions)}</Text>
+              <QuickButtons actions={actions} onPick={(a) => quick.start(a, { kind, id })} />
+            </Card>
+          ) : null}
           <Details
             rows={config.fields
               .filter((f) => !f.createOnly)
@@ -115,6 +137,7 @@ export default function CareRecord() {
           )}
         </>
       )}
+      {quick.sheet}
     </FormScreen>
   );
 }

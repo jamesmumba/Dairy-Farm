@@ -10,6 +10,7 @@ import { addPullHook } from '../sync/engine';
 import { failedOps, useLocal } from '../sync/store';
 import { findDuplicates } from './duplicates';
 import { useDismissedDuplicates } from './duplicatesStore';
+import { useHiddenReminders } from './hiddenReminders';
 import { newDeviceReminders } from '../lib/devices';
 import { useDevices } from '../lib/devicesStore';
 import { syncInboxReads } from './inbox';
@@ -38,6 +39,7 @@ export function useReminders() {
   const failed = useLocal(failedOps);
   const dismissedDuplicates = useDismissedDuplicates();
   const devices = useDevices();
+  const hidden = useHiddenReminders();
   const timeZone = account?.time_zone;
   const rule = account?.decline_rule ?? DEFAULT_DECLINE_RULE;
   return useMemo(() => {
@@ -93,11 +95,11 @@ export function useReminders() {
       : [];
     // Two phones adding the same customer or untagged animal while offline.
     const duplicates = findDuplicates(finance.customers, animals.map((a) => a.data), dismissedDuplicates, today);
-    const reminders = [...sync, ...duplicates, ...newDeviceReminders(devices, now, today), ...computeReminders(care, active, now), ...declines, ...missing, ...financeReminders(finance, milk, today, farmDate)].sort(
+    const reminders = [...sync, ...duplicates, ...newDeviceReminders(devices, now, today), ...computeReminders(care, active, now), ...declines, ...missing, ...financeReminders(finance, milk, today, farmDate)].filter((r) => !hidden.has(r.key)).sort(
       (a, b) => order[a.urgency] - order[b.urgency] || a.due.localeCompare(b.due),
     );
     return { reminders, names };
-  }, [care, animals, finance, milk, timeZone, failed, rule, dismissedDuplicates, devices]);
+  }, [care, animals, finance, milk, timeZone, failed, rule, dismissedDuplicates, devices, hidden]);
 }
 
 export type NotificationStatus = { state: 'scheduled'; count: number; at: string } | { state: 'denied' } | { state: 'off' } | { state: 'none' };

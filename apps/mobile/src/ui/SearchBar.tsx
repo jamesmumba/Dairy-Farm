@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { BottomSheet } from './BottomSheet';
 import { Button } from './form';
 import { minTouch, radius, spacing, useFieldFill, useTheme } from './theme';
 
@@ -121,35 +121,9 @@ export function FilterSheet({
   showLabel: string;
   children: ReactNode;
 }) {
-  const t = useTheme();
-  const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Close filters" style={{ flex: 1, backgroundColor: '#0006' }} onPress={onClose} />
-      <View
-        style={{
-          maxHeight: '85%',
-          backgroundColor: t.surface,
-          borderTopLeftRadius: radius.card + 4,
-          borderTopRightRadius: radius.card + 4,
-          paddingBottom: insets.bottom + spacing.sm,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, borderBottomWidth: 1, borderBottomColor: t.border }}>
-          <Text accessibilityRole="header" style={{ color: t.text, fontSize: 19, fontWeight: '600', paddingVertical: spacing.md }}>
-            Filters
-          </Text>
-          {onClear ? (
-            <Pressable accessibilityRole="button" onPress={onClear} hitSlop={8} style={{ minHeight: minTouch, justifyContent: 'center' }}>
-              <Text style={{ color: t.primary, fontSize: 17 }}>Clear all</Text>
-            </Pressable>
-          ) : null}
-        </View>
-        <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>{children}</ScrollView>
-        <View style={{ paddingHorizontal: spacing.md }}>
-          <Button label={showLabel} onPress={onClose} />
-        </View>
-      </View>
-    </Modal>
+    <BottomSheet visible={visible} title="Filters" onClose={onClose} headerAction={onClear ? { label: 'Clear all', onPress: onClear } : undefined} footer={<Button label={showLabel} onPress={onClose} />}>
+      {children}
+    </BottomSheet>
   );
 }
