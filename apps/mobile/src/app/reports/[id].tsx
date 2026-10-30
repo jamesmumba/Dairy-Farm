@@ -28,10 +28,9 @@ const SHOWN_ROWS = 25;
 /** Tables this narrow fit a phone as plain rows; wider ones scroll sideways. */
 const LIST_COLUMNS = 3;
 
-/** A table that folds: a heading with its row count, tapped to open or close. */
-function ReportTable({ table, initiallyOpen }: { table: Table; initiallyOpen: boolean }) {
+/** A table in a card: its heading with the row count, then the rows. */
+function ReportTable({ table }: { table: Table }) {
   const t = useTheme();
-  const [open, setOpen] = useState(initiallyOpen);
   const [all, setAll] = useState(false);
   const limit = table.daily ? SHOWN_DAYS : SHOWN_ROWS;
   const cut = !all && table.rows.length > limit;
@@ -41,18 +40,11 @@ function ReportTable({ table, initiallyOpen }: { table: Table; initiallyOpen: bo
 
   return (
     <View style={{ backgroundColor: t.surface, borderRadius: radius.card, ...shadow, overflow: 'hidden' }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        accessibilityLabel={`${table.title}, ${table.rows.length} rows`}
-        onPress={() => setOpen((o) => !o)}
-        style={({ pressed }) => ({ minHeight: minTouch + 8, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, backgroundColor: pressed ? t.primarySoft : 'transparent' })}
-      >
+      <View accessibilityRole="header" style={{ minHeight: minTouch, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md }}>
         <Text style={{ flex: 1, color: t.text, fontSize: 16, fontWeight: '600' }}>{table.title}</Text>
         <Text style={{ color: t.textMuted, fontSize: 14, fontVariant: ['tabular-nums'] }}>{table.rows.length}</Text>
-        <MaterialCommunityIcons name={open ? 'chevron-up' : 'chevron-down'} size={22} color={t.textMuted} importantForAccessibility="no" />
-      </Pressable>
-      {!open ? null : asList ? (
+      </View>
+      {asList ? (
         // Narrow tables: plain rows, the first column on the left and the figures on the right.
         <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
           {rows.map((row, i) => (
@@ -98,7 +90,7 @@ function ReportTable({ table, initiallyOpen }: { table: Table; initiallyOpen: bo
           </View>
         </ScrollView>
       )}
-      {open && cut ? (
+      {cut ? (
         <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
           <Button label={`Show all ${table.rows.length} rows${table.daily ? ` (showing the last ${limit} days)` : ''}`} variant="link" onPress={() => setAll(true)} />
         </View>
@@ -265,8 +257,8 @@ export default function ReportScreen() {
             </Notice>
           ))}
 
-          {shown.map((table, i) => (
-            <ReportTable key={table.title} table={table} initiallyOpen={i === 0} />
+          {shown.map((table) => (
+            <ReportTable key={table.title} table={table} />
           ))}
           {empty.length ? (
             <Text style={{ color: t.textMuted, fontSize: 14 }}>Nothing recorded for: {empty.map((x) => x.title.toLowerCase()).join(', ')}.</Text>

@@ -13,7 +13,7 @@ import { SyncBadge } from '../../ui/SyncBadge';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Avatar, Pill } from '../../ui/kit';
 import { useSyncRefresh } from '../../ui/useSyncRefresh';
-import { minTouch, radius, shadow, spacing, type, useTheme } from '../../ui/theme';
+import { minTouch, radius, raisedShadow, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 export default function Animals() {
   const t = useTheme();
@@ -170,9 +170,7 @@ export default function Animals() {
           borderRadius: 28,
           backgroundColor: t.primary,
           opacity: pressed ? 0.9 : 1,
-          ...shadow,
-          shadowOpacity: 0.2,
-          elevation: 6,
+          ...raisedShadow,
         })}
       >
         <MaterialCommunityIcons name="plus" size={24} color={t.onPrimary} />

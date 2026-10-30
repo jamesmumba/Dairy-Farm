@@ -28,13 +28,17 @@ export function useTheme() {
   return useColorScheme() === 'dark' ? dark : light;
 }
 
-/** Soft card shadow, tinted green so it reads as depth rather than grey dirt. */
+/**
+ * Card shadow in two layers, tinted green so it reads as depth rather than grey dirt: a tight one
+ * that seats the card on the page, and a wide soft one that lifts it. The same on iOS and Android.
+ */
 export const shadow = {
-  shadowColor: '#173F2B',
-  shadowOpacity: 0.12,
-  shadowRadius: 14,
-  shadowOffset: { width: 0, height: 4 },
-  elevation: 4,
+  boxShadow: '0px 1px 2px rgba(23, 63, 43, 0.08), 0px 6px 16px -2px rgba(23, 63, 43, 0.10)',
+};
+
+/** For what floats above the page (the Add button): the same layers, stronger. */
+export const raisedShadow = {
+  boxShadow: '0px 2px 4px rgba(23, 63, 43, 0.14), 0px 10px 24px -4px rgba(23, 63, 43, 0.28)',
 };
 
 /**
