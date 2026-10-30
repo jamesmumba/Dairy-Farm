@@ -127,7 +127,7 @@ export default function FinanceSummary() {
                   <Line label="Expenses paid" value={money(s.paidOutCents, cur)} sign="−" note="Expenses marked paid; unpaid ones are not cash yet" />
                   {s.refundsCents ? <Line label="Refunds paid out" value={money(s.refundsCents, cur)} sign="−" /> : null}
                   <Rule />
-                  <Line label="Cash in less cash out" value={money(s.cashCents, cur)} sign="=" strong />
+                  <Line label={s.cashCents < 0 ? 'Cash lost' : 'Cash gained'} value={money(Math.abs(s.cashCents), cur)} sign="=" strong />
                   {s.partlyPaidCount ? (
                     <Text style={{ color: t.textMuted, fontSize: 13, marginTop: spacing.xs }}>
                       {s.partlyPaidCount} partly paid expense{s.partlyPaidCount === 1 ? ' is' : 's are'} not included: how much was paid is not recorded.
