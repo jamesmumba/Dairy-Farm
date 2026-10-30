@@ -6,3 +6,4 @@ dist/
 .expo/
 *.log
 apps/api/test/.edge-bundle-*.mjs
+supabase/.temp/
