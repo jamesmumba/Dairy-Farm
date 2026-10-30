@@ -9,6 +9,7 @@
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
+      "environment": "preview",
       "env": { "APP_ENV": "staging" }
     },
     "production": {
