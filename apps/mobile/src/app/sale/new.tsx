@@ -2,10 +2,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { fromCents, listPrice, money, saleTotal, toCents } from '../../finance/calc';
+import { existingSale } from '../../finance/existing';
 import { METHOD_LABELS, type Method } from '../../finance/model';
 import { recordSale } from '../../finance/repo';
 import { useFinance } from '../../finance/useFinance';
 import { CURRENCIES } from '../../lib/account';
+import { formatDateTime } from '../../lib/dates';
 import { litres } from '../../production/calc';
 import { Chips } from '../../ui/Chips';
 import { DateTimeField } from '../../ui/DateField';
@@ -99,9 +101,13 @@ export default function NewSale() {
       currency !== f.currency && `${currency}, not your usual currency`,
       quantityCl * 2 > stockCl && 'more than half the milk in stock',
     ].filter(Boolean);
-    Alert.alert('Confirm sale', [...(unusual.length ? [`Note: ${unusual.join(', ')}.`, ''] : []), ...summary].join('\n'), [
+    // The same sale entered twice (another phone, or saved again) is named first, with a way to open it.
+    const same = existingSale(f.sales, { customer_id: customer.id, quantity: norm(quantity), sale_at: saleAt });
+    const repeat = same ? [`Already recorded? ${litres(toCents(same.quantity))} L to ${customer.name} at ${formatDateTime(same.sale_at)}.`, ''] : [];
+    Alert.alert(same ? 'Already recorded?' : 'Confirm sale', [...repeat, ...(unusual.length ? [`Note: ${unusual.join(', ')}.`, ''] : []), ...summary].join('\n'), [
       { text: 'Go back', style: 'cancel' },
-      { text: 'Save sale', onPress: finish },
+      ...(same ? [{ text: 'Open it', onPress: () => router.replace({ pathname: '/sale/[id]', params: { id: same.id } }) }] : []),
+      { text: same ? 'Save anyway' : 'Save sale', onPress: finish },
     ]);
   }
 

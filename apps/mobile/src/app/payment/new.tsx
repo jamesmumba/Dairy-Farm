@@ -2,6 +2,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text } from 'react-native';
 import { fromCents, money, toCents } from '../../finance/calc';
+import { existingPayment } from '../../finance/existing';
+import { formatDateTime } from '../../lib/dates';
 import { METHOD_LABELS, type Method, type Payment } from '../../finance/model';
 import { recordPayment } from '../../finance/repo';
 import { useFinance } from '../../finance/useFinance';
@@ -40,10 +42,14 @@ export default function NewPayment() {
     if (kind === 'refund' && toCents(a) > -balance) return setError(`A refund cannot be more than the customer’s credit (${money(Math.max(0, -balance), currency)}).`);
     if (kind === 'adjustment' && toCents(a) > balance) return setError(`A discount or write-off cannot be more than what is owed (${money(Math.max(0, balance), currency)}).`);
     const after = balance + (kind === 'refund' ? toCents(a) : -toCents(a));
-    Alert.alert('Confirm', `${KINDS[kind]}: ${money(toCents(a), currency)} — ${customer.name}\nBalance after: ${after > 0 ? `owes ${money(after, currency)}` : after < 0 ? `in credit ${money(-after, currency)}` : 'settled'}`, [
+    // The same payment entered twice (another phone, or saved again) is named first, with a way to open it.
+    const same = existingPayment(f.payments, { customer_id: customer.id, kind, amount: a, paid_at: paidAt });
+    const repeat = same ? `Already recorded? ${money(toCents(same.amount), same.currency)} from ${customer.name} at ${formatDateTime(same.paid_at)}.\n\n` : '';
+    Alert.alert(same ? 'Already recorded?' : 'Confirm', `${repeat}${KINDS[kind]}: ${money(toCents(a), currency)} — ${customer.name}\nBalance after: ${after > 0 ? `owes ${money(after, currency)}` : after < 0 ? `in credit ${money(-after, currency)}` : 'settled'}`, [
       { text: 'Cancel', style: 'cancel' },
+      ...(same ? [{ text: 'Open it', onPress: () => router.replace({ pathname: '/payment/[id]', params: { id: same.id } }) }] : []),
       {
-        text: 'Save',
+        text: same ? 'Save anyway' : 'Save',
         onPress: () => {
           recordPayment({
             customer_id: customer.id,

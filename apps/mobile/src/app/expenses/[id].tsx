@@ -49,8 +49,7 @@ export default function ExpenseScreen() {
   /** The rest is paid: the status changes, and the day it was paid goes in the note. */
   function markPaid(paidOn: string, method: Method) {
     const line = `Paid on ${paidOn}`;
-    editExpense(stored!, { payment_status: 'paid', payment_method: method, notes: e.notes ? `${e.notes}
-${line}` : line });
+    editExpense(stored!, { payment_status: 'paid', payment_method: method, notes: e.notes ? `${e.notes}\n${line}` : line });
     setMode('view');
   }
 

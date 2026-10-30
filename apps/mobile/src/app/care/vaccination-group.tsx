@@ -4,7 +4,9 @@ import { useMemo, useState } from 'react';
 import { Alert, Text } from 'react-native';
 import { type Cattle, displayName } from '../../animals/model';
 import { listBreeds } from '../../animals/repo';
-import { createCare } from '../../care/repo';
+import { groupDosePlan } from '../../care/existing';
+import type { Vaccination } from '../../care/model';
+import { createCare, getCare, updateCare } from '../../care/repo';
 import { useCareContext } from '../../care/useCareContext';
 import { formatDate } from '../../lib/dates';
 import { useLocal } from '../../sync/store';
@@ -65,13 +67,36 @@ export default function GroupVaccination() {
     if (!selected.length) return setError('Select at least one animal.');
     if (next && next <= given) return setError('The next dose must be after this one.');
     const definition = `${groupLabel}, active animals on ${formatDate(given)}: ${selected.length} selected${excluded.size ? `, ${inGroup.length - selected.length} left out` : ''}`;
-    Alert.alert('Save group vaccination?', `${vaccine.trim()} for ${selected.length} animal${selected.length === 1 ? '' : 's'} on ${formatDate(given)}.`, [
+    // Cows with this dose already booked get that booking marked given (no second record, no leftover
+    // reminder); cows already given it in the last two weeks are left out.
+    const plan = groupDosePlan(selected.map((a) => a.id), vaccine.trim(), given, ctx.care);
+    const recorded = plan.complete.size + plan.fresh.length;
+    if (!recorded) return setError(`All ${selected.length} selected were already given ${vaccine.trim()} in the last two weeks.`);
+    const notes = [
+      plan.complete.size ? `${plan.complete.size} already booked: marked as given.` : null,
+      plan.alreadyGiven.length ? `${plan.alreadyGiven.length} already given it in the last two weeks: left out.` : null,
+    ].filter(Boolean);
+    const summary = `${vaccine.trim()} for ${recorded} animal${recorded === 1 ? '' : 's'} on ${formatDate(given)}.`;
+    Alert.alert('Save group vaccination?', [summary, ...notes].join('\n\n'), [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Save',
         onPress: () => {
           const batchId = randomUUID();
-          for (const a of selected) {
+          for (const [, doseId] of plan.complete) {
+            const booked = getCare<Vaccination>('vaccination', doseId);
+            if (booked) {
+              updateCare('vaccination', booked, {
+                status: 'completed',
+                administered_on: given,
+                batch_number: batch.trim() || null,
+                dosage_as_directed: dose.trim() || null,
+                administered_by: by.trim() || null,
+                next_due_on: next,
+              });
+            }
+          }
+          for (const a of selected.filter((x) => plan.fresh.includes(x.id))) {
             createCare('vaccination', {
               cattle_id: a.id,
               schedule_id: scheduleId,

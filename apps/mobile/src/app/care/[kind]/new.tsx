@@ -1,9 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { displayName } from '../../../animals/model';
+import { findExisting } from '../../../care/existing';
 import { CareForm } from '../../../care/CareForm';
 import { CARE_FORMS } from '../../../care/forms';
 import { CARE_KINDS, type CareKind } from '../../../care/model';
 import { createCare } from '../../../care/repo';
 import { useCareContext } from '../../../care/useCareContext';
+import { askIfExisting } from '../../../ui/askIfExisting';
 import { FormScreen, Notice } from '../../../ui/form';
 
 export default function NewCareRecord() {
@@ -36,8 +39,15 @@ export default function NewCareRecord() {
         creating
         submitLabel="Save"
         onSubmit={(body, createOnly) => {
-          const id = createCare(kind, body, createOnly);
-          router.replace({ pathname: '/care/[kind]/[id]', params: { kind, id } });
+          const save = () => {
+            const id = createCare(kind, body, createOnly);
+            router.replace({ pathname: '/care/[kind]/[id]', params: { kind, id } });
+          };
+          // The same dose, check, concern or event may already be recorded (often from another phone).
+          const cow = ctx.animals.find((a) => a.id === (body.cattle_id ?? body.dam_id));
+          const found = findExisting(kind, body, ctx.care, cow ? displayName(cow) : 'This animal', ctx.today);
+          if (!found) return save();
+          askIfExisting(found.message, () => router.replace({ pathname: '/care/[kind]/[id]', params: { kind: found.kind, id: found.id } }), save);
         }}
       />
     </FormScreen>
