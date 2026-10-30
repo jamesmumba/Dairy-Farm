@@ -115,6 +115,9 @@ describe('vaccination report', () => {
     expect(value(r, 'Compliance in period')).toBe('50%');
     expect(value(r, 'Overdue now')).toBe('1');
     expect(r.tables[0].rows[0]).toMatchObject({ covered: '1 of 2', pct: '50%' });
+    // A cancelled dose was never due, so it does not lower compliance.
+    const cancelled = { ...care, vaccinations: [care.vaccinations[0], { ...care.vaccinations[1], status: 'cancelled' as const }] };
+    expect(value(vaccinationReport(input({ care: cancelled }), f), 'Compliance in period')).toBe('100%');
   });
 });
 
@@ -137,6 +140,12 @@ describe('finance report', () => {
     const unpaidPhiri = financeReport(input({ finance }), { ...f, customerId: 'c1', paid: 'unpaid' });
     expect(unpaidPhiri.tables[0].rows).toEqual([expect.objectContaining({ customer: 'Mrs Phiri', total: '100.00', due: '40.00' })]);
     expect(unpaidPhiri.filters).toMatchObject({ Customer: 'Mrs Phiri', 'Payment status': 'Unpaid' });
+    // The summary follows the filters, so it matches the table; farm-wide figures are left out.
+    const phiri = financeReport(input({ finance }), { ...f, customerId: 'c1' });
+    expect(value(phiri, 'Sales revenue')).toBe('ZMW 100.00');
+    expect(value(phiri, 'Customers owe now')).toBe('ZMW 40.00');
+    expect(phiri.summary.map((s) => s.label)).not.toContain('Recorded operating result');
+    expect(phiri.tables[1].rows[0]).toMatchObject({ kind: 'Payment received' });
   });
 });
 

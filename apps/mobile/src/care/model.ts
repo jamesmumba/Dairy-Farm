@@ -174,4 +174,7 @@ export const ACTION_LABELS = {
   other: 'Something else',
 } as const;
 export const ALERT_TYPE_LABELS = { milk_drop: 'Sudden milk drop', milk_decline: 'Falling milk', other: 'Other concern' } as const;
+export const SEVERITY_LABELS = { low: 'Low', moderate: 'Moderate', high: 'High', critical: 'Critical' } as const;
+export const RECOVERY_LABELS = { ongoing: 'Ongoing', recovering: 'Recovering', recovered: 'Recovered', chronic: 'Chronic', died: 'Died' } as const;
+export const CALVING_OUTCOME_LABELS = { live: 'Live calf', stillborn: 'Stillborn', aborted: 'Aborted', other: 'Other' } as const;
 export const RESULT_LABELS = { pending: 'Not yet examined', pregnant: 'Pregnant', not_pregnant: 'Not pregnant', inconclusive: 'Inconclusive' } as const;

@@ -4,7 +4,7 @@ import { Alert, Text } from 'react-native';
 import { fromCents, money, toCents } from '../../finance/calc';
 import { existingPayment } from '../../finance/existing';
 import { formatDateTime } from '../../lib/dates';
-import { METHOD_LABELS, type Method, type Payment } from '../../finance/model';
+import { METHOD_LABELS, type Method, type Payment, PAYMENT_KIND_LABELS } from '../../finance/model';
 import { recordPayment } from '../../finance/repo';
 import { useFinance } from '../../finance/useFinance';
 import { CURRENCIES } from '../../lib/account';
@@ -13,7 +13,7 @@ import { DateTimeField } from '../../ui/DateField';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 import { useTheme } from '../../ui/theme';
 
-const KINDS = { payment: 'Payment received', refund: 'Refund to customer', adjustment: 'Discount or write-off' } as const;
+const KINDS = PAYMENT_KIND_LABELS;
 
 export default function NewPayment() {
   const t = useTheme();

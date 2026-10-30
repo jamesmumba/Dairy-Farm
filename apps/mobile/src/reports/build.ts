@@ -2,11 +2,11 @@
 // period, filters, generation time, units/currency, definitions, and says what is missing.
 
 import { type Breed, type Cattle, displayName, PRODUCTION_LABELS, REPRODUCTIVE_LABELS, STATUS_LABELS } from '../animals/model';
-import { activeWithdrawal, type CareData, EVENT_LABELS, RESULT_LABELS, underTreatment } from '../care/model';
+import { activeWithdrawal, CALVING_OUTCOME_LABELS, type CareData, EVENT_LABELS, RECOVERY_LABELS, RESULT_LABELS, SEVERITY_LABELS, underTreatment } from '../care/model';
 import { balances, money, reconcile, saleDue, summarize as summarizeMoney, toCents } from '../finance/calc';
-import { CATEGORY_LABELS, METHOD_LABELS, type Method } from '../finance/model';
+import { CATEGORY_LABELS, METHOD_LABELS, type Method, PAYMENT_KIND_LABELS } from '../finance/model';
 import type { FinanceData } from '../finance/repo';
-import { formatDate } from '../lib/dates';
+import { formatDate, formatDateTime } from '../lib/dates';
 import { addDays, dailyTotals, decline, type DeclineRule, highLow, litres, type MilkRow, perAnimal, perBreed, previousRange, summarize } from '../production/calc';
 
 export type ReportId = 'herd' | 'production' | 'health' | 'reproduction' | 'vaccination' | 'finance';
@@ -22,6 +22,8 @@ export interface Table {
   columns: Column[];
   rows: Record<string, string>[];
   empty?: string;
+  /** One row per day, oldest first: on screen only the latest days are shown until asked. */
+  daily?: boolean;
 }
 
 export interface Report {
@@ -191,6 +193,7 @@ export function productionReport(input: ReportInput, f: Filters): Report {
           { key: 'litres', label: 'Litres', numeric: true },
         ],
         rows: days.map((d) => ({ date: formatDate(d.date), litres: d.recorded ? litres(d.cl) : 'no records' })),
+        daily: true,
       },
       {
         title: 'By cow',
@@ -264,7 +267,7 @@ export function healthReport(input: ReportInput, f: Filters): Report {
   const treating = activeIds.filter((id) => underTreatment(treatments, id, input.today));
   const withdrawn = activeIds.map((id) => ({ id, t: activeWithdrawal(treatments, id, now) })).filter((x) => x.t);
   const incidents = health.filter((h) => inRange(h.reported_on, f));
-  const outcomes = ['ongoing', 'recovering', 'recovered', 'chronic', 'died'].map((s) => ({ status: s, n: incidents.filter((h) => h.recovery_status === s).length }));
+  const outcomes = (Object.keys(RECOVERY_LABELS) as (keyof typeof RECOVERY_LABELS)[]).map((s) => ({ status: RECOVERY_LABELS[s], n: incidents.filter((h) => h.recovery_status === s).length }));
   return {
     ...base('health', 'Animal health', input, f, filters, 'records'),
     summary: [
@@ -281,7 +284,7 @@ export function healthReport(input: ReportInput, f: Filters): Report {
           { key: 'medicine', label: 'Medicine' },
           { key: 'until', label: 'Until' },
         ],
-        rows: withdrawn.map(({ id, t }) => ({ animal: animal(id), medicine: t!.medication, until: new Date(t!.withdrawal_ends_at!).toLocaleString() })),
+        rows: withdrawn.map(({ id, t }) => ({ animal: animal(id), medicine: t!.medication, until: formatDateTime(t!.withdrawal_ends_at!) })),
         empty: 'None.',
       },
       {
@@ -299,8 +302,8 @@ export function healthReport(input: ReportInput, f: Filters): Report {
           animal: animal(h.cattle_id),
           issue: h.confirmed_diagnosis ?? h.suspected_issue ?? '',
           status: h.condition_status === 'confirmed' ? 'Confirmed' : h.condition_status === 'ruled_out' ? 'Ruled out' : 'Suspected',
-          severity: h.severity ?? '',
-          recovery: h.recovery_status,
+          severity: h.severity ? SEVERITY_LABELS[h.severity] : '',
+          recovery: RECOVERY_LABELS[h.recovery_status],
         })),
         empty: 'No health concerns recorded.',
       },
@@ -320,7 +323,7 @@ export function healthReport(input: ReportInput, f: Filters): Report {
             animal: animal(t.cattle_id),
             medicine: t.medication,
             completed: t.completed_on ? formatDate(t.completed_on) : 'ongoing',
-            withdrawal: t.requires_milk_withdrawal && t.withdrawal_ends_at ? new Date(t.withdrawal_ends_at).toLocaleString() : '',
+            withdrawal: t.requires_milk_withdrawal && t.withdrawal_ends_at ? formatDateTime(t.withdrawal_ends_at) : '',
           })),
         empty: 'None.',
       },
@@ -406,7 +409,7 @@ export function reproductionReport(input: ReportInput, f: Filters): Report {
           { key: 'outcome', label: 'Outcome' },
           { key: 'calf', label: 'Calf' },
         ],
-        rows: calvings.filter((c) => inRange(c.calved_on, f)).map((c) => ({ date: formatDate(c.calved_on), cow: animal(c.dam_id), outcome: c.outcome, calf: animal(c.calf_id) })),
+        rows: calvings.filter((c) => inRange(c.calved_on, f)).map((c) => ({ date: formatDate(c.calved_on), cow: animal(c.dam_id), outcome: CALVING_OUTCOME_LABELS[c.outcome], calf: animal(c.calf_id) })),
         empty: 'None.',
       },
       {
@@ -439,7 +442,8 @@ export function vaccinationReport(input: ReportInput, f: Filters): Report {
   const doses = live(input.care.vaccinations).filter((v) => inScope.has(v.cattle_id));
   const active = input.animals.filter((a) => inScope.has(a.id) && a.status === 'active');
   const given = doses.filter((v) => v.status === 'completed' && inRange(v.administered_on, f));
-  const dueInPeriod = doses.filter((v) => v.due_on && inRange(v.due_on, f));
+  // Cancelled doses were never due; missed ones were, and count as not given.
+  const dueInPeriod = doses.filter((v) => v.status !== 'cancelled' && v.due_on && inRange(v.due_on, f));
   const overdue = doses.filter((v) => v.status === 'scheduled' && v.due_on && v.due_on < input.today);
   const upcoming = doses.filter((v) => v.status === 'scheduled' && v.due_on && v.due_on >= input.today && v.due_on <= addDays(input.today, 30));
   const vaccines = [...new Set(doses.map((v) => v.vaccine_name))];
@@ -541,7 +545,14 @@ export function financeReport(input: ReportInput, f: Filters): Report {
   );
   const payments = fin.payments.filter((p) => p.currency === f.currency && inRange(input.farmDate(p.paid_at), f) && (!f.customerId || p.customer_id === f.customerId) && (!f.method || p.method === f.method));
   const expenses = fin.expenses.filter((e) => e.currency === f.currency && inRange(e.expense_date, f) && (!f.category || e.category === f.category));
-  const sum = summarizeMoney(f.currency, f.from, f.to, fin, input.farmDate);
+  // The summary follows the filters, so it always matches the tables under it. Balances are all-time,
+  // so they are worked out from every record of the customers in view.
+  const sum = summarizeMoney(f.currency, f.from, f.to, { ...fin, sales, payments, expenses }, input.farmDate);
+  const owedNow = fin.customers
+    .filter((c) => !f.customerId || c.id === f.customerId)
+    .reduce((s, c) => s + Math.max(0, balances(c.id, fin.sales, fin.payments)[f.currency] ?? 0), 0);
+  const salesFiltered = !!(f.customerId || f.method || f.paid);
+  const anyFilter = salesFiltered || !!f.category;
   const days = reconcile(fin.movements, input.milk, f.from, f.to);
   const M = (c: number) => money(c, f.currency);
   const byCategory = Object.keys(CATEGORY_LABELS)
@@ -552,10 +563,12 @@ export function financeReport(input: ReportInput, f: Filters): Report {
     summary: [
       { label: 'Sales revenue', value: M(sum.revenueCents), note: `${sum.salesCount} sales, ${L(sum.litresCl)}` },
       { label: 'Payments received', value: M(sum.receiptsCents) },
-      { label: 'Refunds / discounts and write-offs', value: `${M(sum.refundsCents)} / ${M(sum.adjustmentsCents)}` },
-      { label: 'Recorded expenses', value: M(sum.expensesCents) },
-      { label: 'Recorded operating result', value: M(sum.operatingResultCents), note: 'Sales less discounts and write-offs, minus expenses. Not audited profit.' },
-      { label: 'Customers owe now', value: M(sum.outstandingCents) },
+      ...(sum.refundsCents ? [{ label: 'Refunds paid out', value: M(sum.refundsCents) }] : []),
+      ...(sum.adjustmentsCents ? [{ label: 'Discounts and write-offs', value: M(sum.adjustmentsCents) }] : []),
+      // Farm expenses are not about a customer or payment method: left out while those filters are on.
+      ...(salesFiltered ? [] : [{ label: f.category ? `${CATEGORY_LABELS[f.category as keyof typeof CATEGORY_LABELS]} expenses` : 'Recorded expenses', value: M(sum.expensesCents) }]),
+      ...(anyFilter ? [] : [{ label: 'Recorded operating result', value: M(sum.operatingResultCents), note: 'Sales less discounts and write-offs, minus expenses. Not audited profit.' }]),
+      { label: 'Customers owe now', value: M(owedNow) },
     ],
     tables: [
       {
@@ -593,7 +606,7 @@ export function financeReport(input: ReportInput, f: Filters): Report {
         rows: payments.map((p) => ({
           date: formatDate(input.farmDate(p.paid_at)),
           customer: customerName.get(p.customer_id) ?? '',
-          kind: p.kind,
+          kind: PAYMENT_KIND_LABELS[p.kind],
           method: METHOD_LABELS[p.method],
           amount: p.amount,
           status: p.status === 'voided' ? `voided: ${p.void_reason ?? ''}` : '',
@@ -642,6 +655,7 @@ export function financeReport(input: ReportInput, f: Filters): Report {
           adjusted: litres(d.adjusted),
           closing: litres(d.closing),
         })),
+        daily: true,
       },
     ],
     definitions: [

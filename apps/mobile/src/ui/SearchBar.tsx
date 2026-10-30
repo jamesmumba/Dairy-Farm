@@ -26,7 +26,6 @@ export function SearchBar({
 }) {
   const t = useTheme();
   const fill = useFieldFill();
-  const on = activeFilters > 0;
   return (
     <View style={{ flexDirection: 'row', gap: spacing.sm }}>
       <View
@@ -61,47 +60,55 @@ export function SearchBar({
           </Pressable>
         ) : null}
       </View>
-      {onFilters ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={on ? `Filters, ${activeFilters} on` : 'Filters'}
-          onPress={onFilters}
-          style={({ pressed }) => ({
-            width: minTouch,
-            minHeight: minTouch,
+      {onFilters ? <FilterButton activeFilters={activeFilters} onPress={onFilters} /> : null}
+    </View>
+  );
+}
+
+/** A filter icon button; filled, with a count, while any filter is on. */
+export function FilterButton({ activeFilters, onPress }: { activeFilters: number; onPress: () => void }) {
+  const t = useTheme();
+  const fill = useFieldFill();
+  const on = activeFilters > 0;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={on ? `Filters, ${activeFilters} on` : 'Filters'}
+      onPress={onPress}
+      style={({ pressed }) => ({
+        width: minTouch,
+        minHeight: minTouch,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: on ? t.primary : t.border,
+        borderRadius: radius.control,
+        backgroundColor: on ? t.primary : pressed ? t.primarySoft : fill,
+      })}
+    >
+      <MaterialCommunityIcons name={on ? 'filter' : 'filter-outline'} size={22} color={on ? t.onPrimary : t.text} />
+      {on ? (
+        <View
+          importantForAccessibility="no-hide-descendants"
+          style={{
+            position: 'absolute',
+            top: -6,
+            right: -6,
+            minWidth: 20,
+            height: 20,
+            paddingHorizontal: 4,
+            borderRadius: 10,
             alignItems: 'center',
             justifyContent: 'center',
+            backgroundColor: t.surface,
             borderWidth: 1,
-            borderColor: on ? t.primary : t.border,
-            borderRadius: radius.control,
-            backgroundColor: on ? t.primary : pressed ? t.primarySoft : fill,
-          })}
+            borderColor: t.primary,
+          }}
         >
-          <MaterialCommunityIcons name={on ? 'filter' : 'filter-outline'} size={22} color={on ? t.onPrimary : t.text} />
-          {on ? (
-            <View
-              importantForAccessibility="no-hide-descendants"
-              style={{
-                position: 'absolute',
-                top: -6,
-                right: -6,
-                minWidth: 20,
-                height: 20,
-                paddingHorizontal: 4,
-                borderRadius: 10,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: t.surface,
-                borderWidth: 1,
-                borderColor: t.primary,
-              }}
-            >
-              <Text style={{ color: t.primary, fontSize: 12, fontWeight: '700' }}>{activeFilters}</Text>
-            </View>
-          ) : null}
-        </Pressable>
+          <Text style={{ color: t.primary, fontSize: 12, fontWeight: '700' }}>{activeFilters}</Text>
+        </View>
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 

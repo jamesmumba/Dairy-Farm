@@ -6,12 +6,15 @@ import {
   type AlertAction,
   ALERT_TYPE_LABELS,
   type BreedingRecord,
+  CALVING_OUTCOME_LABELS,
   type CareData,
   type CareKind,
   EVENT_LABELS,
   type HealthRecord,
   type PregnancyCheck,
+  RECOVERY_LABELS,
   RESULT_LABELS,
+  SEVERITY_LABELS,
   type Treatment,
   type Vaccination,
   type VaccinationSchedule,
@@ -104,9 +107,9 @@ export function validate(config: CareFormConfig, v: FormValues): [string, string
 // --- Choices -----------------------------------------------------------------------
 
 const CONDITION = { suspected: 'Suspected', confirmed: 'Confirmed by vet', ruled_out: 'Ruled out' } as const;
-const SEVERITY = { low: 'Low', moderate: 'Moderate', high: 'High', critical: 'Critical' } as const;
-const RECOVERY = { ongoing: 'Ongoing', recovering: 'Recovering', recovered: 'Recovered', chronic: 'Chronic', died: 'Died' } as const;
-const OUTCOME = { live: 'Live calf', stillborn: 'Stillborn', aborted: 'Aborted', other: 'Other' } as const;
+const SEVERITY = SEVERITY_LABELS;
+const RECOVERY = RECOVERY_LABELS;
+const OUTCOME = CALVING_OUTCOME_LABELS;
 const VACC_STATUS = { completed: 'Given', scheduled: 'Planned (due)', missed: 'Missed', cancelled: 'Cancelled' } as const;
 
 // --- Entities ------------------------------------------------------------------------

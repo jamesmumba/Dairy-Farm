@@ -131,6 +131,8 @@ export const MOVEMENT_LABELS: Record<MovementKind, string> = {
   reversal: 'Reversal',
 };
 
+export const PAYMENT_KIND_LABELS = { payment: 'Payment received', refund: 'Refund to customer', adjustment: 'Discount or write-off' } as const;
+
 export const CATEGORY_LABELS: Record<Expense['category'], string> = {
   feed: 'Feed',
   veterinary_care: 'Veterinary care',
