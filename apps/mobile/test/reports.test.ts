@@ -4,7 +4,7 @@ import type { CareData } from '../src/care/model';
 import type { FinanceData } from '../src/finance/repo';
 import type { MilkRow } from '../src/production/calc';
 import { financeReport, herdReport, productionReport, reproductionReport, type ReportInput, vaccinationReport } from '../src/reports/build';
-import { csvCell, escapeHtml, toCsv, toHtml } from '../src/reports/format';
+import { csvCell, escapeHtml, rangeLabel, toCsv, toHtml } from '../src/reports/format';
 import { needingAttention } from '../src/reports/dashboard';
 
 const cow = (id: string, extra: Partial<Cattle> = {}): Cattle =>
@@ -186,5 +186,14 @@ describe('animals needing attention', () => {
     expect(result.get('a')).toEqual(['withdrawal']);
     expect(result.get('b')).toEqual(['overdue_care']);
     expect(result.has('c')).toBe(false); // sold
+  });
+});
+
+describe('period heading', () => {
+  it('reads like a date range a person would write', () => {
+    expect(rangeLabel('2026-10-01', '2026-10-28')).toBe('1 – 28 October 2026');
+    expect(rangeLabel('2026-09-01', '2026-10-28')).toBe('1 Sep – 28 Oct 2026');
+    expect(rangeLabel('2025-12-05', '2026-01-02')).toBe('5 December 2025 – 2 January 2026');
+    expect(rangeLabel('2026-10-28', '2026-10-28')).toBe('28 October 2026');
   });
 });

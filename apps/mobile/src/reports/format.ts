@@ -77,3 +77,16 @@ export function toHtml(report: Report, farmName: string | null): string {
   <h2>Definitions</h2><ul>${report.definitions.map((d) => `<li>${e(d)}</li>`).join('')}</ul>
 </body></html>`;
 }
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** A period as a reader says it: "1 – 28 October 2026", "1 Sep – 28 Oct 2026", "5 December 2025 – 2 January 2026". */
+export function rangeLabel(from: string, to: string): string {
+  const [fy, fm, fd] = from.split('-').map(Number);
+  const [ty, tm, td] = to.split('-').map(Number);
+  const short = (m: number) => MONTHS[m - 1].slice(0, 3);
+  if (from === to) return `${td} ${MONTHS[tm - 1]} ${ty}`;
+  if (fy === ty && fm === tm) return `${fd} – ${td} ${MONTHS[tm - 1]} ${ty}`;
+  if (fy === ty) return `${fd} ${short(fm)} – ${td} ${short(tm)} ${ty}`;
+  return `${fd} ${MONTHS[fm - 1]} ${fy} – ${td} ${MONTHS[tm - 1]} ${ty}`;
+}
