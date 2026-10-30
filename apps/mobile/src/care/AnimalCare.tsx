@@ -1,21 +1,25 @@
 import { type Href, router } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { Cattle } from '../animals/model';
 import { formatDate, formatDateTime, toDateString } from '../lib/dates';
 import { Button, Notice } from '../ui/form';
 import { Card, type IconName, ListGroup, ListRow } from '../ui/kit';
 import { spacing, useCardBasis, useTheme } from '../ui/theme';
+import { useOpenOrBack } from '../ui/useOpenOrBack';
 import { CARE_FORMS } from './forms';
 import { activeWithdrawal, CARE_KINDS, type CareData, type CareKind, RESULT_LABELS, underTreatment } from './model';
 
-/** Prominent notice while the vet's withdrawal end time has not been reached. */
+/** Prominent notice while the vet's withdrawal end time has not been reached. Opens the treatment. */
 export function WithdrawalBanner({ care, cattleId }: { care: CareData; cattleId: string }) {
+  const open = useOpenOrBack();
   const w = activeWithdrawal(care.treatments, cattleId);
   if (!w) return null;
   return (
-    <Notice tone="error" title={`Milk withdrawal until ${formatDateTime(w.withdrawal_ends_at)}`}>
-      {w.medication}. Not for sale or drinking until then, even if the treatment has finished.
-    </Notice>
+    <Pressable accessibilityRole="button" accessibilityHint="Opens the treatment" onPress={() => open({ pathname: '/care/[kind]/[id]', params: { kind: 'treatment', id: w.id } })}>
+      <Notice tone="error" title={`Milk withdrawal until ${formatDateTime(w.withdrawal_ends_at)}`}>
+        {w.medication}. Not for sale or drinking until then, even if the treatment has finished. Tap to open the treatment.
+      </Notice>
+    </Pressable>
   );
 }
 
@@ -32,7 +36,7 @@ const dateOf = (kind: CareKind, r: Record<string, any>): string =>
     action: r.action_on,
   })[kind] ?? '';
 
-const KIND_ICON: Partial<Record<CareKind, IconName>> = {
+export const KIND_ICON: Partial<Record<CareKind, IconName>> = {
   health: 'stethoscope',
   treatment: 'pill',
   'vet-visit': 'medical-bag',
@@ -41,6 +45,7 @@ const KIND_ICON: Partial<Record<CareKind, IconName>> = {
   calving: 'cow',
   vaccination: 'needle',
   action: 'clipboard-check-outline',
+  schedule: 'calendar-check',
 };
 
 export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; care: CareData; showAdd?: boolean }) {

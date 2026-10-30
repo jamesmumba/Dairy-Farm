@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Alert, Text } from 'react-native';
 import { displayName } from '../../animals/model';
 import { getAnimal } from '../../animals/repo';
+import { withdrawalCovering } from '../../care/related';
+import { loadCareData } from '../../care/repo';
 import { type Session, SESSIONS, toCl } from '../../production/calc';
 import { dayLabel, L, LITRES_HINT, parseLitres, SESSION_LABELS } from '../../production/format';
 import { correctMilk, type MilkEntry, SessionTaken, voidMilk } from '../../production/repo';
@@ -22,6 +24,7 @@ export default function MilkEntryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const entry = useLocal(() => getRecord<MilkEntry>('milk_production', id), id);
   const cow = useLocal(() => (entry ? getAnimal(entry.data.cattle_id) : null), entry?.data.cattle_id ?? '');
+  const treatments = useLocal(() => loadCareData().treatments);
   const [mode, setMode] = useState<'view' | 'correct' | 'void'>('view');
   const [quantity, setQuantity] = useState(entry?.data.quantity ?? '');
   const [date, setDate] = useState(entry?.data.production_date ?? '');
@@ -31,6 +34,8 @@ export default function MilkEntryScreen() {
 
   if (!entry) return <MissingRecord what="milk entry" />;
   const e = entry.data;
+  // Restricted milk: the treatment whose withdrawal covers this milking.
+  const withdrawal = e.restricted ? withdrawalCovering(treatments, e.cattle_id, e.production_date, e.session) : undefined;
   const voided = e.status === 'voided';
 
   function saveCorrection() {
@@ -101,6 +106,9 @@ export default function MilkEntryScreen() {
         </FormCard>
       ) : (
         <ListGroup>
+          {withdrawal ? (
+            <ListRow icon="pill" tint="red" title={`Withdrawal: ${withdrawal.medication}`} subtitle="Open the treatment" onPress={() => open({ pathname: '/care/[kind]/[id]', params: { kind: 'treatment', id: withdrawal.id } })} />
+          ) : null}
           {cow ? <ListRow icon="cow" title={displayName(cow.data)} subtitle="Open the animal" onPress={() => open({ pathname: '/animal/[id]', params: { id: e.cattle_id } })} /> : null}
           {!voided ? (
             <ListRow

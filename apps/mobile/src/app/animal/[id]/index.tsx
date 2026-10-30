@@ -2,7 +2,8 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { type ReactNode, useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { ageLabel, displayName, PRODUCTION_LABELS, REPRODUCTIVE_LABELS, shortCode, STATUS_LABELS } from '../../../animals/model';
 import { deleteAnimal, editAnimal, getAnimal, listAnimals, listBreeds, setAnimalPhoto } from '../../../animals/repo';
 import { usePhotoUri } from '../../../animals/usePhotoUri';
@@ -21,7 +22,7 @@ import { Button, Notice } from '../../../ui/form';
 import { MissingRecord } from '../../../ui/ProblemView';
 import { Avatar, Card, Figure, ListGroup, ListRow, Pill } from '../../../ui/kit';
 import { SyncBadge } from '../../../ui/SyncBadge';
-import { radius, shadow, spacing, type, useTheme } from '../../../ui/theme';
+import { minTouch, radius, shadow, spacing, type, useTheme } from '../../../ui/theme';
 import { useOpenOrBack } from '../../../ui/useOpenOrBack';
 
 interface TimelineEvent {
@@ -33,9 +34,19 @@ interface TimelineEvent {
 
 type Section = 'overview' | 'care' | 'milk' | 'history';
 
-function Row({ label, value }: { label: string; value: string | null | undefined }) {
+/** A detail line; with `onPress`, the value opens that animal (her mother, his father). */
+function Row({ label, value, onPress }: { label: string; value: string | null | undefined; onPress?: () => void }) {
   const t = useTheme();
   if (!value) return null;
+  if (onPress) {
+    return (
+      <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value}`} accessibilityHint="Opens that animal" onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: minTouch - 8, paddingVertical: spacing.sm }}>
+        <Text style={{ color: t.textMuted, fontSize: 15, width: 120 }}>{label}</Text>
+        <Text style={{ color: t.primary, fontSize: 15, fontWeight: '600', flex: 1 }}>{value}</Text>
+        <MaterialCommunityIcons name="chevron-right" size={20} color={t.textMuted} importantForAccessibility="no" />
+      </Pressable>
+    );
+  }
   return (
     <View style={{ flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.sm }} accessible accessibilityLabel={`${label}: ${value}`}>
       <Text style={{ color: t.textMuted, fontSize: 15, width: 120 }}>{label}</Text>
@@ -86,6 +97,7 @@ export default function AnimalProfile() {
     const p = animals.find((x) => x.data.id === pid)?.data;
     return p ? displayName(p) : null;
   };
+  const parentLink = (pid: string | null) => (pid && animals.some((x) => x.data.id === pid) ? () => open({ pathname: '/animal/[id]', params: { id: pid } }) : undefined);
   const dateFmt = account?.date_format;
 
   async function choosePhoto(source: 'camera' | 'library') {
@@ -198,8 +210,8 @@ export default function AnimalProfile() {
         <Card gap={0}>
           <Row label="Ear tag" value={a.ear_tag ?? 'Not tagged yet'} />
           <Row label="Born" value={a.birth_date ? `${a.birth_date_estimated ? 'About ' : ''}${formatDate(a.birth_date, dateFmt)}` : null} />
-          <Row label="Mother" value={nameOf(a.dam_id)} />
-          <Row label="Father" value={nameOf(a.sire_id) ?? a.sire_identifier} />
+          <Row label="Mother" value={nameOf(a.dam_id)} onPress={parentLink(a.dam_id)} />
+          <Row label="Father" value={nameOf(a.sire_id) ?? a.sire_identifier} onPress={parentLink(a.sire_id)} />
           <Row label="Acquired" value={a.acquisition_date ? formatDate(a.acquisition_date, dateFmt) + (a.acquisition_source ? ` from ${a.acquisition_source}` : '') : a.acquisition_source} />
           <Row label="Purchase price" value={a.purchase_price ? `${a.purchase_currency} ${a.purchase_price}` : null} />
           <Row label="Notes" value={a.notes} />

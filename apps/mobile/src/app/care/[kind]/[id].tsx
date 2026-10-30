@@ -3,12 +3,14 @@ import { useState } from 'react';
 import { Alert, Text } from 'react-native';
 import { displayName } from '../../../animals/model';
 import { listAnimals } from '../../../animals/repo';
+import { KIND_ICON } from '../../../care/AnimalCare';
 import { CareForm } from '../../../care/CareForm';
 import { CARE_FORMS, fromRecord } from '../../../care/forms';
 import { type QuickAction, recordActions } from '../../../care/quick';
 import { QuickButtons, useQuickActions } from '../../../care/QuickActions';
 import { CARE_KINDS, type CareKind, type Treatment } from '../../../care/model';
-import { getCare, removeCare, updateCare } from '../../../care/repo';
+import { relatedRecords } from '../../../care/related';
+import { getCare, listCare, removeCare, updateCare } from '../../../care/repo';
 import { useCareContext } from '../../../care/useCareContext';
 import { formatDate, formatDateTime } from '../../../lib/dates';
 import { useLocal } from '../../../sync/store';
@@ -52,6 +54,12 @@ export default function CareRecord() {
   const animal = allAnimals.find((a) => a.id === animalId);
   const treatment = kind === 'treatment' ? (r as unknown as Treatment) : null;
   const actions = recordActions(kind, r, ctx, new Date());
+  // Records that belong with this one, both ways (a concern and its treatments, a mating and its check).
+  const related = relatedRecords(kind, r, ctx.care).flatMap((x) => {
+    const row = listCare<Row>(x.kind).find((c) => c.data.id === x.id)?.data;
+    return row ? [{ ...x, subtitle: CARE_FORMS[x.kind].summary(row, ctx) }] : [];
+  });
+  const calf = kind === 'calving' && r.calf_id ? allAnimals.find((a) => a.id === r.calf_id) : undefined;
 
   const show = (key: string, type: string): string | null => {
     const v = r[key];
@@ -136,6 +144,10 @@ export default function CareRecord() {
                     <ListRow key="visit" icon="medical-bag" title="Add vet visit" subtitle="Linked to this concern" onPress={() => router.push({ pathname: '/care/[kind]/new', params: { kind: 'vet-visit', cattle_id: animal.id, health_record_id: id } })} />,
                   ]
                 : null}
+              {related.map((x) => (
+                <ListRow key={x.id} icon={KIND_ICON[x.kind]} title={x.title} subtitle={x.subtitle} onPress={() => open({ pathname: '/care/[kind]/[id]', params: { kind: x.kind, id: x.id } })} />
+              ))}
+              {calf ? <ListRow icon="cow" title={`Calf: ${displayName(calf)}`} subtitle="Open the calf" onPress={() => open({ pathname: '/animal/[id]', params: { id: calf.id } })} /> : null}
               {animal ? <ListRow icon="cow" title={displayName(animal)} subtitle="Open the animal" onPress={() => open({ pathname: '/animal/[id]', params: { id: animal.id } })} /> : null}
               <ListRow icon="pencil-outline" title="Edit" onPress={() => setMode('edit')} />
               <ListRow icon="delete-outline" tint="red" title="Remove" subtitle="Only if entered by mistake" onPress={() => setMode('remove')} />
