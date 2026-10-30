@@ -32,6 +32,8 @@ export interface Reminder {
   /** The care record it is about; finance reminders link to a screen instead. */
   record?: { kind: CareKind; id: string };
   href?: string;
+  /** For reminders that are not care records: where the answer button goes (e.g. a prefilled payment). */
+  actionHref?: string;
   /** Days before `due` to notify; [] = no dated notification. */
   notifyOffsets: number[];
   /**

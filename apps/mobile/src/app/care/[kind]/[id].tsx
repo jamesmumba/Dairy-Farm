@@ -130,6 +130,12 @@ export default function CareRecord() {
             </FormCard>
           ) : (
             <ListGroup>
+              {kind === 'health' && animal
+                ? [
+                    <ListRow key="treatment" icon="pill" title="Add treatment" subtitle="Linked to this concern" onPress={() => router.push({ pathname: '/care/[kind]/new', params: { kind: 'treatment', cattle_id: animal.id, health_record_id: id } })} />,
+                    <ListRow key="visit" icon="medical-bag" title="Add vet visit" subtitle="Linked to this concern" onPress={() => router.push({ pathname: '/care/[kind]/new', params: { kind: 'vet-visit', cattle_id: animal.id, health_record_id: id } })} />,
+                  ]
+                : null}
               {animal ? <ListRow icon="cow" title={displayName(animal)} subtitle="Open the animal" onPress={() => open({ pathname: '/animal/[id]', params: { id: animal.id } })} /> : null}
               <ListRow icon="pencil-outline" title="Edit" onPress={() => setMode('edit')} />
               <ListRow icon="delete-outline" tint="red" title="Remove" subtitle="Only if entered by mistake" onPress={() => setMode('remove')} />

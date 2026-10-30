@@ -22,6 +22,7 @@ import { financeReminders } from '../finance/reminders';
 import { milkAlerts, missingMilkings } from '../production/alerts';
 import { DEFAULT_DECLINE_RULE } from '../production/calc';
 import { SESSION_LABELS } from '../production/format';
+import { useNotMilked } from '../production/notMilked';
 import { listMilk } from '../production/repo';
 import { farmDateOf } from '../lib/dates';
 
@@ -40,6 +41,7 @@ export function useReminders() {
   const dismissedDuplicates = useDismissedDuplicates();
   const devices = useDevices();
   const hidden = useHiddenReminders();
+  const notMilked = useNotMilked();
   const timeZone = account?.time_zone;
   const rule = account?.decline_rule ?? DEFAULT_DECLINE_RULE;
   return useMemo(() => {
@@ -65,7 +67,7 @@ export function useReminders() {
       alert: 'next_reminder',
     }));
     // Milkings already over where cows in milk have no entry: shown in the app, never notified.
-    const missing: Reminder[] = missingMilkings(milk, cows, today, now).map((m) => ({
+    const missing: Reminder[] = missingMilkings(milk, cows, today, now, notMilked).map((m) => ({
       key: `missing:${m.date}:${m.session}`,
       kind: 'missing_milk',
       urgency: 'today',
@@ -99,7 +101,7 @@ export function useReminders() {
       (a, b) => order[a.urgency] - order[b.urgency] || a.due.localeCompare(b.due),
     );
     return { reminders, names };
-  }, [care, animals, finance, milk, timeZone, failed, rule, dismissedDuplicates, devices, hidden]);
+  }, [care, animals, finance, milk, timeZone, failed, rule, dismissedDuplicates, devices, hidden, notMilked]);
 }
 
 export type NotificationStatus = { state: 'scheduled'; count: number; at: string } | { state: 'denied' } | { state: 'off' } | { state: 'none' };

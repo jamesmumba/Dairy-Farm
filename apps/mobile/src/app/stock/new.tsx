@@ -21,11 +21,12 @@ const KIND_OPTIONS: { value: Kind; label: string }[] = [
 
 export default function NewStockRecord() {
   const t = useTheme();
-  const params = useLocalSearchParams<{ kind?: Kind; date?: string }>();
+  // From the stock discrepancy reminder: the day stock went below zero and the shortfall.
+  const params = useLocalSearchParams<{ kind?: Kind; date?: string; quantity?: string }>();
   const f = useFinance();
   const [kind, setKind] = useState<Kind>(params.kind ?? 'farm_consumption');
   const [direction, setDirection] = useState<'add' | 'remove'>('add');
-  const [quantity, setQuantity] = useState('');
+  const [quantity, setQuantity] = useState(params.quantity ?? '');
   const [date, setDate] = useState(params.date ?? f.today);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);

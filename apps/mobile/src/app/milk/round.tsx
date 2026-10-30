@@ -1,11 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { displayName } from '../../animals/model';
-import { listAnimals } from '../../animals/repo';
+import { editAnimal, getAnimal, listAnimals } from '../../animals/repo';
 import { unusualAmount } from '../../production/alerts';
 import { type Session, SESSIONS, sessionFor, toCl } from '../../production/calc';
 import { dayLabel, L, LITRES_HINT, parseLitres, SESSION_LABELS } from '../../production/format';
+import { markNotMilked, notMilkedKey, undoNotMilked, useNotMilked } from '../../production/notMilked';
 import { findSession, listMilk, recordRound } from '../../production/repo';
 import { useDraft } from '../../lib/useDraft';
 import { useLocal } from '../../sync/store';
@@ -26,7 +28,7 @@ export default function MilkingRound() {
   const [done, setDone] = useState<string | null>(null);
 
   return (
-    <FormScreen title="Milking round" intro="Type the litres for each cow, then save once. Works offline.">
+    <FormScreen title="Milking round" intro="Type the litres for each cow, then save once. Tap ⋮ beside a cow that was not milked or is dry now. Works offline.">
       {done ? <Notice>{done}</Notice> : null}
       <DateField label="Date" value={date} onChange={(d) => d && setDate(d)} optional={false} />
       <Chips label="Session" value={session} options={SESSIONS.map((s) => ({ value: s, label: SESSION_LABELS[s] }))} onChange={(s) => s && setSession(s)} allowClear={false} />
@@ -46,13 +48,30 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
   const sessionAt = new Date(`${date}T${{ morning: '06', afternoon: '12', evening: '18' }[session]}:00:00`);
   const [values, update, clearDraft] = useDraft<Record<string, string>>(`round-${date}-${session}`, () => ({}));
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const notMilked = useNotMilked();
+
+  // A cow with no figure for this milking: not milked this time, or no longer in milk.
+  function noFigure(c: (typeof cows)[number]) {
+    Alert.alert(displayName(c), `${SESSION_LABELS[session]}, ${dayLabel(date)}`, [
+      { text: 'Not milked this time', onPress: () => markNotMilked(notMilkedKey(date, session, c.id)) },
+      {
+        text: 'She is dry now',
+        onPress: () => {
+          const stored = getAnimal(c.id);
+          if (stored) editAnimal(stored, { production_status: 'dry' });
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
 
   const cows = animals
     .map((a) => a.data)
     .filter((a) => a.sex === 'female' && a.status === 'active' && (showAll || a.production_status === 'lactating'))
     .sort((a, b) => displayName(a).localeCompare(displayName(b), undefined, { numeric: true }));
 
-  const typed = cows.filter((c) => (values[c.id] ?? '').trim() !== '' && !findSession(milk, { cattle_id: c.id, production_date: date, session }));
+  const skipped = (id: string) => notMilked.has(notMilkedKey(date, session, id));
+  const typed = cows.filter((c) => (values[c.id] ?? '').trim() !== '' && !skipped(c.id) && !findSession(milk, { cattle_id: c.id, production_date: date, session }));
   const totalCl = typed.reduce((sum, c) => sum + (parseLitres(values[c.id]) ? toCl(parseLitres(values[c.id])!) : 0), 0);
 
   function save() {
@@ -114,28 +133,51 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
                 >
                   <Text style={{ color: t.textMuted, fontSize: 16 }}>✓ {L(toCl(existing.data.quantity))}</Text>
                 </Pressable>
+              ) : skipped(c.id) ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${displayName(c)}: not milked. Undo.`}
+                  onPress={() => undoNotMilked(notMilkedKey(date, session, c.id))}
+                  style={{ minHeight: minTouch, justifyContent: 'center' }}
+                >
+                  <Text style={{ color: t.textMuted, fontSize: 16 }}>
+                    Not milked · <Text style={{ color: t.primary }}>Undo</Text>
+                  </Text>
+                </Pressable>
               ) : (
-                <View style={{ width: 110 }}>
-                  <TextInput
-                    accessibilityLabel={`Litres for ${displayName(c)}`}
-                    value={values[c.id] ?? ''}
-                    onChangeText={(v) => update({ [c.id]: v })}
-                    keyboardType="decimal-pad"
-                    placeholder="L"
-                    placeholderTextColor={t.textMuted}
-                    maxLength={6}
-                    style={{
-                      minHeight: minTouch,
-                      borderWidth: errors[c.id] ? 2 : 1,
-                      borderColor: errors[c.id] ? t.danger : t.border,
-                      borderRadius: radius.control,
-                      paddingHorizontal: spacing.md,
-                      fontSize: 18,
-                      color: t.text,
-                      backgroundColor: t.background,
-                      textAlign: 'right',
-                    }}
-                  />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`No figure for ${displayName(c)}`}
+                    accessibilityHint="Not milked this time, or she is dry now"
+                    onPress={() => noFigure(c)}
+                    hitSlop={6}
+                    style={{ minHeight: minTouch, minWidth: 36, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <MaterialCommunityIcons name="dots-vertical" size={22} color={t.textMuted} />
+                  </Pressable>
+                  <View style={{ width: 110 }}>
+                    <TextInput
+                      accessibilityLabel={`Litres for ${displayName(c)}`}
+                      value={values[c.id] ?? ''}
+                      onChangeText={(v) => update({ [c.id]: v })}
+                      keyboardType="decimal-pad"
+                      placeholder="L"
+                      placeholderTextColor={t.textMuted}
+                      maxLength={6}
+                      style={{
+                        minHeight: minTouch,
+                        borderWidth: errors[c.id] ? 2 : 1,
+                        borderColor: errors[c.id] ? t.danger : t.border,
+                        borderRadius: radius.control,
+                        paddingHorizontal: spacing.md,
+                        fontSize: 18,
+                        color: t.text,
+                        backgroundColor: t.background,
+                        textAlign: 'right',
+                      }}
+                    />
+                  </View>
                 </View>
               )}
             </View>

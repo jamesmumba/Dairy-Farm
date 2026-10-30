@@ -19,7 +19,9 @@ export type QuickAction =
   | 'record_calving'
   | 'recovered'
   | 'resolved'
-  | 'not_yet';
+  | 'not_yet'
+  | 'record_payment'
+  | 'adjust_stock';
 
 export const QUICK_LABELS: Record<QuickAction, string> = {
   given: 'Given',
@@ -35,6 +37,8 @@ export const QUICK_LABELS: Record<QuickAction, string> = {
   recovered: 'Recovered',
   resolved: 'Resolved',
   not_yet: 'Not yet',
+  record_payment: 'Record payment',
+  adjust_stock: 'Correct the stock',
 };
 
 /** What a reminder asks for. The first answer is the usual one and is shown as the main button. */
@@ -54,6 +58,10 @@ export function reminderActions(r: Pick<Reminder, 'kind'>): QuickAction[] {
       return ['recovered', 'not_yet'];
     case 'action_follow_up':
       return ['resolved', 'not_yet'];
+    case 'unpaid_balance':
+      return ['record_payment'];
+    case 'stock_discrepancy':
+      return ['adjust_stock'];
     default:
       return [];
   }
@@ -87,7 +95,7 @@ export function recordActions(kind: CareKind, r: Record<string, unknown>, ctx: P
 }
 
 /** Saved straight away, or opens a form: no sheet. */
-export const NO_SHEET: QuickAction[] = ['no_heat', 'record_calving'];
+export const NO_SHEET: QuickAction[] = ['no_heat', 'record_calving', 'record_payment', 'adjust_stock'];
 
 const addDays = (date: string, days: number) => {
   const d = new Date(`${date}T00:00:00Z`);

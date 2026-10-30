@@ -3,7 +3,7 @@
 
 import type { MilkRow } from '../production/calc';
 import type { Reminder } from '../care/reminders';
-import { balances, money, reconcile, saleDue } from './calc';
+import { balances, fromCents, money, reconcile, saleDue } from './calc';
 import type { Allocation, Customer, Movement, Payment, Sale } from './model';
 
 const UNPAID_AFTER_DAYS = 7;
@@ -37,6 +37,7 @@ export function financeReminders(
         title: `${c.name} owes ${money(owed, currency)}`,
         detail: `Unpaid since ${oldest}`,
         href: `/customers/${c.id}`,
+        actionHref: `/payment/new?customer_id=${c.id}&currency=${currency}&amount=${fromCents(owed)}`,
         notifyOffsets: [],
         alert: 'next_reminder',
       });
@@ -47,6 +48,8 @@ export function financeReminders(
     const first = data.movements.map((m) => m.movement_date).sort()[0];
     const negative = reconcile(data.movements, milk, first, today).filter((d) => d.closing < 0);
     if (negative.length) {
+      // Adding the largest shortfall on the first bad day brings every later day back to zero or more.
+      const shortfall = Math.max(...negative.map((d) => -d.closing));
       out.push({
         key: 'stock-discrepancy',
         kind: 'stock_discrepancy',
@@ -56,6 +59,7 @@ export function financeReminders(
         title: 'Stock discrepancy',
         detail: `Stock went below zero on ${negative.length} day(s), first on ${negative[0].date}. Check production and sales.`,
         href: '/stock',
+        actionHref: `/stock/new?kind=adjustment&date=${negative[0].date}&quantity=${fromCents(shortfall)}`,
         notifyOffsets: [],
         alert: 'next_reminder',
       });

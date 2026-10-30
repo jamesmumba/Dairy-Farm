@@ -13,6 +13,8 @@ describe('finance reminders', () => {
   it('flags balances unpaid for more than a week', () => {
     const old = financeReminders({ ...base, sales: [sale('2026-10-10T08:00:00Z')] }, [], '2026-10-28', day);
     expect(old).toEqual([expect.objectContaining({ kind: 'unpaid_balance', title: 'Mrs Phiri owes ZMW 100.00', href: '/customers/c1' })]);
+    // Its button opens a payment for the whole amount, ready to save.
+    expect(old[0].actionHref).toBe('/payment/new?customer_id=c1&currency=ZMW&amount=100.00');
     expect(financeReminders({ ...base, sales: [sale('2026-10-25T08:00:00Z')] }, [], '2026-10-28', day)).toEqual([]);
   });
 
@@ -20,5 +22,7 @@ describe('finance reminders', () => {
     const movements = [mv('2026-10-01', 'opening_balance', '10.00'), mv('2026-10-02', 'sale', '-10.00'), mv('2026-10-02', 'adjustment', '-5.00')];
     const r = financeReminders({ ...base, sales: [], movements }, [], '2026-10-03', day);
     expect(r).toEqual([expect.objectContaining({ kind: 'stock_discrepancy', due: '2026-10-02', href: '/stock' })]);
+    // Its button opens an adjustment for the shortfall on the first day stock went below zero; the farmer gives the reason.
+    expect(r[0].actionHref).toBe('/stock/new?kind=adjustment&date=2026-10-02&quantity=5.00');
   });
 });

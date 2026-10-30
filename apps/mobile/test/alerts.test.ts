@@ -155,3 +155,12 @@ describe('unusual amount when saving', () => {
     expect(unusualAmount([], 'daisy', 'morning', TODAY, '45')).toEqual({ direction: 'high', usualCl: 0 });
   });
 });
+
+describe('cows marked not milked', () => {
+  it('are not reported as missing for that milking', () => {
+    const herd = [cow('daisy'), cow('rosa')];
+    const week = [...twiceDaily('daisy', addDays(TODAY, -1), 7, '9'), ...twiceDaily('rosa', addDays(TODAY, -2), 6, '8')];
+    const at = new Date('2026-10-28T07:00:00');
+    expect(missingMilkings(week, herd, TODAY, at, new Set(['2026-10-27:morning:rosa'])).map((m) => `${m.date} ${m.session}`)).toEqual(['2026-10-27 evening']);
+  });
+});

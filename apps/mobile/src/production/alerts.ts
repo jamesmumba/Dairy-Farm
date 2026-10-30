@@ -162,9 +162,9 @@ export interface MissingMilking {
  * Milkings already over (yesterday's, and today's before the current one) where some cows in milk
  * have no entry. Only milkings the farm records on most days are expected: one recorded on fewer
  * than half of the last two weeks' recording days is occasional. A milking with no entries at all
- * is reported too.
+ * is reported too. `notMilked` holds `date:session:cattleId` keys the farmer marked as not milked.
  */
-export function missingMilkings(rows: MilkRow[], animals: Cattle[], today: string, now: Date): MissingMilking[] {
+export function missingMilkings(rows: MilkRow[], animals: Cattle[], today: string, now: Date, notMilked: Set<string> = new Set()): MissingMilking[] {
   const valid = rows.filter((r) => r.status === 'valid');
   const recent = valid.filter((r) => r.production_date >= addDays(today, -14) && r.production_date < today);
   const recordingDays = new Set(recent.map((r) => r.production_date)).size;
@@ -181,7 +181,7 @@ export function missingMilkings(rows: MilkRow[], animals: Cattle[], today: strin
   return due
     .map(({ date, session }) => {
       const have = new Set(valid.filter((r) => r.production_date === date && r.session === session).map((r) => r.cattle_id));
-      return { date, session, cattleIds: cows.filter((c) => !have.has(c)), of: cows.length };
+      return { date, session, cattleIds: cows.filter((c) => !have.has(c) && !notMilked.has(`${date}:${session}:${c}`)), of: cows.length };
     })
     .filter((m) => m.cattleIds.length > 0);
 }

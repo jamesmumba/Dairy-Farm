@@ -5,11 +5,14 @@ import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { money, toCents } from '../../finance/calc';
 import { ExpenseForm, type ExpenseFields } from '../../finance/ExpenseForm';
-import { CATEGORY_LABELS, type Expense, METHOD_LABELS } from '../../finance/model';
+import { CATEGORY_LABELS, type Expense, METHOD_LABELS, type Method } from '../../finance/model';
 import { editExpense, setReceiptPhoto, voidExpense } from '../../finance/repo';
 import { api } from '../../lib/api';
 import { formatDate } from '../../lib/dates';
 import { getRecord, useLocal } from '../../sync/store';
+import { BottomSheet } from '../../ui/BottomSheet';
+import { Chips } from '../../ui/Chips';
+import { DateField, toDateString } from '../../ui/DateField';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
@@ -19,7 +22,7 @@ import { radius } from '../../ui/theme';
 export default function ExpenseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const stored = useLocal(() => getRecord<Expense>('farm_expenses', id), id);
-  const [mode, setMode] = useState<'view' | 'edit' | 'void'>('view');
+  const [mode, setMode] = useState<'view' | 'edit' | 'void' | 'pay'>('view');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
@@ -41,6 +44,14 @@ export default function ExpenseScreen() {
     if (!permission.granted) return Alert.alert('Permission needed', 'Allow camera access in the phone settings to photograph the receipt.');
     const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 });
     if (!result.canceled) await setReceiptPhoto(stored!, result.assets[0].uri);
+  }
+
+  /** The rest is paid: the status changes, and the day it was paid goes in the note. */
+  function markPaid(paidOn: string, method: Method) {
+    const line = `Paid on ${paidOn}`;
+    editExpense(stored!, { payment_status: 'paid', payment_method: method, notes: e.notes ? `${e.notes}
+${line}` : line });
+    setMode('view');
   }
 
   function doVoid() {
@@ -97,6 +108,7 @@ export default function ExpenseScreen() {
       {error ? <Notice tone="error">{error}</Notice> : null}
       {e.status === 'active' && mode === 'view' ? (
         <ListGroup>
+          {e.payment_status !== 'paid' ? <ListRow icon="cash-check" title="Mark paid" subtitle={e.payment_status === 'unpaid' ? 'Not paid yet' : 'Partly paid so far'} onPress={() => setMode('pay')} /> : null}
           <ListRow icon="camera-outline" title={photo ? 'Replace receipt photo' : 'Photograph the receipt'} onPress={addReceipt} />
           <ListRow icon="pencil-outline" title="Correct this expense" subtitle="Old values stay in the history" onPress={() => setMode('edit')} />
           <ListRow icon="close-circle-outline" tint="red" title="Void" subtitle="Only if entered by mistake" onPress={() => setMode('void')} />
@@ -109,6 +121,25 @@ export default function ExpenseScreen() {
           <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
         </FormCard>
       ) : null}
+      {mode === 'pay' ? <MarkPaidSheet initialMethod={e.payment_method} notBefore={e.expense_date} onClose={() => setMode('view')} onSave={markPaid} /> : null}
     </FormScreen>
+  );
+}
+
+function MarkPaidSheet({ initialMethod, notBefore, onClose, onSave }: { initialMethod: Method | null; notBefore: string; onClose: () => void; onSave: (paidOn: string, method: Method) => void }) {
+  const [paidOn, setPaidOn] = useState(toDateString(new Date()));
+  const [method, setMethod] = useState<Method>(initialMethod && initialMethod !== 'credit' ? initialMethod : 'cash');
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <BottomSheet
+      visible
+      title="Mark paid"
+      onClose={onClose}
+      footer={<Button label="Save as paid" onPress={() => (paidOn < notBefore ? setError('It cannot be paid before the expense date.') : onSave(paidOn, method))} />}
+    >
+      {error ? <Notice tone="error">{error}</Notice> : null}
+      <DateField label="Paid on" value={paidOn} onChange={(d) => d && setPaidOn(d)} optional={false} />
+      <Chips label="Paid by" value={method} options={(Object.keys(METHOD_LABELS) as Method[]).filter((m) => m !== 'credit').map((m) => ({ value: m, label: METHOD_LABELS[m] }))} onChange={(m) => m && setMethod(m)} allowClear={false} />
+    </BottomSheet>
   );
 }

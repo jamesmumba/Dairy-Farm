@@ -1,14 +1,17 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { displayName } from '../animals/model';
-import { listAnimals, listBreeds } from '../animals/repo';
+import { deleteAnimal, getAnimal, listAnimals, listBreeds } from '../animals/repo';
 import { duplicateKey } from '../care/duplicates';
 import { dismissDuplicate } from '../care/duplicatesStore';
+import { loadCareData } from '../care/repo';
+import type { Customer } from '../finance/model';
+import { editCustomer } from '../finance/repo';
 import { money, toCents } from '../finance/calc';
 import { useFinance } from '../finance/useFinance';
 import { formatDate } from '../lib/dates';
 import { listMilk } from '../production/repo';
-import { useLocal } from '../sync/store';
+import { getRecord, useLocal } from '../sync/store';
 import { Button, FormScreen, Notice } from '../ui/form';
 import { Details, ListGroup, ListRow } from '../ui/kit';
 import { spacing, useTheme } from '../ui/theme';
@@ -24,6 +27,48 @@ export default function Duplicate() {
   const animals = useLocal(listAnimals);
   const breeds = useLocal(listBreeds);
   const milk = useLocal(() => listMilk().map((m) => m.data));
+  const care = useLocal(loadCareData);
+  const otherOf = (id: string) => (id === a ? b : a);
+
+  // Same person: the other one stops being offered for new sales. Its sales and payments stay as they are.
+  function keepCustomer(id: string) {
+    const keep = f.customers.find((c) => c.id === id);
+    const other = getRecord<Customer>('customers', otherOf(id));
+    if (!keep || !other) return;
+    Alert.alert(`Keep ${keep.name}?`, `The other one is marked inactive: its sales and payments stay on it, and new ones go on this one.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Keep this one',
+        onPress: () => {
+          editCustomer(other, { active: false });
+          router.back();
+        },
+      },
+    ]);
+  }
+
+  // Records on an animal: milk entries, care records and offspring. One with none was entered twice by mistake.
+  const recordsOf = (id: string) =>
+    milk.filter((m) => m.cattle_id === id && m.status === 'valid').length +
+    [care.health, care.visits, care.treatments, care.breeding, care.checks, care.vaccinations, care.actions].reduce((n, rows) => n + rows.filter((r) => r.cattle_id === id).length, 0) +
+    care.calvings.filter((k) => k.dam_id === id).length +
+    animals.filter((x) => x.data.dam_id === id || x.data.sire_id === id).length;
+
+  function keepAnimal(id: string) {
+    const other = getAnimal(otherOf(id));
+    if (!other) return;
+    Alert.alert('Delete the other one?', 'It has no records, so nothing is lost. This one stays as it is.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete the other',
+        style: 'destructive',
+        onPress: () => {
+          deleteAnimal(other);
+          router.back();
+        },
+      },
+    ]);
+  }
 
   function keepBoth() {
     dismissDuplicate(duplicateKey(kind, a, b));
@@ -49,7 +94,8 @@ export default function Duplicate() {
             ]}
           />
           <ListGroup>
-            <ListRow icon="account-outline" title={`Open ${c.name}`} subtitle="To stop using this one: Edit customer › Active off" href={`/customers/${id}`} />
+            <ListRow icon="account-check-outline" title="Keep this one" subtitle="The other is marked inactive" onPress={() => keepCustomer(id)} />
+            <ListRow icon="account-outline" title={`Open ${c.name}`} href={`/customers/${id}`} />
           </ListGroup>
         </View>
       );
@@ -62,7 +108,7 @@ export default function Duplicate() {
         {card(a)}
         {card(b)}
         <Text style={{ color: t.textMuted, fontSize: 14 }}>
-          If they are the same person: keep the one with more sales and mark the other inactive. Record new sales and payments on the one you keep.
+          If they are the same person, tap Keep this one on the customer with more sales. Record new sales and payments on the one you keep.
         </Text>
         <Button label="They are different people: keep both" variant="secondary" onPress={keepBoth} />
       </FormScreen>
@@ -73,6 +119,7 @@ export default function Duplicate() {
     const x = animals.find((r) => r.data.id === id)?.data;
     if (!x) return null;
     const entries = milk.filter((m) => m.cattle_id === id && m.status === 'valid').length;
+    const otherEmpty = recordsOf(otherOf(id)) === 0;
     return (
       <View key={id} style={{ gap: spacing.sm }}>
         <Details
@@ -85,7 +132,8 @@ export default function Duplicate() {
           ]}
         />
         <ListGroup>
-          <ListRow icon="cow" title={`Open ${displayName(x)}`} subtitle={entries ? 'Has records: keep this one' : 'No records yet: can be deleted from its page'} href={`/animal/${id}`} />
+          {otherEmpty ? <ListRow icon="check-circle-outline" title="Keep this one" subtitle="Deletes the other, which has no records" onPress={() => keepAnimal(id)} /> : null}
+          <ListRow icon="cow" title={`Open ${displayName(x)}`} subtitle={recordsOf(id) ? 'Has records' : 'No records yet'} href={`/animal/${id}`} />
         </ListGroup>
       </View>
     );
@@ -98,7 +146,7 @@ export default function Duplicate() {
       {card(a)}
       {card(b)}
       <Text style={{ color: t.textMuted, fontSize: 14 }}>
-        If they are the same animal: keep the one with records and delete the other from its page (only possible while it has no records). Giving each an ear tag prevents this.
+        If they are the same animal, tap Keep this one on the one with records; the other is deleted (offered only while it has no records). If both have records, keep both and give each an ear tag.
       </Text>
       <Button label="They are different animals: keep both" variant="secondary" onPress={keepBoth} />
     </FormScreen>

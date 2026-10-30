@@ -90,8 +90,8 @@ export default function Notifications() {
                     title={`${r.cattleId ? `${names.get(r.cattleId) ?? 'Animal'}: ` : ''}${r.title}`}
                     subtitle={[whenOf(r), r.detail].filter(Boolean).join(' · ')}
                     onPress={() => router.push((r.href ?? { pathname: '/care/[kind]/[id]', params: { kind: r.record!.kind, id: r.record!.id } }) as Href)}
-                    actions={r.record ? reminderActions(r) : []}
-                    onAction={(a) => quick.start(a, { ...r.record!, reminderKey: r.key })}
+                    actions={r.record || r.actionHref ? reminderActions(r) : []}
+                    onAction={(a) => (r.record ? quick.start(a, { ...r.record, reminderKey: r.key }) : router.push(r.actionHref as Href))}
                   />
                 ),
               )}

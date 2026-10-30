@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { ageLabel, displayName, PRODUCTION_LABELS, REPRODUCTIVE_LABELS, shortCode, STATUS_LABELS } from '../../../animals/model';
-import { deleteAnimal, getAnimal, listAnimals, listBreeds, setAnimalPhoto } from '../../../animals/repo';
+import { deleteAnimal, editAnimal, getAnimal, listAnimals, listBreeds, setAnimalPhoto } from '../../../animals/repo';
 import { usePhotoUri } from '../../../animals/usePhotoUri';
 import { AnimalMilk } from '../../../production/AnimalMilk';
 import { AnimalCare, WithdrawalBanner } from '../../../care/AnimalCare';
@@ -124,6 +124,19 @@ export default function AnimalProfile() {
     );
   }
 
+  // Drying off and coming back into milk happen every lactation: one tap, not the Edit form.
+  function toggleMilking() {
+    const drying = a.production_status === 'lactating';
+    Alert.alert(
+      drying ? `Dry off ${displayName(a)}?` : `${displayName(a)} back in milk?`,
+      drying ? 'She leaves the milking round and the missing-milk checks.' : 'She joins the milking round again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: drying ? 'Dry off' : 'Back in milk', onPress: () => editAnimal(animal!, { production_status: drying ? 'dry' : 'lactating' }) },
+      ],
+    );
+  }
+
   const uploading = sync.photo?.recordId === a.id;
   const female = a.sex === 'female';
   const breed = breeds.find((b) => b.id === a.breed_id)?.name;
@@ -172,6 +185,9 @@ export default function AnimalProfile() {
             <Figure label="Age" value={ageLabel(a) || 'Unknown'} />
             <Figure label="Milk" value={PRODUCTION_LABELS[a.production_status]} />
           </View>
+          {female && a.status === 'active' && (a.production_status === 'lactating' || a.production_status === 'dry') ? (
+            <Button label={a.production_status === 'lactating' ? 'Dry her off' : 'Back in milk'} variant="secondary" onPress={toggleMilking} />
+          ) : null}
           {female ? (
             <View style={{ flexDirection: 'row', gap: spacing.md }}>
               <Figure label="Reproduction" value={REPRODUCTIVE_LABELS[a.reproductive_status]} />

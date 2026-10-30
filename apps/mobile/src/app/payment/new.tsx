@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text } from 'react-native';
-import { money, toCents } from '../../finance/calc';
+import { fromCents, money, toCents } from '../../finance/calc';
 import { METHOD_LABELS, type Method, type Payment } from '../../finance/model';
 import { recordPayment } from '../../finance/repo';
 import { useFinance } from '../../finance/useFinance';
@@ -15,11 +15,12 @@ const KINDS = { payment: 'Payment received', refund: 'Refund to customer', adjus
 
 export default function NewPayment() {
   const t = useTheme();
-  const params = useLocalSearchParams<{ customer_id?: string; currency?: string }>();
+  // From an unpaid balance reminder: what is owed, ready to save.
+  const params = useLocalSearchParams<{ customer_id?: string; currency?: string; amount?: string }>();
   const f = useFinance();
   const [customerId, setCustomerId] = useState<string | null>(params.customer_id ?? null);
   const [kind, setKind] = useState<Payment['kind']>('payment');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(params.amount ?? '');
   const [currency, setCurrency] = useState(params.currency ?? f.currency);
   const [method, setMethod] = useState<Method>('cash');
   const [paidAt, setPaidAt] = useState(new Date().toISOString());
@@ -76,6 +77,9 @@ export default function NewPayment() {
       ) : null}
       <Chips label="Type" value={kind} options={Object.entries(KINDS).map(([value, label]) => ({ value: value as Payment['kind'], label }))} onChange={(v) => v && setKind(v)} allowClear={false} />
       <TextField label={`Amount (${currency})`} value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
+      {kind === 'payment' && balance > 0 && amount !== fromCents(balance) ? (
+        <Button label={`Pay all owed: ${money(balance, currency)}`} variant="link" onPress={() => setAmount(fromCents(balance))} />
+      ) : null}
       {CURRENCIES.length > 1 ? <Chips label="Currency" value={currency} options={CURRENCIES} onChange={(v) => v && setCurrency(v)} allowClear={false} /> : null}
       {kind !== 'adjustment' ? (
         <Chips label="Method" value={method} options={(Object.keys(METHOD_LABELS) as Method[]).filter((m) => m !== 'credit').map((m) => ({ value: m, label: METHOD_LABELS[m] }))} onChange={(v) => v && setMethod(v)} allowClear={false} />

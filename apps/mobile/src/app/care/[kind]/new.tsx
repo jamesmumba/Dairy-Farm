@@ -7,7 +7,13 @@ import { useCareContext } from '../../../care/useCareContext';
 import { FormScreen, Notice } from '../../../ui/form';
 
 export default function NewCareRecord() {
-  const { kind, cattle_id, alert_type, alert_reason } = useLocalSearchParams<{ kind: CareKind; cattle_id?: string; alert_type?: string; alert_reason?: string }>();
+  const { kind, cattle_id, alert_type, alert_reason, health_record_id } = useLocalSearchParams<{
+    kind: CareKind;
+    cattle_id?: string;
+    alert_type?: string;
+    alert_reason?: string;
+    health_record_id?: string;
+  }>();
   const ctx = useCareContext();
   if (!(kind in CARE_KINDS)) return <FormScreen card title="Record"><Notice tone="error">Unknown record type.</Notice></FormScreen>;
   const config = CARE_FORMS[kind];
@@ -17,12 +23,14 @@ export default function NewCareRecord() {
     <FormScreen card title={CARE_KINDS[kind].label}>
       <CareForm
         kind={kind}
-        draftKey={`care-new-${kind}-${cattle_id ?? ''}`}
+        draftKey={`care-new-${kind}-${cattle_id ?? ''}-${health_record_id ?? ''}`}
         initial={{
           ...config.defaults(ctx),
           ...(animalKey && cattle_id ? { [animalKey]: cattle_id } : {}),
           // From an early-warning alert: what it was about and why, kept with the action.
           ...(kind === 'action' && alert_type ? { alert_type, alert_reason: alert_reason ?? '' } : {}),
+          // From a health concern: the treatment or visit is linked to it.
+          ...(health_record_id && config.fields.some((f) => f.key === 'health_record_id') ? { health_record_id } : {}),
         }}
         ctx={ctx}
         creating
