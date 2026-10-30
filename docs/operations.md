@@ -46,8 +46,11 @@ committed copy is out of date.
 cd apps/api
 npm test                                   # rebuilds and tests the bundle
 npx supabase login                         # once
-npx supabase functions deploy api --project-ref <project-ref> --no-verify-jwt
+npx supabase functions deploy api --project-ref <project-ref> --no-verify-jwt --use-api
 ```
+
+`supabase/config.toml` tells the CLI the entry point is `index.js` (it looks for `index.ts` otherwise). `--use-api`
+bundles on Supabase's side, so Docker is not needed.
 
 `--no-verify-jwt` is required: the API verifies tokens itself (against the project's ES256 signing keys), and
 `/health` must answer without one. The function is served at `https://<project-ref>.supabase.co/functions/v1/api`.

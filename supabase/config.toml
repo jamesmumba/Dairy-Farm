@@ -1,0 +1,7 @@
+# Only what `supabase functions deploy` needs: the API bundle is plain JavaScript (index.js),
+# built by apps/api (npm run build:edge). The API checks tokens itself, so the gateway does not.
+project_id = "xgdhqmlkjfhcfjkmrqrx"
+
+[functions.api]
+entrypoint = "./functions/api/index.js"
+verify_jwt = false
