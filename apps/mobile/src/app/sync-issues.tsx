@@ -11,7 +11,7 @@ import { runSync } from '../sync/engine';
 import { applyServerRow, discardChanges, failedOps, getRecord, type Op, removeRecord, requeue, useLocal } from '../sync/store';
 import type { Customer } from '../finance/model';
 import { Button, Notice } from '../ui/form';
-import { radius, shadow, spacing, useTheme } from '../ui/theme';
+import { radius, shadow, spacing, type, useTheme } from '../ui/theme';
 
 const KIND_LABELS: Record<Op['kind'], string> = {
   create: 'New record',
@@ -91,7 +91,7 @@ function Differences({ mine, saved }: { mine: Record<string, unknown>; saved: Re
   return (
     <View style={{ gap: 4 }}>
       {keys.map((k) => (
-        <Text key={k} style={{ color: t.text, fontSize: 15 }}>
+        <Text key={k} style={{ color: t.text, ...type.bodySmall }}>
           {k.replace(/_/g, ' ')}: yours “{show(mine[k])}”, saved “{show(saved[k])}”
         </Text>
       ))}
@@ -121,15 +121,15 @@ function Issue({ op }: { op: Op }) {
 
   return (
     <View style={{ backgroundColor: t.surface, borderRadius: radius.card, ...shadow, padding: spacing.md, gap: spacing.sm }}>
-      <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }}>
+      <Text style={{ color: t.text, ...type.input, fontWeight: '600' }}>
         {KIND_LABELS[op.kind]}: {recordName(op)}
       </Text>
-      <Text style={{ color: t.danger, fontSize: 15 }}>⚠ {op.error_message}</Text>
+      <Text style={{ color: t.danger, ...type.bodySmall }}>⚠ {op.error_message}</Text>
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {existing ? (
         <>
-          <Text style={{ color: t.textMuted, fontSize: 15 }}>
+          <Text style={{ color: t.textMuted, ...type.bodySmall }}>
             This session was already recorded (perhaps on another phone) as {litres(toCl(existing.quantity))} L. This phone has{' '}
             {mine.quantity ? `${litres(toCl(String(mine.quantity)))} L` : 'a different value'}.
           </Text>
@@ -147,7 +147,7 @@ function Issue({ op }: { op: Op }) {
         </>
       ) : conflict ? (
         <>
-          <Text style={{ color: t.textMuted, fontSize: 15 }}>This record was changed on another device. Choose which version to keep.</Text>
+          <Text style={{ color: t.textMuted, ...type.bodySmall }}>This record was changed on another device. Choose which version to keep.</Text>
           <Differences mine={mine} saved={body.current!} />
           <Button
             label="Keep my version"
@@ -202,7 +202,7 @@ export default function SyncIssues() {
           Everything on this phone has been saved to your account.
         </Notice>
       ) : (
-        <Text style={{ color: t.textMuted, fontSize: 14 }}>Saved on this phone, but your account did not accept them. Nothing is lost until you discard it.</Text>
+        <Text style={{ color: t.textMuted, ...type.secondary }}>Saved on this phone, but your account did not accept them. Nothing is lost until you discard it.</Text>
       )}
       {ops.map((op) => (
         <Issue key={op.op_id} op={op} />

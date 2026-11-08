@@ -25,11 +25,11 @@ import { minTouch, radius, shadow, spacing, type, useTheme } from '../../ui/them
 // Home leads with what needs the farmer today and what to do next, then the summary the specification
 // asks for (herd, milk, money for a chosen period, with charts); each section opens its details.
 
-const QUICK: { label: string; hint: string; icon: IconName; href: Href }[] = [
-  { label: 'Milk', hint: 'Record a milking round', icon: 'water-outline', href: '/milk/round' },
-  { label: 'Sale', hint: 'Log milk sold to a customer', icon: 'cash', href: '/sale/new' },
-  { label: 'Animal', hint: 'Register an animal', icon: 'cow', href: '/animal/new' },
-  { label: 'Health', hint: 'Record a health issue', icon: 'stethoscope', href: { pathname: '/care/[kind]/new', params: { kind: 'health' } } },
+const QUICK: { label: string; spoken: string; hint: string; icon: IconName; href: Href }[] = [
+  { label: 'Milk', spoken: 'Record milk', hint: 'A milking round for the whole herd', icon: 'water-outline', href: '/milk/round' },
+  { label: 'Sale', spoken: 'Log a sale', hint: 'Milk sold to a customer', icon: 'cash', href: '/sale/new' },
+  { label: 'Animal', spoken: 'Add an animal', hint: 'Register a new animal', icon: 'cow', href: '/animal/new' },
+  { label: 'Health', spoken: 'Record a health issue', hint: 'A concern about one animal', icon: 'stethoscope', href: { pathname: '/care/[kind]/new', params: { kind: 'health' } } },
 ];
 
 function greeting() {
@@ -41,22 +41,22 @@ function TodayCard({ name, today, milkToday, cows, forSale }: { name?: string | 
   const t = useTheme();
   const figure = (label: string, value: string, note: string) => (
     <View style={{ flex: 1, gap: 2 }} accessible accessibilityLabel={`${label}: ${value}. ${note}`}>
-      <Text style={{ color: t.heroMuted, fontSize: 14 }}>{label}</Text>
-      <Text style={{ color: t.onHero, fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
+      <Text style={{ color: t.heroMuted, ...type.secondary }}>{label}</Text>
+      <Text style={{ color: t.onHero, ...type.display, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
-      <Text style={{ color: t.heroMuted, fontSize: 13 }}>{note}</Text>
+      <Text style={{ color: t.heroMuted, ...type.caption }}>{note}</Text>
     </View>
   );
   return (
     <View style={{ backgroundColor: t.hero, borderRadius: radius.card + 4, padding: spacing.lg, gap: spacing.lg, overflow: 'hidden', ...shadow }}>
       <MaterialCommunityIcons name="cow" size={72} color={t.onHero} style={{ position: 'absolute', right: 12, top: 8, opacity: 0.1 }} importantForAccessibility="no" />
       <View style={{ gap: 2 }}>
-        <Text accessibilityRole="header" style={{ color: t.onHero, ...type.screenTitle, fontSize: 24 }}>
+        <Text accessibilityRole="header" style={{ color: t.onHero, ...type.headline }}>
           {greeting()}
           {name ? `, ${name}` : ''}
         </Text>
-        <Text style={{ color: t.heroMuted, fontSize: 15 }}>{dayLabel(today)}</Text>
+        <Text style={{ color: t.heroMuted, ...type.bodySmall }}>{dayLabel(today)}</Text>
       </View>
       <View style={{ flexDirection: 'row', gap: spacing.md }}>
         {figure('Milk today', milkToday, `from ${cows} cow${cows === 1 ? '' : 's'}`)}
@@ -67,16 +67,16 @@ function TodayCard({ name, today, milkToday, cows, forSale }: { name?: string | 
 }
 
 /** A round icon button with a one-word label under it. */
-function QuickAction({ label, hint, icon, href }: (typeof QUICK)[number]) {
+function QuickAction({ label, spoken, hint, icon, href }: (typeof QUICK)[number]) {
   const t = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`Record ${label.toLowerCase()}`} accessibilityHint={hint} onPress={() => router.push(href)} style={{ flex: 1, minWidth: 72, alignItems: 'center', gap: spacing.xs }}>
+    <Pressable accessibilityRole="button" accessibilityLabel={spoken} accessibilityHint={hint} onPress={() => router.push(href)} style={{ flex: 1, minWidth: 72, alignItems: 'center', gap: spacing.xs }}>
       {({ pressed }) => (
         <>
           <View style={{ width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? t.primary : t.surface, ...shadow }}>
             <MaterialCommunityIcons name={icon} size={28} color={pressed ? t.onPrimary : t.primary} />
           </View>
-          <Text style={{ color: t.text, fontSize: 14, fontWeight: '600' }}>{label}</Text>
+          <Text style={{ color: t.text, ...type.secondary, fontWeight: '600' }}>{label}</Text>
         </>
       )}
     </Pressable>
@@ -99,6 +99,7 @@ export default function Home() {
   const attention = useMemo(() => needingAttention(input), [input]);
   const withdrawals = reminders.filter((r) => r.kind === 'withdrawal').length;
   const missingMilk = reminders.filter((r) => r.kind === 'missing_milk');
+  const outbreaks = reminders.filter((r) => r.kind === 'outbreak');
   const milkDay = summarize(milk, today, today);
   const range = choice === 'today' ? { from: today, to: today } : periodRange(choice, today);
   const to = range.to > today ? today : range.to;
@@ -135,16 +136,14 @@ export default function Home() {
       <TodayCard name={account?.display_name} today={today} milkToday={L(milkDay.totalCl)} cows={milkDay.cows} forSale={`${litres(f.available(today))} L`} />
       {syncWorthShowing ? <SyncStatus /> : null}
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: spacing.xs }}>
-        {QUICK.map((q) => (
-          <QuickAction key={q.label} {...q} />
-        ))}
-      </View>
-
-      {withdrawals > 0 || missingMilk.length > 0 || attentionRows.length > 0 ? (
+      {/* What needs the farmer today comes first, above the shortcuts. */}
+      {outbreaks.length > 0 || withdrawals > 0 || missingMilk.length > 0 || attentionRows.length > 0 ? (
         <View style={{ gap: spacing.sm }}>
           <SectionHeader title="Needs attention" action={attention.size > 3 ? `All ${attention.size}` : undefined} onAction={() => router.push('/reminders')} />
           <ListGroup>
+            {outbreaks.map((r) => (
+              <ListRow key={r.key} icon={REMINDER_ICON.outbreak} tint="red" title={r.title} subtitle={r.detail} href={r.href as Href} />
+            ))}
             {withdrawals > 0 ? (
               <ListRow icon="water-off-outline" tint="red" title={`${withdrawals} milk withdrawal${withdrawals === 1 ? '' : 's'}`} subtitle="This milk is not for sale" href="/reminders" />
             ) : null}
@@ -167,6 +166,12 @@ export default function Home() {
         </View>
       ) : null}
 
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: spacing.xs }}>
+        {QUICK.map((q) => (
+          <QuickAction key={q.label} {...q} />
+        ))}
+      </View>
+
       {/* Herd: one big number, then chips for the groups that matter; warnings only when there are any. */}
       <View style={{ gap: spacing.sm }}>
         <SectionHeader title="Herd" action="Animals" onAction={() => router.push('/animals')} />
@@ -174,10 +179,10 @@ export default function Home() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
             <IconBadge icon="cow" size={48} />
             <View style={{ flex: 1 }}>
-              <Text style={{ color: t.text, fontSize: 26, fontWeight: '600' }}>
-                {herd} <Text style={{ fontSize: 17, fontWeight: '500', color: t.textMuted }}>active animal{herd === 1 ? '' : 's'}</Text>
+              <Text style={{ color: t.text, ...type.headline }}>
+                {herd} <Text style={{ ...type.input, fontWeight: '500', color: t.textMuted }}>active animal{herd === 1 ? '' : 's'}</Text>
               </Text>
-              <Text style={{ color: t.textMuted, fontSize: 14 }}>{animals.length} recorded in total</Text>
+              <Text style={{ color: t.textMuted, ...type.secondary }}>{animals.length} recorded in total</Text>
             </View>
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
@@ -217,7 +222,6 @@ export default function Home() {
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           <Figure label="Sold" value={L(moneyPeriod.litresCl)} />
-          <Figure label="For sale now" value={`${litres(f.available(today))} L`} />
           {milkPeriod.restrictedCl ? <Figure label="Withdrawal" value={L(milkPeriod.restrictedCl)} tone="danger" /> : null}
         </View>
         <Segmented
@@ -240,7 +244,7 @@ export default function Home() {
           <HorizontalBars title="By cow" items={byCow} format={L} limit={6} />
         )}
         <Pressable accessibilityRole="button" onPress={() => router.push('/production')} style={{ minHeight: minTouch - 8, justifyContent: 'center' }}>
-          <Text style={{ color: t.primary, fontSize: 15, fontWeight: '600' }}>Production details ›</Text>
+          <Text style={{ color: t.primary, ...type.link }}>Production details ›</Text>
         </Pressable>
       </Card>
 
@@ -256,19 +260,19 @@ export default function Home() {
           <StatementLine first label="Money received" value={money(moneyPeriod.receiptsCents, f.currency)} />
           <StatementLine label="Customers owe now" value={money(moneyPeriod.outstandingCents, f.currency)} tone={moneyPeriod.outstandingCents > 0 ? 'danger' : undefined} />
           <StatementLine label="Expenses" value={money(moneyPeriod.expensesCents, f.currency)} />
-          <StatementLine label="Sales left after feed" value={money(moneyPeriod.afterFeedCents, f.currency)} tone={moneyPeriod.afterFeedCents < 0 ? 'danger' : undefined} />
+          <StatementLine label="Sales minus feed costs" value={money(moneyPeriod.afterFeedCents, f.currency)} tone={moneyPeriod.afterFeedCents < 0 ? 'danger' : undefined} />
         </View>
         <BarChart title="Sales per day" bars={salesBars} format={fmtMoney} height={64} max={moneyMax} />
         <BarChart title="Payments received per day" bars={payBars} format={fmtMoney} height={64} max={moneyMax} />
         <Pressable accessibilityRole="button" onPress={() => router.push('/finance')} style={{ minHeight: minTouch - 8, justifyContent: 'center' }}>
-          <Text style={{ color: t.primary, fontSize: 15, fontWeight: '600' }}>Money summary ›</Text>
+          <Text style={{ color: t.primary, ...type.link }}>Money summary ›</Text>
         </Pressable>
       </Card>
 
       <View style={{ gap: spacing.sm }}>
         <SectionHeader title="Coming up" action="All" onAction={() => router.push('/reminders')} />
         {upcoming.length === 0 ? (
-          <Text style={{ color: t.textMuted, fontSize: 15 }}>Nothing due in the coming days.</Text>
+          <Text style={{ color: t.textMuted, ...type.bodySmall }}>Nothing due in the coming days.</Text>
         ) : (
           <ListGroup>
             {upcoming.map((r) =>

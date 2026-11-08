@@ -97,4 +97,27 @@ describe('built Edge Function bundle', () => {
     expect(statement.body.balances).toEqual({ ZMW: '40.00' });
     expect((await call('/v1/sync/pull?entity=milk_sales', { sub })).body.rows).toHaveLength(1);
   });
+
+  it('pages through many rows changed in one transaction (same updated_at) without repeating', async () => {
+    const sub = randomUUID();
+    await db.createAuthUser(sub);
+    await call('/v1/me', { sub });
+    const cow = randomUUID();
+    expect((await call('/v1/cattle', { method: 'POST', sub, headers: { 'content-type': 'application/json', 'idempotency-key': randomUUID() }, body: JSON.stringify({ id: cow, sex: 'female' }) })).status).toBe(201);
+    // As a bulk import or seed would: 410 rows inserted in one statement share one updated_at.
+    await db.pg.query(
+      `insert into public.milk_production (owner_id, cattle_id, production_date, session, quantity)
+       select a.id, $1, date '2026-01-01' + g, 'morning', 10 from public.farmer_accounts a, generate_series(0, 409) g where a.auth_user_id = $2`,
+      [cow, sub],
+    );
+    const seen = new Set<string>();
+    let q = 'entity=milk_production&limit=200';
+    for (let page = 0; page < 10; page++) {
+      const { body } = await call(`/v1/sync/pull?${q}`, { sub });
+      body.rows.forEach((r: { id: string }) => seen.add(r.id));
+      if (!body.has_more) break;
+      q = `entity=milk_production&limit=200&${new URLSearchParams(body.next)}`;
+    }
+    expect(seen.size).toBe(410);
+  });
 });

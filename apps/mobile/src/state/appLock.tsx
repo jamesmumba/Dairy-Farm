@@ -4,7 +4,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useR
 import { AppState, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Notice, BrandMark } from '../ui/form';
-import { spacing, useTheme } from '../ui/theme';
+import { spacing, type, useTheme } from '../ui/theme';
 
 // Convenience lock only: it never replaces server sign-in or account recovery.
 const KEY = 'app_lock_enabled';
@@ -99,10 +99,10 @@ function LockScreen({ onUnlocked, onSignOut }: { onUnlocked: () => void; onSignO
     <SafeAreaView style={{ flex: 1, backgroundColor: t.background, justifyContent: 'center', padding: spacing.lg }}>
       <View style={{ gap: spacing.md }}>
         <BrandMark />
-        <Text accessibilityRole="header" style={{ color: t.text, fontSize: 28, fontWeight: '600' }}>
+        <Text accessibilityRole="header" style={{ color: t.text, ...type.screenTitle }}>
           Dairy Farm is locked
         </Text>
-        <Text style={{ color: t.textMuted, fontSize: 16 }}>Use your phone’s fingerprint, face or screen lock to continue.</Text>
+        <Text style={{ color: t.textMuted, ...type.body }}>Use your phone’s fingerprint, face or screen lock to continue.</Text>
         {error ? <Notice tone="error">{error}</Notice> : null}
         <Button label="Unlock" onPress={unlock} />
         <Button label="Sign out instead" variant="link" onPress={onSignOut} hint="You will need your email and password to sign in again" />

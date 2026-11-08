@@ -8,7 +8,7 @@ import { Button } from '../../ui/form';
 import { Avatar, Card, Figure, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
 import { SearchBar } from '../../ui/SearchBar';
 import { useSyncRefresh } from '../../ui/useSyncRefresh';
-import { spacing, useTheme } from '../../ui/theme';
+import { spacing, type, useTheme } from '../../ui/theme';
 
 export default function Sales() {
   const t = useTheme();
@@ -64,7 +64,7 @@ export default function Sales() {
             })}
           </ListGroup>
         ) : (
-          <Text style={{ color: t.textMuted, fontSize: 16 }}>{f.customers.length ? 'No customers match.' : 'No customers yet.'}</Text>
+          <Text style={{ color: t.textMuted, ...type.body }}>{f.customers.length ? 'No customers match.' : 'No customers yet.'}</Text>
         )}
       </View>
     </ScrollView>

@@ -9,7 +9,7 @@ import { litres } from '../../production/calc';
 import { Chips } from '../../ui/Chips';
 import { DateField } from '../../ui/DateField';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
-import { useTheme } from '../../ui/theme';
+import { type, useTheme } from '../../ui/theme';
 
 type Kind = keyof typeof USE_LABELS | 'adjustment' | 'opening_balance';
 
@@ -68,7 +68,7 @@ export default function NewStockRecord() {
         value={reason}
         onChangeText={setReason}
       />
-      <Text style={{ color: t.textMuted, fontSize: 14 }}>Stock for this date: {litres(stockCl)} L</Text>
+      <Text style={{ color: t.textMuted, ...type.secondary }}>Stock for this date: {litres(stockCl)} L</Text>
       <Button label="Review and save" onPress={save} />
     </FormScreen>
   );

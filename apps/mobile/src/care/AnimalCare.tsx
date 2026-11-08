@@ -4,7 +4,7 @@ import type { Cattle } from '../animals/model';
 import { formatDate, formatDateTime, toDateString } from '../lib/dates';
 import { Button, Notice } from '../ui/form';
 import { Card, type IconName, ListGroup, ListRow } from '../ui/kit';
-import { spacing, useCardBasis, useTheme } from '../ui/theme';
+import { spacing, type, useCardBasis, useTheme } from '../ui/theme';
 import { useOpenOrBack } from '../ui/useOpenOrBack';
 import { CARE_FORMS } from './forms';
 import { activeWithdrawal, CARE_KINDS, type CareData, type CareKind, RESULT_LABELS, underTreatment } from './model';
@@ -94,15 +94,15 @@ export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; c
       <Card gap={spacing.sm}>
         {lines.length ? (
           lines.map((l) => (
-            <Text key={l.text} style={{ color: l.tone === 'danger' ? t.danger : t.text, fontSize: 15 }}>
+            <Text key={l.text} style={{ color: l.tone === 'danger' ? t.danger : t.text, ...type.bodySmall }}>
               {l.text}
             </Text>
           ))
         ) : (
-          <Text style={{ color: t.textMuted, fontSize: 15 }}>No open health concerns or upcoming care.</Text>
+          <Text style={{ color: t.textMuted, ...type.bodySmall }}>No open health concerns or upcoming care.</Text>
         )}
         {female && animal.reproductive_status === 'bred' && !pendingCheck ? (
-          <Text style={{ color: t.textMuted, fontSize: 13 }}>Bred: not pregnant until a pregnancy check confirms it.</Text>
+          <Text style={{ color: t.textMuted, ...type.caption }}>Bred: not pregnant until a pregnancy check confirms it.</Text>
         ) : null}
       </Card>
 
@@ -129,7 +129,7 @@ export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; c
           ))}
         </ListGroup>
       ) : null}
-      {female && lastPregnant ? <Text style={{ color: t.textMuted, fontSize: 13 }}>Pregnancy status: {RESULT_LABELS[lastPregnant.result]} on {formatDate(lastPregnant.examined_on)}.</Text> : null}
+      {female && lastPregnant ? <Text style={{ color: t.textMuted, ...type.caption }}>Pregnancy status: {RESULT_LABELS[lastPregnant.result]} on {formatDate(lastPregnant.examined_on)}.</Text> : null}
     </View>
   );
 }

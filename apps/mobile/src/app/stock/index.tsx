@@ -12,7 +12,7 @@ import { useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { Button, Notice, TextField } from '../../ui/form';
 import { Card, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
-import { spacing, useTheme } from '../../ui/theme';
+import { spacing, type, useTheme } from '../../ui/theme';
 
 const REVERSIBLE = ['farm_consumption', 'calf_feeding', 'spoilage', 'gift', 'other_use', 'adjustment', 'opening_balance'];
 
@@ -22,8 +22,8 @@ function Flow({ label, cl, sign, strong }: { label: string; cl: number; sign?: '
   const weight = strong ? '700' : '400';
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }} accessible accessibilityLabel={`${label}: ${sign === '−' ? 'minus ' : ''}${litres(cl)} litres`}>
-      <Text style={{ color: strong ? t.text : t.textMuted, fontSize: 15, fontWeight: weight }}>{label}</Text>
-      <Text style={{ color: t.text, fontSize: 15, fontWeight: weight, fontVariant: ['tabular-nums'] }}>
+      <Text style={{ color: strong ? t.text : t.textMuted, ...type.bodySmall, fontWeight: weight }}>{label}</Text>
+      <Text style={{ color: t.text, ...type.bodySmall, fontWeight: weight, fontVariant: ['tabular-nums'] }}>
         {sign ? `${sign} ` : ''}
         {litres(cl)} L
       </Text>
@@ -78,9 +78,9 @@ export default function Stock() {
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl }}>
       <Card gap={2}>
-        <Text style={{ color: t.textMuted, fontSize: 14 }}>Milk for sale now</Text>
-        <Text style={{ color: t.text, fontSize: 36, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{litres(f.available(f.today))} L</Text>
-        <Text style={{ color: t.textMuted, fontSize: 13 }}>
+        <Text style={{ color: t.textMuted, ...type.secondary }}>Milk for sale now</Text>
+        <Text style={{ color: t.text, ...type.display, fontVariant: ['tabular-nums'] }}>{litres(f.available(f.today))} L</Text>
+        <Text style={{ color: t.textMuted, ...type.caption }}>
           Milk under withdrawal is never counted{f.unsyncedStockItems ? ` · ${f.unsyncedStockItems} not yet synced` : ''}
         </Text>
       </Card>
@@ -124,7 +124,7 @@ export default function Stock() {
           <Card gap={0}>
             <View style={{ flexDirection: 'row', paddingBottom: spacing.xs }}>
               {['Day', 'In', 'Out', 'Close'].map((h, i) => (
-                <Text key={h} style={{ flex: 1, color: t.textMuted, fontSize: 13, textAlign: i ? 'right' : 'left' }}>
+                <Text key={h} style={{ flex: 1, color: t.textMuted, ...type.caption, textAlign: i ? 'right' : 'left' }}>
                   {h}
                 </Text>
               ))}
@@ -136,10 +136,10 @@ export default function Stock() {
                 accessibilityLabel={`${formatDate(d.date)}: in ${litres(d.produced + Math.max(0, d.adjusted))}, out ${litres(d.sold + d.used + Math.max(0, -d.adjusted))}, closing ${litres(d.closing)} litres`}
                 style={{ flexDirection: 'row', paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: t.border }}
               >
-                <Text style={{ flex: 1, color: t.text, fontSize: 14 }}>{formatDate(d.date).slice(0, 5)}</Text>
-                <Text style={{ flex: 1, color: t.text, fontSize: 14, textAlign: 'right', fontVariant: ['tabular-nums'] }}>{litres(d.produced + Math.max(0, d.adjusted))}</Text>
-                <Text style={{ flex: 1, color: t.text, fontSize: 14, textAlign: 'right', fontVariant: ['tabular-nums'] }}>{litres(d.sold + d.used + Math.max(0, -d.adjusted))}</Text>
-                <Text style={{ flex: 1, color: d.closing < 0 ? t.danger : t.text, fontSize: 14, fontWeight: '600', textAlign: 'right', fontVariant: ['tabular-nums'] }}>{litres(d.closing)}</Text>
+                <Text style={{ flex: 1, color: t.text, ...type.secondary }}>{formatDate(d.date).slice(0, 5)}</Text>
+                <Text style={{ flex: 1, color: t.text, ...type.secondary, textAlign: 'right', fontVariant: ['tabular-nums'] }}>{litres(d.produced + Math.max(0, d.adjusted))}</Text>
+                <Text style={{ flex: 1, color: t.text, ...type.secondary, textAlign: 'right', fontVariant: ['tabular-nums'] }}>{litres(d.sold + d.used + Math.max(0, -d.adjusted))}</Text>
+                <Text style={{ flex: 1, color: d.closing < 0 ? t.danger : t.text, ...type.secondary, fontWeight: '600', textAlign: 'right', fontVariant: ['tabular-nums'] }}>{litres(d.closing)}</Text>
               </View>
             ))}
           </Card>
@@ -152,14 +152,14 @@ export default function Stock() {
             {totals.adjusted ? <Flow label="Adjusted" cl={Math.abs(totals.adjusted)} sign={totals.adjusted >= 0 ? '+' : '−'} /> : null}
             <View style={{ height: 1, backgroundColor: t.border, marginVertical: spacing.xs }} />
             <Flow label="At the end" cl={days[days.length - 1]?.closing ?? 0} strong />
-            {totals.restricted ? <Text style={{ color: t.textMuted, fontSize: 13, marginTop: spacing.xs }}>Also {litres(totals.restricted)} L under withdrawal, not in stock</Text> : null}
+            {totals.restricted ? <Text style={{ color: t.textMuted, ...type.caption, marginTop: spacing.xs }}>Also {litres(totals.restricted)} L under withdrawal, not in stock</Text> : null}
           </Card>
         )}
       </View>
 
       <View style={{ gap: spacing.sm }}>
         <SectionHeader title="Milk use and adjustments" />
-        {recent.length === 0 ? <Text style={{ color: t.textMuted, fontSize: 15 }}>None recorded yet.</Text> : null}
+        {recent.length === 0 ? <Text style={{ color: t.textMuted, ...type.bodySmall }}>None recorded yet.</Text> : null}
         {recent.length ? (
           <ListGroup>
             {recent.map((m) => {
@@ -175,13 +175,13 @@ export default function Stock() {
                   style={{ padding: spacing.md, gap: 2 }}
                 >
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }}>
-                    <Text style={{ color: t.text, fontSize: 16, flex: 1 }}>{MOVEMENT_LABELS[m.kind]}</Text>
-                    <Text style={{ color: t.text, fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                    <Text style={{ color: t.text, ...type.body, flex: 1 }}>{MOVEMENT_LABELS[m.kind]}</Text>
+                    <Text style={{ color: t.text, ...type.cardTitle, fontVariant: ['tabular-nums'] }}>
                       {out ? '−' : '+'}
                       {m.quantity.replace('-', '')} L
                     </Text>
                   </View>
-                  <Text style={{ color: t.textMuted, fontSize: 14 }}>
+                  <Text style={{ color: t.textMuted, ...type.secondary }}>
                     {formatDate(m.movement_date)}
                     {m.reason ? ` · ${m.reason}` : ''}
                     {reversed.has(m.id) ? ' · reversed' : ''}
@@ -198,7 +198,7 @@ export default function Stock() {
           </ListGroup>
         ) : null}
         {recent.some((m) => REVERSIBLE.includes(m.kind) && !reversed.has(m.id)) ? (
-          <Text style={{ color: t.textMuted, fontSize: 13 }}>Tap a record entered by mistake to reverse it.</Text>
+          <Text style={{ color: t.textMuted, ...type.caption }}>Tap a record entered by mistake to reverse it.</Text>
         ) : null}
       </View>
     </ScrollView>

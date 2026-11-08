@@ -1,7 +1,7 @@
 import { Pressable, Text } from 'react-native';
 import { formatDate, toDateString } from '../lib/dates';
 import { runSync, useSyncStatus } from '../sync/engine';
-import { minTouch, radius, shadow, spacing, useTheme } from './theme';
+import { minTouch, radius, shadow, spacing, type, useTheme } from './theme';
 import { useOpenOrBack } from './useOpenOrBack';
 
 function ago(iso: string) {
@@ -38,7 +38,7 @@ export function SyncStatus() {
       onPress={() => (reviewing ? open('/sync-issues') : void runSync())}
       style={{ minHeight: minTouch, justifyContent: 'center', paddingHorizontal: spacing.md, backgroundColor: t.surface, borderRadius: radius.card, ...shadow }}
     >
-      <Text style={{ color, fontSize: 15 }}>
+      <Text style={{ color, ...type.bodySmall }}>
         {icon} {text}
       </Text>
     </Pressable>

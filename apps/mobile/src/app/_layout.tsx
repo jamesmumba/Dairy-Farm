@@ -10,7 +10,7 @@ import { SyncHeader } from '../ui/SyncHeader';
 import { Button } from '../ui/form';
 import { ProblemView } from '../ui/ProblemView';
 import { screenLayout } from '../ui/ScreenErrorBoundary';
-import { useTheme } from '../ui/theme';
+import { type, useTheme } from '../ui/theme';
 import { useNotificationScheduler } from '../care/useReminders';
 
 function NotificationScheduler() {
@@ -127,7 +127,7 @@ function Gate() {
         // Covers the app (without closing its screens, in case signing out the other phones fails).
         <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: t.background }}>
           <ActivityIndicator color={t.primary} />
-          <Text style={{ color: t.text, fontSize: 16 }}>Signing out…</Text>
+          <Text style={{ color: t.text, ...type.body }}>Signing out…</Text>
         </View>
       ) : null}
     </AppLockProvider>

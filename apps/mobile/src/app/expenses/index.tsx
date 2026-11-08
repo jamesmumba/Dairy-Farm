@@ -8,7 +8,7 @@ import { periodRange } from '../../production/calc';
 import { getRecord } from '../../sync/store';
 import { Button } from '../../ui/form';
 import { Card, ListGroup, ListRow } from '../../ui/kit';
-import { spacing, useTheme } from '../../ui/theme';
+import { spacing, type, useTheme } from '../../ui/theme';
 
 export default function Expenses() {
   const t = useTheme();
@@ -24,8 +24,8 @@ export default function Expenses() {
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl }}>
       <Card gap={2}>
-        <Text style={{ color: t.textMuted, fontSize: 14 }}>Spent this month</Text>
-        <Text style={{ color: t.text, fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{monthTotals.length ? monthTotals.map(([cur, c]) => money(c, cur)).join(' · ') : 'Nothing yet'}</Text>
+        <Text style={{ color: t.textMuted, ...type.secondary }}>Spent this month</Text>
+        <Text style={{ color: t.text, ...type.display, fontVariant: ['tabular-nums'] }}>{monthTotals.length ? monthTotals.map(([cur, c]) => money(c, cur)).join(' · ') : 'Nothing yet'}</Text>
       </Card>
       <Button label="Add an expense" onPress={() => router.push('/expenses/new')} />
       {list.length ? (

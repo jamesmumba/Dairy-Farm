@@ -3,7 +3,7 @@ import type { Cattle } from '../src/animals/model';
 import type { CareData } from '../src/care/model';
 import type { FinanceData } from '../src/finance/repo';
 import type { MilkRow } from '../src/production/calc';
-import { financeReport, herdReport, productionReport, reproductionReport, type ReportInput, vaccinationReport } from '../src/reports/build';
+import { financeReport, herdHealthReport, herdReport, productionReport, reproductionReport, type ReportInput, vaccinationReport } from '../src/reports/build';
 import { csvCell, escapeHtml, rangeLabel, toCsv, toHtml } from '../src/reports/format';
 import { needingAttention } from '../src/reports/dashboard';
 
@@ -195,5 +195,37 @@ describe('period heading', () => {
     expect(rangeLabel('2026-09-01', '2026-10-28')).toBe('1 Sep – 28 Oct 2026');
     expect(rangeLabel('2025-12-05', '2026-01-02')).toBe('5 December 2025 – 2 January 2026');
     expect(rangeLabel('2026-10-28', '2026-10-28')).toBe('28 October 2026');
+  });
+});
+
+describe('herd health trends report', () => {
+  const hr = (id: string, cattle_id: string, reported_on: string, condition: string | null, extra = {}) =>
+    ({ id, cattle_id, reported_on, condition, recovery_status: 'ongoing', confirmed_diagnosis: null, suspected_issue: null, deleted_at: null, ...extra }) as unknown as CareData['health'][number];
+
+  it('counts deaths by cause (calves apart), sales by reason, problems by kind and repeat cases', () => {
+    const animals = [
+      cow('a'),
+      cow('b', { status: 'deceased', status_date: '2026-10-20', status_reason: 'illness', status_health_record_id: 'h2' }),
+      cow('calf', { birth_date: '2026-08-01', status: 'deceased', status_date: '2026-10-05' }),
+      cow('c', { status: 'sold', status_date: '2026-10-10', status_reason: 'low_yield' }),
+    ];
+    const care = { ...emptyCare(), health: [hr('h1', 'a', '2026-10-02', 'mastitis'), hr('h3', 'a', '2026-10-25', 'mastitis'), hr('h2', 'b', '2026-10-15', 'tick_borne', { recovery_status: 'died', suspected_issue: 'East Coast fever' }), hr('h4', 'a', '2026-10-26', null)] };
+    const expenses = [{ id: 'e1', status: 'active', currency: 'ZMW', amount: '700.00', care_id: 'h2' }] as unknown as FinanceData['expenses'];
+    const r = herdHealthReport(input({ animals, care, finance: { ...emptyFinance(), expenses } }), f);
+
+    expect(value(r, 'Deaths')).toBe('2');
+    expect(r.summary[0].note).toContain('1 calves under 6 months');
+    expect(r.summary[0].note).not.toContain('%'); // too few animals for a share of the herd
+    const table = (title: string) => r.tables.find((t) => t.title === title)!.rows;
+    expect(table('Deaths by cause')).toEqual([
+      { cause: 'Illness', n: '1', calves: '0' },
+      { cause: 'Not given', n: '1', calves: '1' },
+    ]);
+    expect(table('Each death').find((d) => d.animal === 'B')?.illness).toBe('East Coast fever');
+    expect(table('Sales by reason')).toEqual([{ reason: 'Low milk yield', n: '1' }]);
+    expect(table('Health problems by kind')[0]).toMatchObject({ kind: 'Mastitis (udder)', cases: '2', animals: '1' });
+    expect(table('Health problems by kind').find((k) => k.kind.startsWith('Tick'))).toMatchObject({ died: '1', cost: 'ZMW 700.00' });
+    expect(table('Animals with repeat problems')).toEqual([{ animal: 'A', kind: 'Mastitis (udder)', cases: '2' }]);
+    expect(r.missing).toEqual(['1 health concern has no kind of problem chosen; they are counted as “Not set”.', '1 death has no cause recorded.']);
   });
 });

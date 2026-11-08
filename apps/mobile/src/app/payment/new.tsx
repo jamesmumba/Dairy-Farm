@@ -11,7 +11,7 @@ import { CURRENCIES } from '../../lib/account';
 import { Chips } from '../../ui/Chips';
 import { DateTimeField } from '../../ui/DateField';
 import { Button, FormScreen, Notice, TextField } from '../../ui/form';
-import { useTheme } from '../../ui/theme';
+import { type, useTheme } from '../../ui/theme';
 
 const KINDS = PAYMENT_KIND_LABELS;
 
@@ -72,12 +72,12 @@ export default function NewPayment() {
     <FormScreen card title="Record a payment" intro="Payments are applied to the customer’s oldest unpaid sales first; anything extra is kept as credit for their next sales.">
       {error ? <Notice tone="error">{error}</Notice> : null}
       {customer ? (
-        <Text style={{ color: t.text, fontSize: 18, fontWeight: '600' }}>{customer.name}</Text>
+        <Text style={{ color: t.text, ...type.figure }}>{customer.name}</Text>
       ) : (
         <Chips label="Customer" value={customerId} options={f.customers.filter((c) => c.active).map((c) => ({ value: c.id, label: c.name }))} onChange={setCustomerId} />
       )}
       {customer ? (
-        <Text style={{ color: balance > 0 ? t.danger : t.textMuted, fontSize: 16 }}>
+        <Text style={{ color: balance > 0 ? t.danger : t.textMuted, ...type.body }}>
           {balance > 0 ? `Owes ${money(balance, currency)}` : balance < 0 ? `In credit ${money(-balance, currency)}` : 'Nothing owed'}
         </Text>
       ) : null}

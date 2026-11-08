@@ -35,6 +35,10 @@ export interface Cattle {
   status: AnimalStatus;
   status_date: string | null;
   status_details: string | null;
+  /** Why it left the herd: a cause of death or a reason for sale (see DEATH_CAUSE_LABELS, SALE_REASON_LABELS). */
+  status_reason?: string | null;
+  /** The health concern that led to a death (or a sale for illness). */
+  status_health_record_id?: string | null;
   deleted_at: string | null;
   version: number;
   created_at?: string;
@@ -46,11 +50,45 @@ export interface Cattle {
 /** Fields the farmer edits on the registration form. */
 export type CattleFields = Omit<
   Cattle,
-  'id' | 'photo_path' | 'status' | 'status_date' | 'status_details' | 'deleted_at' | 'version' | 'created_at' | 'updated_at' | 'local_photo_uri'
+  | 'id'
+  | 'photo_path'
+  | 'status'
+  | 'status_date'
+  | 'status_details'
+  | 'status_reason'
+  | 'status_health_record_id'
+  | 'deleted_at'
+  | 'version'
+  | 'created_at'
+  | 'updated_at'
+  | 'local_photo_uri'
 >;
 
 /** The farmer-visible permanent ID: first 6 characters of the UUID. Exists offline, never changes. */
 export const shortCode = (id: string) => id.replace(/-/g, '').slice(0, 6).toUpperCase();
+
+/** Causes of death, as categories so deaths can be counted by cause. */
+export const DEATH_CAUSE_LABELS = {
+  illness: 'Illness',
+  calving: 'Calving problems',
+  injury: 'Injury or accident',
+  poisoning: 'Poisoning',
+  predator_theft: 'Predator or theft',
+  old_age: 'Old age',
+  unknown: 'Not known',
+  other: 'Other',
+} as const;
+
+/** Reasons for selling, so culling can be counted by reason. */
+export const SALE_REASON_LABELS = {
+  low_yield: 'Low milk yield',
+  infertility: 'Not getting in calf',
+  old_age: 'Old age',
+  illness: 'Illness',
+  surplus: 'Surplus to the herd',
+  needed_money: 'Farm needed money',
+  other: 'Other',
+} as const;
 
 export const STATUS_LABELS: Record<AnimalStatus, string> = {
   active: 'Active',
@@ -124,6 +162,18 @@ export function matches(a: Cattle, f: AnimalFilter) {
     if (months === null || !AGE_BANDS.find((b) => b.value === f.age)!.test(months)) return false;
   }
   return true;
+}
+
+/**
+ * The ear tag offered for a new animal: C001, C002… one past the highest C-number in the herd, skipping any
+ * tag already used (in any letter case). Past C999 it carries on as C1000. The farmer can change or clear it.
+ */
+export function nextEarTag(animals: Pick<Cattle, 'ear_tag'>[]) {
+  const taken = new Set(animals.map((a) => a.ear_tag?.trim().toUpperCase()).filter(Boolean));
+  const highest = Math.max(0, ...[...taken].map((t) => /^C(\d+)$/.exec(t!)?.[1]).filter(Boolean).map(Number));
+  let n = highest + 1;
+  while (taken.has(`C${String(n).padStart(3, '0')}`)) n++;
+  return `C${String(n).padStart(3, '0')}`;
 }
 
 /** The label the farmer sees for an animal everywhere: tag and name, falling back to the ID. */

@@ -320,17 +320,28 @@ var fields = {
 };
 var CattleCreate = z4.object({ id: z4.uuid(), ...fields }).strict();
 var CattleUpdate = z4.object(fields).partial().strict();
+var DEATH_CAUSES = ["illness", "calving", "injury", "poisoning", "predator_theft", "old_age", "unknown", "other"];
+var SALE_REASONS = ["low_yield", "infertility", "old_age", "illness", "surplus", "needed_money", "other"];
 var StatusChange = z4.object({
   status: z4.enum(["active", "sold", "deceased", "transferred", "inactive"]),
   status_date: pastDate.nullable().optional(),
   status_details: text(500),
+  status_reason: z4.enum([.../* @__PURE__ */ new Set([...DEATH_CAUSES, ...SALE_REASONS])]).nullable().optional(),
+  /** The health concern that led to a death (or a sale for illness). */
+  status_health_record_id: z4.uuid().nullable().optional(),
   reason: text(500)
-}).strict().refine((s) => s.status === "active" || s.status_date, { message: "Enter the date", path: ["status_date"] }).refine((s) => s.status !== "active" || s.reason, { message: "Say why the animal is active again", path: ["reason"] });
+}).strict().refine((s) => s.status === "active" || s.status_date, { message: "Enter the date", path: ["status_date"] }).refine(
+  (s) => !s.status_reason || s.status === "deceased" && DEATH_CAUSES.includes(s.status_reason) || s.status === "sold" && SALE_REASONS.includes(s.status_reason),
+  { message: "Choose a reason that fits the new status", path: ["status_reason"] }
+).refine((s) => !s.status_health_record_id || s.status === "deceased" || s.status === "sold", {
+  message: "A health concern can be linked only to a death or a sale",
+  path: ["status_health_record_id"]
+}).refine((s) => s.status !== "active" || s.reason, { message: "Say why the animal is active again", path: ["reason"] });
 var PhotoConfirm = z4.object({ path: z4.string().min(1).max(300) }).strict();
 var CATTLE_COLUMNS = `id, ear_tag, name, breed_id, sex, birth_date::text, birth_date_estimated,
   acquisition_date::text, acquisition_source, purchase_price::text, purchase_currency, weight_kg::text,
   dam_id, sire_id, sire_identifier, reproductive_status, production_status, photo_path, notes, status,
-  status_date::text, status_details, deleted_at, version, created_at, updated_at`;
+  status_date::text, status_details, status_reason, status_health_record_id, deleted_at, version, created_at, updated_at`;
 var EDITABLE = Object.keys(fields);
 async function getCattle(client, ownerId, id, forUpdate = false) {
   const { rows } = await client.query(
@@ -413,11 +424,28 @@ async function changeStatus(client, ownerId, actor, id, version, s) {
     throw new HttpError(409, "version_conflict", "This animal was changed elsewhere. Review the latest version.", { current });
   }
   const active = s.status === "active";
+  const healthId = active ? null : s.status_health_record_id ?? null;
+  if (healthId) {
+    const { rows: hr } = await client.query(
+      "select 1 from public.animal_health_records where owner_id = $1 and id = $2 and cattle_id = $3 and deleted_at is null",
+      [ownerId, healthId, id]
+    );
+    if (!hr[0]) throw new HttpError(400, "validation_failed", "That health concern is not about this animal.", { field: "status_health_record_id" });
+  }
   const { rows } = await client.query(
-    `update public.cattle set status = $3, status_date = $4, status_details = $5
+    `update public.cattle set status = $3, status_date = $4, status_details = $5, status_reason = $6, status_health_record_id = $7
      where owner_id = $1 and id = $2 returning ${CATTLE_COLUMNS}`,
-    [ownerId, id, s.status, active ? null : s.status_date, active ? null : s.status_details ?? null]
+    [ownerId, id, s.status, active ? null : s.status_date, active ? null : s.status_details ?? null, active ? null : s.status_reason ?? null, healthId]
   );
+  if (healthId && s.status === "deceased") {
+    const { rows: closed } = await client.query(
+      `update public.animal_health_records set recovery_status = 'died' where id = $1 and recovery_status <> 'died' returning id`,
+      [healthId]
+    );
+    if (closed[0]) {
+      await audit(client, { ownerId, actorUserId: actor, action: "animal_health_records.updated", entityTable: "animal_health_records", entityId: healthId, after: { recovery_status: "died" } });
+    }
+  }
   await audit(client, {
     ownerId,
     actorUserId: actor,
@@ -425,8 +453,8 @@ async function changeStatus(client, ownerId, actor, id, version, s) {
     entityTable: "cattle",
     entityId: id,
     reason: s.reason ?? null,
-    before: { status: current.status, status_date: current.status_date, status_details: current.status_details },
-    after: { status: rows[0].status, status_date: rows[0].status_date, status_details: rows[0].status_details }
+    before: { status: current.status, status_date: current.status_date, status_details: current.status_details, status_reason: current.status_reason },
+    after: { status: rows[0].status, status_date: rows[0].status_date, status_details: rows[0].status_details, status_reason: rows[0].status_reason }
   });
   return rows[0];
 }
@@ -478,48 +506,85 @@ async function setPhoto(client, ownerId, actor, id, path) {
 async function timeline(client, ownerId, id, limit = 200) {
   await getCattle(client, ownerId, id);
   const { rows } = await client.query(
-    `select * from (
-       select production_date::timestamptz as at, 'milk' as kind,
-              'Milk ' || sum(quantity)::text || ' L' as title, string_agg(session, ', ' order by session) as detail
-         from public.milk_production where owner_id = $1 and cattle_id = $2 and status = 'valid'
-        group by production_date
+    `with farm as (select time_zone as tz from public.farmer_accounts where id = $1)
+     select at, kind, title, detail, record_id, episode from (
+       select (production_date::timestamp at time zone farm.tz) as at, 'milk' as kind,
+              'Milk ' || trim_scale(sum(quantity))::text || ' L' as title,
+              initcap(left(string_agg(session, ', ' order by array_position(array['morning', 'afternoon', 'evening'], session)), 1))
+                || substr(string_agg(session, ', ' order by array_position(array['morning', 'afternoon', 'evening'], session)), 2) as detail,
+              null::uuid as record_id, null::uuid as episode
+         from public.milk_production, farm where owner_id = $1 and cattle_id = $2 and status = 'valid'
+        group by production_date, farm.tz
        union all
-       select coalesce(first_symptoms_on, reported_on)::timestamptz, 'health',
-              coalesce(confirmed_diagnosis, suspected_issue, 'Health concern'), observations
-         from public.animal_health_records where owner_id = $1 and cattle_id = $2 and deleted_at is null
+       select (coalesce(first_symptoms_on, reported_on)::timestamp at time zone farm.tz), 'health',
+              coalesce(confirmed_diagnosis, suspected_issue, 'Health concern'), observations, id, id
+         from public.animal_health_records, farm where owner_id = $1 and cattle_id = $2 and deleted_at is null
        union all
-       select started_on::timestamptz, 'treatment', 'Treatment: ' || medication,
-              case when requires_milk_withdrawal then 'Milk withdrawal until ' || withdrawal_ends_at::text end
-         from public.treatments where owner_id = $1 and cattle_id = $2 and deleted_at is null
+       select (started_on::timestamp at time zone farm.tz), 'treatment', 'Treatment: ' || medication,
+              case when requires_milk_withdrawal
+                   then 'Milk withdrawal until ' || to_char(withdrawal_ends_at at time zone farm.tz, 'FMDD Mon YYYY, HH24:MI') end,
+              id, health_record_id
+         from public.treatments, farm where owner_id = $1 and cattle_id = $2 and deleted_at is null
        union all
-       select visit_at, 'vet_visit', 'Veterinary visit' || coalesce(': ' || veterinarian, ''), purpose
+       select visit_at, 'vet_visit', 'Veterinary visit' || coalesce(': ' || veterinarian, ''), purpose, id, health_record_id
          from public.veterinary_visits where owner_id = $1 and cattle_id = $2 and deleted_at is null
        union all
-       select event_at, 'breeding', replace(initcap(replace(event_type, '_', ' ')), 'Artificial Insemination', 'Artificial insemination'), bull_or_semen_id
+       select event_at, 'breeding',
+              case event_type when 'heat_observed' then 'Heat seen'
+                              when 'natural_mating' then 'Natural mating'
+                              when 'artificial_insemination' then 'Artificial insemination' end,
+              bull_or_semen_id, id, case when event_type <> 'heat_observed' then id end
          from public.breeding_records where owner_id = $1 and cattle_id = $2 and deleted_at is null
        union all
-       select coalesce(examined_on, scheduled_on)::timestamptz, 'pregnancy_check', 'Pregnancy check: ' || replace(result, '_', ' '), examiner
-         from public.pregnancy_checks where owner_id = $1 and cattle_id = $2 and deleted_at is null
+       select (examined_on::timestamp at time zone farm.tz), 'pregnancy_check', 'Pregnancy check: ' || replace(result, '_', ' '), examiner, id, breeding_record_id
+         from public.pregnancy_checks, farm where owner_id = $1 and cattle_id = $2 and deleted_at is null and result <> 'pending'
        union all
-       select calved_on::timestamptz, 'calving', 'Calving: ' || outcome, complications
-         from public.calving_records where owner_id = $1 and dam_id = $2 and deleted_at is null
+       select (calved_on::timestamp at time zone farm.tz), 'calving',
+              case outcome when 'live' then 'Calved' when 'stillborn' then 'Calving: stillborn'
+                           when 'aborted' then 'Calving: aborted' else 'Calving' end,
+              complications, id,
+              (select p.breeding_record_id from public.pregnancy_checks p where p.id = calving_records.pregnancy_check_id)
+         from public.calving_records, farm where owner_id = $1 and dam_id = $2 and deleted_at is null
        union all
-       select coalesce(administered_on, due_on)::timestamptz, 'vaccination', vaccine_name || ' (' || status || ')', target_disease
-         from public.vaccination_records where owner_id = $1 and cattle_id = $2 and deleted_at is null
+       select (coalesce(administered_on, due_on)::timestamp at time zone farm.tz), 'vaccination',
+              'Vaccination: ' || vaccine_name || case status when 'missed' then ' (missed)' when 'cancelled' then ' (cancelled)' else '' end,
+              target_disease, id, null::uuid
+         from public.vaccination_records, farm where owner_id = $1 and cattle_id = $2 and deleted_at is null and status <> 'scheduled'
        union all
-       select action_on::timestamptz, 'alert_action', 'Action: ' || replace(action_taken, '_', ' ') || ' (' || status || ')',
-              concat_ws(' \xB7 ', alert_reason, outcome)
-         from public.alert_actions where owner_id = $1 and cattle_id = $2 and deleted_at is null
+       select (action_on::timestamp at time zone farm.tz), 'alert_action',
+              'Milk alert: ' || case action_taken when 'checked_record' then 'checked the record'
+                                                  when 'checked_feed_water' then 'checked feed and water'
+                                                  when 'observed' then 'watched her'
+                                                  when 'called_vet' then 'called the vet'
+                                                  when 'treated' then 'treated'
+                                                  else 'other action' end
+                || case status when 'resolved' then ' (resolved)' else ' (watching)' end,
+              concat_ws(' \xB7 ', alert_reason, outcome), id, health_record_id
+         from public.alert_actions, farm where owner_id = $1 and cattle_id = $2 and deleted_at is null
        union all
        select occurred_at, 'audit',
               case action when 'cattle.created' then 'Registered'
                           when 'cattle.updated' then 'Details changed'
-                          when 'cattle.status_changed' then 'Status: ' || (after_data->>'status')
+                          when 'cattle.status_changed' then
+                            case after_data->>'status' when 'active' then 'Back to active' when 'sold' then 'Sold'
+                                                       when 'deceased' then 'Died' when 'transferred' then 'Transferred'
+                                                       else 'Marked inactive' end
+                            || coalesce(' (' || case after_data->>'status_reason'
+                                 when 'illness' then 'illness' when 'calving' then 'calving problems' when 'injury' then 'injury or accident'
+                                 when 'poisoning' then 'poisoning' when 'predator_theft' then 'predator or theft' when 'old_age' then 'old age'
+                                 when 'unknown' then 'cause unknown' when 'low_yield' then 'low yield' when 'infertility' then 'not getting in calf'
+                                 when 'surplus' then 'surplus to the herd' when 'needed_money' then 'farm needed money' when 'other' then 'other reason'
+                               end || ')', '')
                           when 'cattle.photo_changed' then 'Photo changed'
-                          else action end,
-              reason
+                          when 'cattle.reproductive_status_derived' then
+                            case after_data->>'reproductive_status' when 'pregnant' then 'Now pregnant'
+                                                                    when 'bred' then 'Now bred, not yet checked'
+                                                                    else 'Now open (not pregnant)' end
+                          else 'Record changed' end,
+              reason, null::uuid, null::uuid
          from public.audit_logs where owner_id = $1 and entity_table = 'cattle' and entity_id = $2
-     ) events
+     ) events, farm
+     where (at at time zone farm.tz)::date <= (now() at time zone farm.tz)::date
      order by at desc
      limit $3`,
     [ownerId, id, limit]
@@ -840,7 +905,7 @@ var health = {
   path: "health-records",
   label: "Health record",
   columns: `id, cattle_id, first_symptoms_on::text, reported_on::text, observations, suspected_issue, confirmed_diagnosis,
-    condition_status, severity, urgent, responsible_person, follow_up_on::text, recovery_status, notes, ${COMMON}`,
+    condition_status, condition, severity, urgent, responsible_person, follow_up_on::text, recovery_status, notes, ${COMMON}`,
   fields: {
     cattle_id: z6.uuid(),
     first_symptoms_on: opt(pastDate),
@@ -854,6 +919,8 @@ var health = {
     responsible_person: text(120),
     follow_up_on: opt(isoDate),
     recovery_status: z6.enum(["ongoing", "recovering", "recovered", "chronic", "died"]).optional(),
+    // What kind of problem, from a short list, so cases can be counted: what the farmer or vet found.
+    condition: opt(z6.enum(["mastitis", "lameness", "tick_borne", "diarrhoea", "respiratory", "fertility", "metabolic", "injury", "other"])),
     notes: text(2e3)
   },
   links: [{ field: "cattle_id", table: "cattle", label: "Animal" }],
@@ -996,10 +1063,11 @@ var calving = {
   table: "calving_records",
   path: "calvings",
   label: "Calving record",
-  columns: `id, dam_id, calf_id, calved_on::text, outcome, complications, dry_off_on::text, observations, ${COMMON}`,
+  columns: `id, dam_id, calf_id, pregnancy_check_id, calved_on::text, outcome, complications, dry_off_on::text, observations, ${COMMON}`,
   fields: {
     dam_id: z6.uuid(),
     calf_id: opt(z6.uuid()),
+    pregnancy_check_id: opt(z6.uuid()),
     calved_on: pastDate,
     outcome: z6.enum(["live", "stillborn", "aborted", "other"]),
     complications: text(1e3),
@@ -1009,10 +1077,25 @@ var calving = {
   createOnly: { calf: Calf.optional() },
   links: [
     { field: "dam_id", table: "cattle", label: "Mother", female: true },
-    { field: "calf_id", table: "cattle", label: "Calf" }
+    { field: "calf_id", table: "cattle", label: "Calf" },
+    { field: "pregnancy_check_id", table: "pregnancy_checks", label: "Pregnancy check", sameCattle: true, animalField: "dam_id" }
   ],
   check: (r) => r.calf_id && r.calf_id === r.dam_id ? ["calf_id", "The calf cannot be its own mother"] : null,
   async afterWrite(ctx, before, after, extra) {
+    if (!before && !after.pregnancy_check_id) {
+      const { rows } = await ctx.client.query(
+        `select p.id from public.pregnancy_checks p
+         where p.owner_id = $1 and p.cattle_id = $2 and p.deleted_at is null and p.result = 'pregnant'
+           and p.examined_on <= $3::date and p.examined_on > $3::date - 365
+           and not exists (select 1 from public.calving_records c where c.pregnancy_check_id = p.id and c.deleted_at is null)
+         order by p.examined_on desc limit 1`,
+        [ctx.owner, after.dam_id, after.calved_on]
+      );
+      if (rows[0]) {
+        await ctx.client.query("update public.calving_records set pregnancy_check_id = $2 where id = $1", [after.id, rows[0].id]);
+        after.pregnancy_check_id = rows[0].id;
+      }
+    }
     if (!before && extra.calf) {
       if (after.outcome !== "live") throw new HttpError(400, "validation_failed", "A calf can be registered only for a live birth.", { field: "calf" });
       const { rows: bull } = await ctx.client.query(
@@ -1105,7 +1188,7 @@ var alertAction = {
   path: "alert-actions",
   label: "Alert action",
   columns: `id, cattle_id, alert_type, alert_reason, action_taken, action_on::text, notes, status, follow_up_on::text, resolved_on::text,
-    outcome, ${COMMON}`,
+    outcome, health_record_id, ${COMMON}`,
   fields: {
     cattle_id: z6.uuid(),
     alert_type: z6.enum(["milk_drop", "milk_decline", "other"]),
@@ -1116,9 +1199,13 @@ var alertAction = {
     status: z6.enum(["monitoring", "resolved"]).optional(),
     follow_up_on: opt(isoDate),
     resolved_on: opt(pastDate),
-    outcome: text(1e3)
+    outcome: text(1e3),
+    health_record_id: opt(z6.uuid())
   },
-  links: [{ field: "cattle_id", table: "cattle", label: "Animal" }],
+  links: [
+    { field: "cattle_id", table: "cattle", label: "Animal" },
+    { field: "health_record_id", table: "animal_health_records", label: "Health concern", sameCattle: true }
+  ],
   check: (r) => r.status !== "resolved" && !r.follow_up_on ? ["follow_up_on", "Choose when to check on her again"] : r.status === "resolved" && !r.resolved_on ? ["resolved_on", "Enter when it was resolved"] : r.resolved_on && r.resolved_on < r.action_on ? ["resolved_on", "It cannot be resolved before the action was taken"] : null
 };
 var CARE_ENTITIES = [health, vetVisit, treatment, breeding, pregnancyCheck, calving, vaccinationSchedule, vaccination, alertAction];
@@ -1153,7 +1240,7 @@ async function checkLinks2(ctx, e, r) {
     const found = rows[0];
     if (!found) throw new HttpError(400, "validation_failed", `${link.label} not found.`, { field: link.field });
     if (link.female && found.sex !== "female") throw new HttpError(400, "validation_failed", `${link.label} must be female.`, { field: link.field });
-    if (link.sameCattle && found.cattle_id !== r.cattle_id) {
+    if (link.sameCattle && found.cattle_id !== r[link.animalField ?? "cattle_id"]) {
       throw new HttpError(400, "validation_failed", `${link.label} is about a different animal.`, { field: link.field });
     }
   }
@@ -1658,7 +1745,23 @@ async function saleStatus(client, owner, id) {
   return rows[0];
 }
 var EXPENSE_COLUMNS = `id, expense_date::text, category, amount::text, currency, payee, payment_method, payment_status, receipt_path, notes,
-  status, void_reason, version, created_at, updated_at`;
+  care_kind, care_id, status, void_reason, version, created_at, updated_at`;
+var CARE_TABLES = {
+  health: "animal_health_records",
+  "vet-visit": "veterinary_visits",
+  treatment: "treatments",
+  breeding: "breeding_records",
+  "pregnancy-check": "pregnancy_checks",
+  calving: "calving_records",
+  vaccination: "vaccination_records"
+};
+async function checkCareLink(client, owner, r) {
+  if (!r.care_kind !== !r.care_id) throw new HttpError(400, "validation_failed", "Choose the record this expense was for.", { field: "care_id" });
+  if (!r.care_kind) return;
+  const table = CARE_TABLES[r.care_kind];
+  const { rows } = await client.query(`select 1 from public.${table} where owner_id = $1 and id = $2 and deleted_at is null`, [owner, r.care_id]);
+  if (!rows[0]) throw new HttpError(400, "validation_failed", "The record this expense was for was not found.", { field: "care_id" });
+}
 var expenseFields = {
   expense_date: pastDate,
   category: z8.enum(["feed", "veterinary_care", "medicines", "transport", "equipment", "utilities", "labour", "other"]),
@@ -1667,7 +1770,9 @@ var expenseFields = {
   payee: text(120),
   payment_method: z8.enum(METHODS).nullable().optional(),
   payment_status: z8.enum(["paid", "unpaid", "partially_paid"]).optional(),
-  notes: text(1e3)
+  notes: text(1e3),
+  care_kind: z8.enum(Object.keys(CARE_TABLES)).nullable().optional(),
+  care_id: z8.uuid().nullable().optional()
 };
 var ExpenseCreate = z8.object({ id: z8.uuid(), ...expenseFields }).strict();
 var ExpenseUpdate = z8.object(expenseFields).partial().strict();
@@ -1679,6 +1784,7 @@ async function getExpense(client, owner, id, forUpdate = false) {
 async function createExpense(client, owner, actor, input) {
   const { rows: clash } = await client.query("select 1 from public.farm_expenses where id = $1", [input.id]);
   if (clash[0]) throw new HttpError(409, "id_taken", "This record id is already used.");
+  await checkCareLink(client, owner, input);
   const keys = Object.keys(input).filter((k) => input[k] !== void 0 && k !== "id");
   const { rows } = await client.query(
     `insert into public.farm_expenses (owner_id, id${keys.map((k) => `, ${k}`).join("")}) values ($1, $2${keys.map((_, i) => `, $${i + 3}`).join("")})
@@ -1692,6 +1798,9 @@ async function updateExpense(client, owner, actor, id, version, patch) {
   const before = await getExpense(client, owner, id, true);
   if (before.version !== version) throw new HttpError(409, "version_conflict", "This expense was changed elsewhere. Review the latest version.", { current: before });
   if (before.status === "voided") throw new HttpError(409, "voided", "This expense was voided.");
+  if ("care_kind" in patch || "care_id" in patch) {
+    await checkCareLink(client, owner, { care_kind: patch.care_kind ?? null, care_id: patch.care_id ?? null });
+  }
   const changed = Object.keys(patch).filter((k) => patch[k] !== void 0 && String(patch[k]) !== String(before[k]));
   if (!changed.length) return before;
   const { rows } = await client.query(
@@ -1744,7 +1853,7 @@ var PullQuery = z9.object({
 }).strict();
 async function pull(db2, ownerId, q) {
   const { table, columns } = ENTITIES[q.entity];
-  const cursor = q.after ? "and (updated_at, id) > ($2::timestamptz, $3::uuid)" : "";
+  const cursor = q.after ? "and (updated_at, id) > ($2::text::timestamptz, $3::text::uuid)" : "";
   const params = q.after ? [ownerId, q.after, q.after_id ?? "00000000-0000-0000-0000-000000000000"] : [ownerId];
   const { rows } = await db2.query(
     `select ${columns}, updated_at::text as _cursor from public.${table}

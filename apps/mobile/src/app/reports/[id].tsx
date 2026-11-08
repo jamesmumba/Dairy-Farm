@@ -20,7 +20,7 @@ import { MissingRecord } from '../../ui/ProblemView';
 import { Card } from '../../ui/kit';
 import { FilterButton, FilterSheet } from '../../ui/SearchBar';
 import { SyncHeader } from '../../ui/SyncHeader';
-import { minTouch, radius, shadow, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 /** Rows shown before "Show all": the latest days of a daily table, or the first rows of any other. */
 const SHOWN_DAYS = 14;
@@ -41,8 +41,8 @@ function ReportTable({ table }: { table: Table }) {
   return (
     <View style={{ backgroundColor: t.surface, borderRadius: radius.card, ...shadow, overflow: 'hidden' }}>
       <View accessibilityRole="header" style={{ minHeight: minTouch, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md }}>
-        <Text style={{ flex: 1, color: t.text, fontSize: 16, fontWeight: '600' }}>{table.title}</Text>
-        <Text style={{ color: t.textMuted, fontSize: 14, fontVariant: ['tabular-nums'] }}>{table.rows.length}</Text>
+        <Text style={{ flex: 1, color: t.text, ...type.cardTitle }}>{table.title}</Text>
+        <Text style={{ color: t.textMuted, ...type.secondary, fontVariant: ['tabular-nums'] }}>{table.rows.length}</Text>
       </View>
       {asList ? (
         // Narrow tables: plain rows, the first column on the left and the figures on the right.
@@ -54,9 +54,9 @@ function ReportTable({ table }: { table: Table }) {
               accessibilityLabel={table.columns.map((c) => `${c.label || ''} ${row[c.key] ?? ''}`).join(', ')}
               style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 8, borderTopWidth: 1, borderTopColor: t.border }}
             >
-              <Text style={{ flex: 1, color: t.text, fontSize: 15 }}>{row[table.columns[0].key] ?? ''}</Text>
+              <Text style={{ flex: 1, color: t.text, ...type.bodySmall }}>{row[table.columns[0].key] ?? ''}</Text>
               {table.columns.slice(1).map((c) => (
-                <Text key={c.key} style={{ color: c.numeric ? t.text : t.textMuted, fontSize: 15, textAlign: 'right', fontVariant: ['tabular-nums'] }}>
+                <Text key={c.key} style={{ color: c.numeric ? t.text : t.textMuted, ...type.bodySmall, textAlign: 'right', fontVariant: ['tabular-nums'] }}>
                   {row[c.key] ?? ''}
                 </Text>
               ))}
@@ -68,7 +68,7 @@ function ReportTable({ table }: { table: Table }) {
           <View>
             <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: t.border, paddingTop: 4 }}>
               {table.columns.map((c) => (
-                <Text key={c.key} style={{ width: width(c), color: t.textMuted, fontSize: 13, paddingVertical: 4, textAlign: c.numeric ? 'right' : 'left', paddingRight: 8 }}>
+                <Text key={c.key} style={{ width: width(c), color: t.textMuted, ...type.caption, paddingVertical: 4, textAlign: c.numeric ? 'right' : 'left', paddingRight: 8 }}>
                   {c.label}
                 </Text>
               ))}
@@ -81,7 +81,7 @@ function ReportTable({ table }: { table: Table }) {
                 style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: t.border }}
               >
                 {table.columns.map((c) => (
-                  <Text key={c.key} style={{ width: width(c), color: t.text, fontSize: 14, paddingVertical: 6, textAlign: c.numeric ? 'right' : 'left', paddingRight: 8, fontVariant: ['tabular-nums'] }}>
+                  <Text key={c.key} style={{ width: width(c), color: t.text, ...type.secondary, paddingVertical: 6, textAlign: c.numeric ? 'right' : 'left', paddingRight: 8, fontVariant: ['tabular-nums'] }}>
                     {row[c.key] ?? ''}
                   </Text>
                 ))}
@@ -227,11 +227,11 @@ export default function ReportScreen() {
       ) : (
         <>
           <View style={{ gap: 2 }}>
-            <Text accessibilityRole="header" style={{ color: t.text, fontSize: 19, fontWeight: '600' }}>
+            <Text accessibilityRole="header" style={{ color: t.text, ...type.sectionTitle }}>
               {rangeLabel(from, to)}
             </Text>
             {Object.keys(report.filters).length || sync.pending ? (
-              <Text style={{ color: t.textMuted, fontSize: 13 }}>
+              <Text style={{ color: t.textMuted, ...type.caption }}>
                 {[...Object.entries(report.filters).map(([k, v]) => `${k}: ${v}`), sync.pending ? `${sync.pending} not yet synced` : null].filter(Boolean).join(' · ')}
               </Text>
             ) : null}
@@ -245,9 +245,9 @@ export default function ReportScreen() {
                 accessible
                 accessibilityLabel={`${s.label}: ${s.value}. ${s.note ?? ''}`}
               >
-                <Text style={{ color: t.textMuted, fontSize: 12 }}>{s.label}</Text>
-                <Text style={{ color: t.text, fontSize: 18, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{s.value}</Text>
-                {s.note ? <Text style={{ color: t.textMuted, fontSize: 11 }}>{s.note}</Text> : null}
+                <Text style={{ color: t.textMuted, ...type.micro }}>{s.label}</Text>
+                <Text style={{ color: t.text, ...type.figure, fontVariant: ['tabular-nums'] }}>{s.value}</Text>
+                {s.note ? <Text style={{ color: t.textMuted, ...type.micro }}>{s.note}</Text> : null}
               </View>
             ))}
           </View>
@@ -261,18 +261,18 @@ export default function ReportScreen() {
             <ReportTable key={table.title} table={table} />
           ))}
           {empty.length ? (
-            <Text style={{ color: t.textMuted, fontSize: 14 }}>Nothing recorded for: {empty.map((x) => x.title.toLowerCase()).join(', ')}.</Text>
+            <Text style={{ color: t.textMuted, ...type.secondary }}>Nothing recorded for: {empty.map((x) => x.title.toLowerCase()).join(', ')}.</Text>
           ) : null}
 
           <Button label={showHow ? 'Hide how these are calculated' : 'How these figures are calculated'} variant="link" onPress={() => setShowHow((v) => !v)} />
           {showHow ? (
             <Card gap={spacing.sm}>
               {report.definitions.map((d) => (
-                <Text key={d} style={{ color: t.textMuted, fontSize: 14 }}>
+                <Text key={d} style={{ color: t.textMuted, ...type.secondary }}>
                   • {d}
                 </Text>
               ))}
-              <Text style={{ color: t.textMuted, fontSize: 13 }}>
+              <Text style={{ color: t.textMuted, ...type.caption }}>
                 Units: {report.units}. Made {formatDateTime(report.generatedAt)} from records on this phone. Records made on another phone appear after they sync.
               </Text>
             </Card>

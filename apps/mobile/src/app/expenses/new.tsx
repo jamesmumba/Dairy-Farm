@@ -1,7 +1,7 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { formatDate } from '../../lib/dates';
 import { existingExpense } from '../../finance/existing';
-import { CATEGORY_LABELS } from '../../finance/model';
+import { CATEGORY_LABELS, type Expense } from '../../finance/model';
 import { askIfExisting } from '../../ui/askIfExisting';
 import { ExpenseForm } from '../../finance/ExpenseForm';
 import { addExpense } from '../../finance/repo';
@@ -10,14 +10,17 @@ import { FormScreen } from '../../ui/form';
 
 export default function NewExpense() {
   const f = useFinance();
+  // Opened from a care record ("Add a cost"): the expense is recorded against it.
+  const { care_kind, care_id, category } = useLocalSearchParams<{ care_kind?: string; care_id?: string; category?: Expense['category'] }>();
+  const link = care_kind && care_id ? { care_kind, care_id } : {};
   return (
     <FormScreen card title="New expense">
       <ExpenseForm
-        initial={{ expense_date: f.today, category: 'feed', amount: '', currency: f.currency, payee: null, payment_method: 'cash', payment_status: 'paid', notes: null }}
+        initial={{ expense_date: f.today, category: category && category in CATEGORY_LABELS ? category : 'feed', amount: '', currency: f.currency, payee: null, payment_method: 'cash', payment_status: 'paid', notes: null }}
         submitLabel="Save expense"
         onSubmit={(fields) => {
           const save = () => {
-            const id = addExpense(fields);
+            const id = addExpense({ ...fields, ...link });
             router.replace({ pathname: '/expenses/[id]', params: { id } });
           };
           const same = existingExpense(f.expenses, fields);

@@ -18,10 +18,20 @@ import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
 import { radius } from '../../ui/theme';
+import { useOpenOrBack } from '../../ui/useOpenOrBack';
+import { displayName } from '../../animals/model';
+import { KIND_ICON } from '../../care/AnimalCare';
+import { CARE_FORMS } from '../../care/forms';
+import { CARE_KINDS, type CareKind } from '../../care/model';
+import { getCare } from '../../care/repo';
+import { useCareContext } from '../../care/useCareContext';
 
 export default function ExpenseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const stored = useLocal(() => getRecord<Expense>('farm_expenses', id), id);
+  const open = useOpenOrBack();
+  const careCtx = useCareContext();
+  const allAnimals = careCtx.animals;
   const [mode, setMode] = useState<'view' | 'edit' | 'void' | 'pay'>('view');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +47,14 @@ export default function ExpenseScreen() {
 
   if (!stored) return <MissingRecord what="expense" />;
   const e = stored.data;
+  // The care record this expense paid for, with the animal's name.
+  const careKind = e.care_kind && e.care_kind in CARE_KINDS ? (e.care_kind as CareKind) : null;
+  const careRow = careKind && e.care_id ? getCare<{ id: string; version: number; deleted_at: string | null; cattle_id?: string; dam_id?: string }>(careKind, e.care_id)?.data : null;
+  const careAnimal = careRow ? allAnimals.find((a) => a.id === (careRow.cattle_id ?? careRow.dam_id)) : undefined;
+  const forRecord =
+    careKind && careRow
+      ? { kind: careKind, id: careRow.id, subtitle: [careAnimal ? displayName(careAnimal) : null, CARE_FORMS[careKind].summary(careRow, careCtx)].filter(Boolean).join(' · ') }
+      : null;
   const photo = e.local_receipt_uri ? { uri: e.local_receipt_uri } : receiptUrl && receiptPath ? { uri: receiptUrl, cacheKey: receiptPath } : null;
 
   async function addReceipt() {
@@ -103,6 +121,11 @@ export default function ExpenseScreen() {
           ['Note', e.notes],
         ]}
       />
+      {forRecord ? (
+        <ListGroup>
+          <ListRow icon={KIND_ICON[forRecord.kind]} title={`For: ${CARE_KINDS[forRecord.kind].label}`} subtitle={forRecord.subtitle} onPress={() => open({ pathname: '/care/[kind]/[id]', params: { kind: forRecord.kind, id: forRecord.id } })} />
+        </ListGroup>
+      ) : null}
       {photo ? <Image source={photo} style={{ width: '100%', aspectRatio: 3 / 4, borderRadius: radius.card }} contentFit="contain" accessibilityLabel="Receipt photo" cachePolicy="disk" /> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
       {e.status === 'active' && mode === 'view' ? (

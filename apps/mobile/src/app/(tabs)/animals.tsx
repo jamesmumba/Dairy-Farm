@@ -100,7 +100,7 @@ export default function Animals() {
                 onChange={setHealth}
               />
             </FilterSheet>
-            <Text style={{ color: t.textMuted, fontSize: 15 }} accessibilityLiveRegion="polite">
+            <Text style={{ color: t.textMuted, ...type.bodySmall }} accessibilityLiveRegion="polite">
               {shown.length} of {animals.length} animal{animals.length === 1 ? '' : 's'}
             </Text>
           </View>
@@ -108,7 +108,7 @@ export default function Animals() {
         ListEmptyComponent={
           <View style={{ alignItems: 'center', gap: spacing.sm, padding: spacing.lg }}>
             <MaterialCommunityIcons name="cow" size={48} color={t.chart} importantForAccessibility="no" />
-            <Text style={{ color: t.textMuted, fontSize: 16, textAlign: 'center' }}>
+            <Text style={{ color: t.textMuted, ...type.body, textAlign: 'center' }}>
               {animals.length ? 'No animals match your search or filters.' : 'No animals yet. Register your first animal to start keeping records.'}
             </Text>
           </View>
@@ -133,8 +133,8 @@ export default function Animals() {
             >
               <Avatar name={displayName(a)} tint={a.status !== 'active' ? 'sky' : withdrawal ? 'red' : 'green'} size={48} />
               <View style={{ flex: 1, gap: 3 }}>
-                <Text style={{ color: t.text, ...type.cardTitle, fontSize: 17 }}>{displayName(a)}</Text>
-                <Text style={{ color: t.textMuted, fontSize: 14 }}>
+                <Text style={{ color: t.text, ...type.input, fontWeight: '600' }}>{displayName(a)}</Text>
+                <Text style={{ color: t.textMuted, ...type.secondary }}>
                   {[breedName.get(a.breed_id ?? ''), ageLabel(a)].filter(Boolean).join(' · ') || (a.sex === 'female' ? 'Female' : 'Male')}
                 </Text>
                 {/* One label only: the most important thing about this animal right now. */}
@@ -174,7 +174,7 @@ export default function Animals() {
         })}
       >
         <MaterialCommunityIcons name="plus" size={24} color={t.onPrimary} />
-        <Text style={{ color: t.onPrimary, fontSize: 16, fontWeight: '600' }}>Add animal</Text>
+        <Text style={{ color: t.onPrimary, ...type.cardTitle }}>Add animal</Text>
       </Pressable>
     </View>
   );

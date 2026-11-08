@@ -15,6 +15,7 @@ export const light = {
   info: '#356A83', // sky-700
   infoSoft: '#E8F1F5', // sky-100
   border: '#DCE3DC', // line-200
+  track: '#DCE3DC', // the groove of a segmented switch; stays pale with stronger outlines
   // Chart marks: one validated hue per chart (lightness band, chroma, 3:1 vs surface).
   chart: '#34734B', // green-700
   // Deep green headline cards (Home "today", the milking-round banner) and their text.
@@ -22,6 +23,9 @@ export const light = {
   onHero: '#FFFFFF',
   heroMuted: '#E8F1E9',
   onDanger: '#FFFFFF', // text on a red badge
+  // Android touch ripples: on pale rows and cards, and on filled green or red buttons.
+  ripple: 'rgba(36, 88, 58, 0.14)',
+  rippleOnFilled: 'rgba(255, 255, 255, 0.24)',
 };
 
 // Dark: the same pasture palette at night. Deep green-black surfaces, light pasture green for actions,
@@ -41,9 +45,17 @@ export const dark: typeof light = {
   info: '#93C6DD',
   infoSoft: '#142832',
   border: '#2B3830',
+  track: '#2B3830',
   chart: '#5DB27D',
   hero: '#1F4A31',
   onHero: '#F2F7F3',
   heroMuted: '#BFDCC8',
   onDanger: '#2B0E0B',
+  ripple: 'rgba(134, 208, 160, 0.18)',
+  rippleOnFilled: 'rgba(0, 0, 0, 0.18)',
 };
+
+// "Stronger outlines" (More › Appearance): field, chip and divider edges at 3:1 or more against the page and
+// the cards (WCAG 1.4.11), for bright sun or weaker eyesight. The default hairline is about 1.3:1.
+export const lightStrong: typeof light = { ...light, border: '#76847B' };
+export const darkStrong: typeof light = { ...dark, border: '#6B7C71' };

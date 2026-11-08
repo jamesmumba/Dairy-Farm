@@ -6,7 +6,7 @@ import { refreshDevices, signOutDevice, signOutOtherDevices, useDevices } from '
 import { runSync } from '../sync/engine';
 import { Button, FormScreen, Notice, TextField } from '../ui/form';
 import { Card, ListGroup, ListRow, SectionHeader } from '../ui/kit';
-import { spacing, useTheme } from '../ui/theme';
+import { spacing, type, useTheme } from '../ui/theme';
 import { friendlyError } from '../lib/errors';
 
 // Phones signed in to this account: rename this one, see when the others were last used, and sign
@@ -72,7 +72,7 @@ export default function Devices() {
           <TextField label="Name" hint="How this phone shows on your other phones and in the history" value={name} onChangeText={setName} maxLength={60} onSubmitEditing={saveName} />
           <Button label="Save name" variant="secondary" onPress={saveName} busy={busy} />
           {me ? (
-            <Text style={{ color: t.textMuted, fontSize: 14 }}>
+            <Text style={{ color: t.textMuted, ...type.secondary }}>
               {platformLabel(me.platform)}
               {me.app_version ? `, app ${me.app_version}` : ''}
             </Text>
@@ -97,7 +97,7 @@ export default function Devices() {
             ))}
           </ListGroup>
           {others.length > 1 ? <Button label="Sign out all other phones" variant="danger" onPress={confirmAll} busy={busy} /> : null}
-          <Text style={{ color: t.textMuted, fontSize: 14 }}>A phone you don’t recognise? Sign it out, then change your password under Security.</Text>
+          <Text style={{ color: t.textMuted, ...type.secondary }}>A phone you don’t recognise? Sign it out, then change your password under Security.</Text>
         </>
       ) : (
         <Notice>Only this phone is signed in to your account.</Notice>

@@ -99,6 +99,9 @@ export interface Expense {
   payment_status: 'paid' | 'unpaid' | 'partially_paid';
   receipt_path: string | null;
   notes: string | null;
+  /** The care record this paid for (a vet visit, a treatment…), by record kind. */
+  care_kind?: string | null;
+  care_id?: string | null;
   status: 'active' | 'voided';
   void_reason: string | null;
   version: number;

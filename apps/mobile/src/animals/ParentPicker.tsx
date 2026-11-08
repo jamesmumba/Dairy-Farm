@@ -4,7 +4,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/form';
 import { Avatar } from '../ui/kit';
 import { SearchBar } from '../ui/SearchBar';
-import { minTouch, radius, spacing, useTheme } from '../ui/theme';
+import { minTouch, radius, spacing, type, useTheme } from '../ui/theme';
 import { type Cattle, displayName, type Sex, shortCode } from './model';
 
 /** Picks a mother or father from the herd (any status: parents may since have been sold). */
@@ -34,7 +34,7 @@ export function ParentPicker({
 
   return (
     <View style={{ gap: spacing.xs }}>
-      <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{label}</Text>
+      <Text style={{ color: t.text, ...type.cardTitle }}>{label}</Text>
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
         <View style={{ flex: 1 }}>
           <Button label={selected ? displayName(selected) : 'Choose from herd'} variant="secondary" onPress={() => setOpen(true)} hint={`Choose the ${label.toLowerCase()} from your herd`} />
@@ -44,7 +44,7 @@ export function ParentPicker({
 
       <BottomSheet visible={open} title={`Choose ${label.toLowerCase().replace(' (optional)', '')}`} onClose={() => setOpen(false)} footer={<Button label="Cancel" variant="secondary" onPress={() => setOpen(false)} />}>
         <SearchBar value={query} onChangeText={setQuery} placeholder="Ear tag, name or ID" />
-        {options.length === 0 ? <Text style={{ color: t.textMuted, fontSize: 16 }}>No {sex ? `${sex} ` : ''}animals match.</Text> : null}
+        {options.length === 0 ? <Text style={{ color: t.textMuted, ...type.body }}>No {sex ? `${sex} ` : ''}animals match.</Text> : null}
         <View>
           {options.map((item) => (
             <Pressable
@@ -59,8 +59,8 @@ export function ParentPicker({
             >
               <Avatar name={displayName(item)} size={40} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{displayName(item)}</Text>
-                <Text style={{ color: t.textMuted, fontSize: 14 }}>ID {shortCode(item.id)}</Text>
+                <Text style={{ color: t.text, ...type.cardTitle }}>{displayName(item)}</Text>
+                <Text style={{ color: t.textMuted, ...type.secondary }}>ID {shortCode(item.id)}</Text>
               </View>
             </Pressable>
           ))}

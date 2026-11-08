@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, Text, View } from 'react-native';
 import { type AppearanceChoice, setAppearance, useAppearanceChoice } from './appearance';
 import { dark, light } from './palette';
-import { minTouch, radius, spacing, useTheme } from './theme';
+import { minTouch, radius, spacing, type, useTheme } from './theme';
 
 type Palette = typeof light;
 
@@ -67,7 +67,7 @@ export function AppearancePicker() {
                 </View>
               ) : null}
             </View>
-            <Text style={{ color: on ? t.text : t.textMuted, fontSize: 14, fontWeight: on ? '700' : '500' }} numberOfLines={1}>
+            <Text style={{ color: on ? t.text : t.textMuted, ...type.secondary, fontWeight: on ? '700' : '500' }} numberOfLines={1}>
               {o.label}
             </Text>
           </Pressable>

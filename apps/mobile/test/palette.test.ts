@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dark, light } from '../src/ui/palette';
+import { dark, darkStrong, light, lightStrong } from '../src/ui/palette';
 
 // WCAG 2.2 contrast for every text/background pair the components use.
 
@@ -50,5 +50,20 @@ describe.each([
   it('chart marks are at least 3:1 against the surface and the background', () => {
     expect(ratio(p.chart, p.surface)).toBeGreaterThanOrEqual(3);
     expect(ratio(p.chart, p.background)).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe.each([
+  ['light', lightStrong],
+  ['dark', darkStrong],
+])('%s palette with stronger outlines', (_, p) => {
+  it('outlines are at least 3:1 against the page and the cards', () => {
+    expect(ratio(p.border, p.surface)).toBeGreaterThanOrEqual(3);
+    expect(ratio(p.border, p.background)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('the segmented switch keeps its pale groove, so its labels stay readable', () => {
+    expect(ratio(p.textMuted, p.track)).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(p.primary, p.surface)).toBeGreaterThanOrEqual(4.5);
   });
 });

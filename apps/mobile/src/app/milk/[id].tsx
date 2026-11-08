@@ -15,7 +15,7 @@ import { Button, FormScreen, Notice, TextField } from '../../ui/form';
 import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Details, FormCard, Hero, ListGroup, ListRow, Pill } from '../../ui/kit';
-import { useTheme } from '../../ui/theme';
+import { type, useTheme } from '../../ui/theme';
 import { useOpenOrBack } from '../../ui/useOpenOrBack';
 
 export default function MilkEntryScreen() {
@@ -86,7 +86,7 @@ export default function MilkEntryScreen() {
       {voided ? <Notice>Voided: {e.void_reason}. Not counted in totals or stock.</Notice> : null}
       {e.restricted && !voided ? <Notice tone="error">Under milk withdrawal: recorded as produced, but not for sale or drinking and not added to stock.</Notice> : null}
       <Details rows={[['Note', e.notes]]} />
-      {e.version === 0 ? <Text style={{ color: t.textMuted, fontSize: 13 }}>Milk withdrawal is checked again when this entry syncs.</Text> : null}
+      {e.version === 0 ? <Text style={{ color: t.textMuted, ...type.caption }}>Milk withdrawal is checked again when this entry syncs.</Text> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {mode === 'correct' ? (

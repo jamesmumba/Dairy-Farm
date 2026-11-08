@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
-import { useColorScheme, useWindowDimensions } from 'react-native';
-import { dark, light } from './palette';
+import { Platform, useColorScheme, useWindowDimensions } from 'react-native';
+import { useStrongBorders } from './appearance';
+import { dark, darkStrong, light, lightStrong } from './palette';
 
 export type Theme = typeof light;
 
@@ -9,23 +10,36 @@ export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 /** Corner radii: cards and panels, inputs and buttons, chips. */
 export const radius = { card: 16, control: 12, chip: 20 };
 
-/** Type scale (pt). Weights stay at semibold or regular; system fonts (SF Pro, Roboto). */
+/**
+ * Type scale (pt), by role: every text style in the app is one of these (a weight may be raised for a
+ * selected or unread state). Semibold or regular; system fonts (SF Pro, Roboto); all scale with system text size.
+ */
 export const type = {
+  display: { fontSize: 32, fontWeight: '600' as const }, // the one big number of a screen: stock, production, a balance
   screenTitle: { fontSize: 28, fontWeight: '600' as const },
+  headline: { fontSize: 24, fontWeight: '600' as const }, // a card's heading or headline figure
   sectionTitle: { fontSize: 19, fontWeight: '600' as const },
+  figure: { fontSize: 19, fontWeight: '600' as const }, // figures in a row inside a card
+  input: { fontSize: 17 }, // typed values, and names that lead a row
   cardTitle: { fontSize: 16, fontWeight: '600' as const },
   body: { fontSize: 16 },
+  bodySmall: { fontSize: 15 }, // notices, intros, label/value details
+  link: { fontSize: 15, fontWeight: '600' as const }, // text buttons: "See all", "Money summary ›"
   secondary: { fontSize: 14 },
-  caption: { fontSize: 13, fontWeight: '500' as const },
-  figure: { fontSize: 28, fontWeight: '600' as const },
+  caption: { fontSize: 13 }, // notes under figures, timestamps; never essential instructions
+  micro: { fontSize: 12 }, // chart axis labels, tab labels, counts on badges
 };
+
+/** Android shows its own touch ripple (`android_ripple`); iOS keeps the pale pressed tint. */
+export const isAndroid = Platform.OS === 'android';
 
 /** Minimum touch target (dp), per Android and iOS accessibility guidance. */
 export const minTouch = 48;
 
-/** Follows the phone's light or dark setting. */
+/** Follows the phone's light or dark setting, and the farmer's "Stronger outlines" choice. */
 export function useTheme() {
-  return useColorScheme() === 'dark' ? dark : light;
+  const isDark = useColorScheme() === 'dark';
+  return useStrongBorders() ? (isDark ? darkStrong : lightStrong) : isDark ? dark : light;
 }
 
 /**

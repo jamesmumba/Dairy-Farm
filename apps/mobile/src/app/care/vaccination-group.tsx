@@ -13,7 +13,7 @@ import { useLocal } from '../../sync/store';
 import { Chips } from '../../ui/Chips';
 import { DateField } from '../../ui/DateField';
 import { Button, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
-import { useTheme } from '../../ui/theme';
+import { type, useTheme } from '../../ui/theme';
 
 type Group = 'all' | 'milking' | 'females' | 'calves' | 'breed';
 
@@ -125,7 +125,7 @@ export default function GroupVaccination() {
       {error ? <Notice tone="error">{error}</Notice> : null}
       <Chips label="Group" value={group} options={GROUPS.map(({ value, label }) => ({ value, label }))} onChange={(v) => { if (v) { setGroup(v); setExcluded(new Set()); } }} allowClear={false} />
       {group === 'breed' ? <Chips label="Breed" value={breed} options={breeds.map((b) => ({ value: b.id, label: b.name }))} onChange={setBreed} /> : null}
-      <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>
+      <Text style={{ color: t.text, ...type.cardTitle }}>
         {selected.length} of {inGroup.length} selected
       </Text>
       {inGroup.map((a) => (

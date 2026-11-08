@@ -9,6 +9,7 @@ import {
   CALVING_OUTCOME_LABELS,
   type CareData,
   type CareKind,
+  CONDITION_LABELS,
   EVENT_LABELS,
   type HealthRecord,
   type PregnancyCheck,
@@ -121,6 +122,7 @@ const health: CareFormConfig = {
     { key: 'cattle_id', label: 'Animal', type: 'animal', required: true },
     { key: 'reported_on', label: 'Reported on', type: 'date', required: true },
     { key: 'first_symptoms_on', label: 'First symptoms on', type: 'date' },
+    { key: 'condition', label: 'Kind of problem', type: 'choice', options: opts(CONDITION_LABELS), hint: 'So the app can show which problems keep coming back' },
     { key: 'suspected_issue', label: 'Suspected problem', type: 'text', hint: 'What you think it might be' },
     { key: 'condition_status', label: 'Diagnosis', type: 'choice', options: opts(CONDITION), required: true },
     { key: 'confirmed_diagnosis', label: 'Confirmed diagnosis', type: 'text', hint: 'As confirmed by the vet', showIf: (v) => v.condition_status === 'confirmed' },
@@ -248,12 +250,22 @@ const pregnancyCheck: CareFormConfig = {
       : `${RESULT_LABELS[r.result]} · ${formatDate(r.examined_on)}${r.expected_calving_on ? ` · calving expected ${formatDate(r.expected_calving_on)}` : ''}`,
 };
 
+/** A cow's latest confirmed pregnancy before a date, within a year, not already joined to a calving. */
+export function latestPregnancy(ctx: Pick<FormContext, 'care'>, damId: string, before: string) {
+  const yearBefore = addDays(before, -365);
+  return ctx.care.checks
+    .filter((c) => !c.deleted_at && c.cattle_id === damId && c.result === 'pregnant' && c.examined_on && c.examined_on <= before && c.examined_on > yearBefore)
+    .filter((c) => !ctx.care.calvings.some((x) => !x.deleted_at && x.pregnancy_check_id === c.id))
+    .sort((a, b) => b.examined_on!.localeCompare(a.examined_on!))[0];
+}
+
 const calving: CareFormConfig = {
   kind: 'calving',
   fields: [
     { key: 'dam_id', label: 'Mother', type: 'animal', sex: 'female', required: true },
     { key: 'calved_on', label: 'Calved on', type: 'date', required: true },
     { key: 'outcome', label: 'Outcome', type: 'choice', options: opts(OUTCOME), required: true },
+    { key: 'pregnancy_check_id', label: 'From pregnancy check', type: 'link', link: 'pregnancy-check' },
     { key: 'register_calf', label: 'Register the calf as a new animal', type: 'bool', createOnly: true, showIf: (v) => v.outcome === 'live' },
     { key: 'calf_sex', label: 'Calf sex', type: 'choice', options: [{ value: 'female', label: 'Female' }, { value: 'male', label: 'Male' }], createOnly: true, showIf: (v) => v.outcome === 'live' && !!v.register_calf },
     { key: 'calf_ear_tag', label: 'Calf ear tag (optional)', type: 'text', createOnly: true, showIf: (v) => v.outcome === 'live' && !!v.register_calf },
@@ -263,6 +275,12 @@ const calving: CareFormConfig = {
     { key: 'observations', label: 'Observations', type: 'multiline' },
   ],
   defaults: ({ today }) => ({ calved_on: today, outcome: 'live', register_calf: true, calf_sex: 'female' }),
+  // The mother's latest confirmed pregnancy joins this calving to its mating; the farmer can change it.
+  onChange: (key, v, ctx): FormValues => {
+    if (key !== 'dam_id' && key !== 'calved_on') return {};
+    const check = latestPregnancy(ctx, s(v, 'dam_id'), s(v, 'calved_on') || ctx.today);
+    return { pregnancy_check_id: check?.id ?? '' };
+  },
   createOnly: (v) =>
     v.outcome === 'live' && v.register_calf
       ? { calf: { id: randomUUID(), sex: s(v, 'calf_sex') || 'female', ear_tag: s(v, 'calf_ear_tag').trim() || null, name: s(v, 'calf_name').trim() || null } }
@@ -345,6 +363,7 @@ const action: CareFormConfig = {
     { key: 'follow_up_on', label: 'Check on her again on', type: 'date', allowFuture: true, showIf: (v) => v.status !== 'resolved' },
     { key: 'resolved_on', label: 'Resolved on', type: 'date', showIf: (v) => v.status === 'resolved' },
     { key: 'outcome', label: 'Outcome', type: 'multiline', showIf: (v) => v.status === 'resolved' },
+    { key: 'health_record_id', label: 'Led to health concern', type: 'link', link: 'health' },
   ],
   defaults: ({ today }) => ({ alert_type: 'other', action_taken: 'observed', action_on: today, status: 'monitoring', follow_up_on: addDays(today, 3) }),
   onChange: (key, v, { today }): FormValues => (key === 'status' && v.status === 'resolved' && !v.resolved_on ? { resolved_on: today } : {}),

@@ -1,6 +1,8 @@
 import { ScrollView, Text, View } from 'react-native';
 import { useAuth } from '../../state/auth';
+import { setStrongBorders, useStrongBorders } from '../../ui/appearance';
 import { AppearancePicker } from '../../ui/AppearancePicker';
+import { Toggle } from '../../ui/form';
 import { Avatar, Card, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
 import { radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 import { useConfirmSignOut } from '../../ui/useConfirmSignOut';
@@ -9,6 +11,7 @@ export default function More() {
   const t = useTheme();
   const { account, email } = useAuth();
   const confirmSignOut = useConfirmSignOut();
+  const strongBorders = useStrongBorders();
   const farm = account?.farm_name || 'Your farm';
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
@@ -33,7 +36,8 @@ export default function More() {
       <SectionHeader title="Appearance" />
       <Card gap={spacing.md}>
         <AppearancePicker />
-        <Text style={{ color: t.textMuted, fontSize: 13 }}>Saved on this phone. Light is easiest to read outdoors.</Text>
+        <Toggle label="Stronger outlines" hint="Darker edges on boxes, buttons and lines. Easier to see in bright sun." value={strongBorders} onChange={setStrongBorders} />
+        <Text style={{ color: t.textMuted, ...type.caption }}>Saved on this phone. Light is easiest to read outdoors.</Text>
       </Card>
 
       <SectionHeader title="Account" />

@@ -12,7 +12,7 @@ import { litres } from '../../production/calc';
 import { Chips } from '../../ui/Chips';
 import { DateTimeField } from '../../ui/DateField';
 import { Button, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
-import { radius, shadow, spacing, useTheme } from '../../ui/theme';
+import { radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 const QUICK = ['1', '2', '5', '10', '20'];
 const decimal = (s: string, digits: number) => new RegExp(`^\\d{1,${digits}}([.,]\\d{1,2})?$`).test(s.trim());
@@ -117,7 +117,7 @@ export default function NewSale() {
 
       {customer ? (
         <View style={{ gap: spacing.xs }}>
-          <Text style={{ color: t.text, fontSize: 18, fontWeight: '600' }}>{customer.name}</Text>
+          <Text style={{ color: t.text, ...type.figure }}>{customer.name}</Text>
           <Button label="Change customer" variant="link" onPress={() => setCustomerId(null)} />
         </View>
       ) : (
@@ -159,16 +159,16 @@ export default function NewSale() {
       ) : null}
 
       <View style={{ backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap: 4, ...shadow }} accessibilityLiveRegion="polite" accessible>
-        <Text style={{ color: t.text, fontSize: 22, fontWeight: '600' }}>Total {valid ? money(totalCents, currency) : '—'}</Text>
-        <Text style={{ color: t.textMuted, fontSize: 14 }}>
+        <Text style={{ color: t.text, ...type.headline }}>Total {valid ? money(totalCents, currency) : '—'}</Text>
+        <Text style={{ color: t.textMuted, ...type.secondary }}>
           {valid ? `${quantity} L × ${currency} ${unitPrice}${override ? ' (special price)' : ''}` : !listed && !override ? `No ${currency} price set for this date` : ''}
         </Text>
         {customer && valid ? (
-          <Text style={{ color: t.text, fontSize: 15 }}>
+          <Text style={{ color: t.text, ...type.bodySmall }}>
             Balance after: {balanceAfter > 0 ? `owes ${money(balanceAfter, currency)}` : balanceAfter < 0 ? `in credit ${money(-balanceAfter, currency)}` : 'settled'}
           </Text>
         ) : null}
-        <Text style={{ color: quantityCl > stockCl ? t.danger : t.textMuted, fontSize: 14 }}>
+        <Text style={{ color: quantityCl > stockCl ? t.danger : t.textMuted, ...type.secondary }}>
           {quantityCl > stockCl ? `Only ${litres(stockCl)} L in stock for this date` : `Stock for this date: ${litres(stockCl)} L${valid ? ` → ${litres(stockCl - quantityCl)} L` : ''}`}
         </Text>
       </View>

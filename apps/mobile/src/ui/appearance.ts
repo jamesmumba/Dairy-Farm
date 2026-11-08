@@ -25,12 +25,27 @@ export function setAppearance(next: AppearanceChoice) {
   listeners.forEach((l) => l());
 }
 
+const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => {
+    listeners.delete(l);
+  };
+};
+
 export function useAppearanceChoice(): AppearanceChoice {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-    () => choice,
-  );
+  return useSyncExternalStore(subscribe, () => choice);
+}
+
+// Stronger outlines: darker edges on fields, chips and dividers. Also kept on this phone.
+const STRONG_KEY = 'strong-borders';
+let strong = getJson<boolean>(STRONG_KEY) ?? false;
+
+export function setStrongBorders(next: boolean) {
+  strong = next;
+  setJson(STRONG_KEY, next);
+  listeners.forEach((l) => l());
+}
+
+export function useStrongBorders(): boolean {
+  return useSyncExternalStore(subscribe, () => strong);
 }

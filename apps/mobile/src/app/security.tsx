@@ -6,7 +6,7 @@ import { useDevices } from '../lib/devicesStore';
 import { useAuth } from '../state/auth';
 import { FormScreen, Notice, Toggle } from '../ui/form';
 import { Card, ListGroup, ListRow } from '../ui/kit';
-import { useTheme } from '../ui/theme';
+import { type, useTheme } from '../ui/theme';
 import { useConfirmSignOut } from '../ui/useConfirmSignOut';
 
 export default function Security() {
@@ -30,7 +30,7 @@ export default function Security() {
   return (
     <FormScreen title="Security">
       {message ? <Notice tone="error">{message}</Notice> : null}
-      <Text style={{ color: t.textMuted, fontSize: 14 }}>Signed in as {email}</Text>
+      <Text style={{ color: t.textMuted, ...type.secondary }}>Signed in as {email}</Text>
       <Card>
         <Toggle label="App lock" hint="Fingerprint, face or screen lock when opening the app" value={lock.enabled} onChange={toggleLock} />
       </Card>

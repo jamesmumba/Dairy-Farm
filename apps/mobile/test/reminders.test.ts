@@ -199,3 +199,21 @@ describe('follow-up of an action on an alert', () => {
     expect(a).not.toBe(b);
   });
 });
+
+describe('possible outbreak', () => {
+  const hr = (id: string, cattle_id: string, reported_on: string, condition: string) =>
+    ({ ...base, id, cattle_id, reported_on, condition, recovery_status: 'ongoing', follow_up_on: null }) as unknown as CareData['health'][number];
+
+  it('warns when the same kind of problem shows in two animals within 30 days, once per kind', () => {
+    const data = { ...empty(), health: [hr('h1', 'cow', '2026-10-10', 'tick_borne'), hr('h2', 'cow2', '2026-10-27', 'tick_borne'), hr('h3', 'cow', '2026-10-27', 'tick_borne')] };
+    const warnings = computeReminders(data, new Set(['cow', 'cow2']), NOW).filter((r) => r.kind === 'outbreak');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatchObject({ key: 'outbreak:tick_borne', cattleId: '', href: '/reports/herd-health' });
+    expect(warnings[0].detail).toContain('2 animals since 2026-10-10');
+  });
+
+  it('stays quiet for one animal, old cases, or "other"', () => {
+    const data = { ...empty(), health: [hr('h1', 'cow', '2026-10-20', 'mastitis'), hr('h2', 'cow', '2026-10-25', 'mastitis'), hr('h3', 'cow2', '2026-08-01', 'mastitis'), hr('h4', 'cow', '2026-10-25', 'other'), hr('h5', 'cow2', '2026-10-25', 'other')] };
+    expect(computeReminders(data, new Set(['cow', 'cow2']), NOW).filter((r) => r.kind === 'outbreak')).toEqual([]);
+  });
+});

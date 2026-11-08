@@ -18,6 +18,9 @@ WCAG AA contrast.
 | Large text | Summary cards and quick actions drop to one column when the text-scaled screen width is under 340 pt |
 | Expenses | Entered from **Records** |
 | Animal profile | One vertical timeline with filter chips, not a tab row |
+| Stronger outlines (7 Nov) | A switch in More › Appearance darkens field, chip and divider edges to 3:1 or more against page and cards (`lightStrong` / `darkStrong` in `palette.ts`). Off by default |
+| Touch feedback (7 Nov) | Android uses its native ripple, clipped to rounded corners; iOS keeps the pale pressed tint |
+| Type roles (7 Nov) | Every text style is a role in `type` (`theme.ts`); no hand-typed sizes |
 
 ## Product direction
 
@@ -75,15 +78,21 @@ Measured contrast (light): text on background 13+:1, `textMuted` 7.7:1, white on
 
 System fonts: SF Pro on iOS, Roboto on Android. All sizes scale with the system text size.
 
-| Style | Size | Weight | Use |
+| Role (`type.…`) | Size | Weight | Use |
 |---|---:|---|---|
-| Screen title | 28 pt | Semibold | Main screen heading |
-| Section title | 19 pt | Semibold | Screen sections and sheet headings |
-| Card title | 16 pt | Semibold | Summary and list cards |
-| Body | 16 pt | Regular | Labels and instructions |
-| Secondary | 14 pt | Regular | Supporting details, metadata |
-| Caption | 13 pt | Medium | Timestamps, units, chart labels; never essential instructions |
-| Figure | 22–28 pt | Semibold | Key totals such as litres or balance |
+| `display` | 32 pt | Semibold | The one big number of a screen: stock, production, a balance |
+| `screenTitle` | 28 pt | Semibold | Main screen heading |
+| `headline` | 24 pt | Semibold | A card's heading or headline figure |
+| `sectionTitle` | 19 pt | Semibold | Screen sections, sheet and header titles |
+| `figure` | 19 pt | Semibold | Figures in a row inside a card |
+| `input` | 17 pt | Regular | Typed values, names that lead a row, button labels (semibold) |
+| `cardTitle` | 16 pt | Semibold | Summary and list cards, field labels |
+| `body` | 16 pt | Regular | Labels and instructions |
+| `bodySmall` | 15 pt | Regular | Notices, intros, label/value details |
+| `link` | 15 pt | Semibold | Text buttons ("See all", "Money summary ›") |
+| `secondary` | 14 pt | Regular | Supporting details, metadata |
+| `caption` | 13 pt | Regular | Notes under figures, timestamps; never essential instructions |
+| `micro` | 12 pt | Regular | Chart axis labels, tab labels, counts on badges |
 
 No long all-caps labels, light weights, or text in images.
 

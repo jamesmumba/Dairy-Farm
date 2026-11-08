@@ -9,7 +9,11 @@ import { CARE_FORMS, fromRecord } from '../../../care/forms';
 import { type QuickAction, recordActions } from '../../../care/quick';
 import { QuickButtons, useQuickActions } from '../../../care/QuickActions';
 import { CARE_KINDS, type CareKind, type Treatment } from '../../../care/model';
-import { relatedRecords } from '../../../care/related';
+import { milkHeldBack, relatedRecords, storyOf } from '../../../care/related';
+import { COST_CATEGORY, expensesFor, totalCost } from '../../../care/costs';
+import { money, toCents } from '../../../finance/calc';
+import { listMilk } from '../../../production/repo';
+import { L } from '../../../production/format';
 import { getCare, listCare, removeCare, updateCare } from '../../../care/repo';
 import { useCareContext } from '../../../care/useCareContext';
 import { formatDate, formatDateTime } from '../../../lib/dates';
@@ -18,7 +22,7 @@ import { Button, FormScreen, Notice, TextField } from '../../../ui/form';
 import { MissingRecord } from '../../../ui/ProblemView';
 import { SyncBadge } from '../../../ui/SyncBadge';
 import { Card, Details, FormCard, Hero, ListGroup, ListRow } from '../../../ui/kit';
-import { useTheme } from '../../../ui/theme';
+import { type, useTheme } from '../../../ui/theme';
 import { useOpenOrBack } from '../../../ui/useOpenOrBack';
 
 type Row = { id: string; version: number; deleted_at: string | null } & Record<string, unknown>;
@@ -60,6 +64,11 @@ export default function CareRecord() {
     return row ? [{ ...x, subtitle: CARE_FORMS[x.kind].summary(row, ctx) }] : [];
   });
   const calf = kind === 'calving' && r.calf_id ? allAnimals.find((a) => a.id === r.calf_id) : undefined;
+  // Costs: this record's own, and for a health concern the whole case (its visits and treatments too).
+  const costKind = COST_CATEGORY[kind] ? kind : null;
+  const ownCosts = costKind ? expensesFor([id]) : [];
+  const caseCosts = kind === 'health' ? expensesFor(storyOf(kind, id, ctx.care).map((x) => x.id)) : ownCosts;
+  const held = treatment?.requires_milk_withdrawal ? milkHeldBack(treatment, ctx.care.treatments, listMilk().map((m) => m.data)) : null;
 
   const show = (key: string, type: string): string | null => {
     const v = r[key];
@@ -95,7 +104,7 @@ export default function CareRecord() {
     <FormScreen title={CARE_KINDS[kind].label}>
       <Hero label={animal ? displayName(animal) : CARE_KINDS[kind].label} value={config.summary(r, ctx)} />
       <SyncBadge state={record.sync_state} />
-      {r.version === 0 ? <Text style={{ color: t.textMuted, fontSize: 13 }}>Status changes, scheduled checks and milk re-checks appear after this syncs.</Text> : null}
+      {r.version === 0 ? <Text style={{ color: t.textMuted, ...type.caption }}>Status changes, scheduled checks and milk re-checks appear after this syncs.</Text> : null}
       {treatment?.milk_entries_rechecked ? (
         <Notice>{treatment.milk_entries_rechecked} milk entr{treatment.milk_entries_rechecked === 1 ? 'y was' : 'ies were'} re-checked against this withdrawal and updated.</Notice>
       ) : null}
@@ -121,7 +130,7 @@ export default function CareRecord() {
         <>
           {actions.length && mode === 'view' ? (
             <Card>
-              <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }}>{promptFor(kind, actions)}</Text>
+              <Text style={{ color: t.text, ...type.input, fontWeight: '600' }}>{promptFor(kind, actions)}</Text>
               <QuickButtons actions={actions} onPick={(a) => quick.start(a, { kind, id })} />
             </Card>
           ) : null}
@@ -147,6 +156,41 @@ export default function CareRecord() {
               {related.map((x) => (
                 <ListRow key={x.id} icon={KIND_ICON[x.kind]} title={x.title} subtitle={x.subtitle} onPress={() => open({ pathname: '/care/[kind]/[id]', params: { kind: x.kind, id: x.id } })} />
               ))}
+              {held && held.milkings ? (
+                <ListRow
+                  icon="water-off-outline"
+                  tint="red"
+                  title={`Milk held back: ${L(Math.round(held.litres * 100))}`}
+                  subtitle={`${held.milkings} milking${held.milkings === 1 ? '' : 's'} kept out of stock by this withdrawal`}
+                  onPress={() => animal && open({ pathname: '/animal/[id]', params: { id: animal.id, section: 'milk' } })}
+                />
+              ) : null}
+              {kind === 'action' && !r.health_record_id && animal ? (
+                <ListRow
+                  icon="stethoscope"
+                  title="Record a health concern"
+                  subtitle="Linked to this action"
+                  onPress={() => router.push({ pathname: '/care/[kind]/new', params: { kind: 'health', cattle_id: animal.id, from_action: id } })}
+                />
+              ) : null}
+              {ownCosts.map((e) => (
+                <ListRow key={e.id} icon="receipt" title={`Cost: ${money(toCents(e.amount), e.currency)}`} subtitle={e.payee ?? undefined} onPress={() => open({ pathname: '/expenses/[id]', params: { id: e.id } })} />
+              ))}
+              {kind === 'health' && caseCosts.length > ownCosts.length ? (
+                <ListRow
+                  icon="calculator-variant-outline"
+                  title={`Cost of this case: ${totalCost(caseCosts).map(([cur, c]) => money(c, cur)).join(', ')}`}
+                  subtitle="This concern, its vet visits and treatments"
+                />
+              ) : null}
+              {costKind ? (
+                <ListRow
+                  icon="cash-plus"
+                  title="Add a cost"
+                  subtitle="An expense for this record"
+                  onPress={() => router.push({ pathname: '/expenses/new', params: { care_kind: kind, care_id: id, category: COST_CATEGORY[kind] } })}
+                />
+              ) : null}
               {calf ? <ListRow icon="cow" title={`Calf: ${displayName(calf)}`} subtitle="Open the calf" onPress={() => open({ pathname: '/animal/[id]', params: { id: calf.id } })} /> : null}
               {animal ? <ListRow icon="cow" title={displayName(animal)} subtitle="Open the animal" onPress={() => open({ pathname: '/animal/[id]', params: { id: animal.id } })} /> : null}
               <ListRow icon="pencil-outline" title="Edit" onPress={() => setMode('edit')} />

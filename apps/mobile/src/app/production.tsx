@@ -27,7 +27,7 @@ import { Chips } from '../ui/Chips';
 import { DateField, toDateString } from '../ui/DateField';
 import { Notice } from '../ui/form';
 import { Avatar, Card, Figure, ListGroup, ListRow, Pill, SectionHeader } from '../ui/kit';
-import { spacing, useTheme } from '../ui/theme';
+import { spacing, type, useTheme } from '../ui/theme';
 
 type Choice = Period | 'last_month' | 'custom';
 
@@ -98,11 +98,11 @@ export default function Production() {
       {/* The headline: how much milk, and how that compares. Everything else supports it. */}
       <Card>
         <View style={{ gap: 2 }} accessible accessibilityLabel={`Milk produced ${dayLabel(range.from)} to ${dayLabel(to)}: ${L(s.totalCl)}${change === null ? '' : `, ${change >= 0 ? 'up' : 'down'} ${Math.abs(change)}% on the period before`}`}>
-          <Text style={{ color: t.textMuted, fontSize: 14 }}>
+          <Text style={{ color: t.textMuted, ...type.secondary }}>
             Milk produced · {range.from === to ? dayLabel(to) : `${dayLabel(range.from)} – ${dayLabel(to)}`}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' }}>
-            <Text style={{ color: t.text, fontSize: 36, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{L(s.totalCl)}</Text>
+            <Text style={{ color: t.text, ...type.display, fontVariant: ['tabular-nums'] }}>{L(s.totalCl)}</Text>
             {change !== null ? <Pill label={`${change >= 0 ? '▲' : '▼'} ${Math.abs(change)}% on period before`} tint={change >= 0 ? 'green' : 'straw'} /> : null}
           </View>
         </View>
@@ -111,12 +111,12 @@ export default function Production() {
           <Figure label="Cows milked" value={String(s.cows)} />
           <Figure label="Not for sale" value={L(s.restrictedCl)} tone={s.restrictedCl ? 'danger' : undefined} />
         </View>
-        {sync.pending ? <Text style={{ color: t.textMuted, fontSize: 13 }}>Includes {sync.pending} changes not yet synced.</Text> : null}
+        {sync.pending ? <Text style={{ color: t.textMuted, ...type.caption }}>Includes {sync.pending} changes not yet synced.</Text> : null}
       </Card>
 
       {choice === 'today' ? (
         <Card>
-          <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>Today by session</Text>
+          <Text style={{ color: t.text, ...type.cardTitle }}>Today by session</Text>
           <View style={{ flexDirection: 'row', gap: spacing.md }}>
             {sessionTotals.map(({ session, cl }) => (
               <Figure key={session} label={SESSION_LABELS[session]} value={cl ? L(cl) : '—'} />
@@ -139,7 +139,7 @@ export default function Production() {
       {declines.length ? (
         <View style={{ gap: spacing.sm }}>
           <SectionHeader title="Falling milk" />
-          <Text style={{ color: t.textMuted, fontSize: 13 }}>
+          <Text style={{ color: t.textMuted, ...type.caption }}>
             Last {rule.recent_days} days (to yesterday) against the {rule.baseline_days} before, flagged at {rule.threshold_pct}% down. Change this in settings.
           </Text>
           <ListGroup>
@@ -186,10 +186,10 @@ export default function Production() {
           <Card gap={spacing.sm}>
             {byBreed.map((b) => (
               <View key={b.breed_id ?? 'none'} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }} accessible>
-                <Text style={{ color: t.text, fontSize: 15, flex: 1 }}>
+                <Text style={{ color: t.text, ...type.bodySmall, flex: 1 }}>
                   {breeds.find((x) => x.id === b.breed_id)?.name ?? 'Breed not set'} <Text style={{ color: t.textMuted }}>· {b.cows} cow{b.cows === 1 ? '' : 's'}</Text>
                 </Text>
-                <Text style={{ color: t.text, fontSize: 15, fontVariant: ['tabular-nums'] }}>{L(b.avgPerCowDayCl)} a day</Text>
+                <Text style={{ color: t.text, ...type.bodySmall, fontVariant: ['tabular-nums'] }}>{L(b.avgPerCowDayCl)} a day</Text>
               </View>
             ))}
           </Card>

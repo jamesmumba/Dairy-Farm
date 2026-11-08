@@ -223,6 +223,84 @@ describe('health records and common lifecycle', () => {
     expect(titles).not.toContain('Treatment: Mistake');
   });
 
+  it('records why an animal died, closes the illness behind it, and keeps the condition of each case', async () => {
+    const f = await farmWithCow();
+    const concern = (await f.call('POST', '/v1/health-records', { id: randomUUID(), cattle_id: f.cowId, reported_on: '2026-10-20', condition: 'tick_borne', suspected_issue: 'East Coast fever' })).json();
+    expect(concern.condition).toBe('tick_borne');
+    expect((await f.call('POST', '/v1/health-records', { id: randomUUID(), cattle_id: f.cowId, reported_on: '2026-10-20', condition: 'cancer' })).json().field).toBe('condition');
+
+    const died = (body: object) => f.call('POST', `/v1/cattle/${f.cowId}/status`, { status: 'deceased', status_date: '2026-10-25', ...body }, { 'if-match': '1' });
+    expect((await died({ status_reason: 'low_yield' })).json().field).toBe('status_reason'); // a reason for a sale, not a death
+    const other = await farmWithCow();
+    const theirs = (await other.call('POST', '/v1/health-records', { id: randomUUID(), cattle_id: other.cowId, reported_on: '2026-10-20' })).json();
+    expect((await died({ status_reason: 'illness', status_health_record_id: theirs.id })).json().field).toBe('status_health_record_id');
+
+    const ok = (await died({ status_reason: 'illness', status_health_record_id: concern.id })).json();
+    expect(ok).toMatchObject({ status: 'deceased', status_reason: 'illness', status_health_record_id: concern.id });
+    expect((await f.call('GET', `/v1/health-records?cattle_id=${f.cowId}`)).json().find((h: { id: string }) => h.id === concern.id).recovery_status).toBe('died');
+    const titles = (await f.call('GET', `/v1/cattle/${f.cowId}/timeline`)).json().map((e: { title: string }) => e.title);
+    expect(titles).toContain('Died (illness)');
+  });
+
+  it('joins mating, pregnancy check and calving into one story on the timeline', async () => {
+    const f = await farmWithCow();
+    const mating = randomUUID();
+    await f.call('POST', '/v1/breeding', { id: mating, cattle_id: f.cowId, event_type: 'artificial_insemination', event_at: '2025-11-01T08:00:00Z', bull_or_semen_id: 'FR-1' });
+    const check = randomUUID();
+    await f.call('POST', '/v1/pregnancy-checks', { id: check, cattle_id: f.cowId, breeding_record_id: mating, examined_on: '2025-12-06', result: 'pregnant' });
+    const calving = (await f.call('POST', '/v1/calvings', { id: randomUUID(), dam_id: f.cowId, calved_on: '2026-08-10', outcome: 'live' })).json();
+    expect(calving.pregnancy_check_id).toBe(check); // found on its own
+
+    const events: { kind: string; episode: string | null; record_id: string | null }[] = (await f.call('GET', `/v1/cattle/${f.cowId}/timeline`)).json();
+    const story = events.filter((e) => e.episode === mating).map((e) => e.kind);
+    expect(story).toEqual(['calving', 'pregnancy_check', 'breeding']);
+    expect(events.find((e) => e.kind === 'calving')?.record_id).toBe(calving.id);
+  });
+
+  it('links an action on a milk alert to the health concern it led to, and an expense to a care record', async () => {
+    const f = await farmWithCow();
+    const concern = (await f.call('POST', '/v1/health-records', { id: randomUUID(), cattle_id: f.cowId, reported_on: '2026-10-20', suspected_issue: 'Mastitis' })).json();
+    const action = await f.call('POST', '/v1/alert-actions', {
+      id: randomUUID(), cattle_id: f.cowId, alert_type: 'milk_drop', action_taken: 'called_vet', action_on: '2026-10-20', status: 'resolved', resolved_on: '2026-10-21', health_record_id: concern.id,
+    });
+    expect(action.json().health_record_id).toBe(concern.id);
+    const events: { kind: string; episode: string | null }[] = (await f.call('GET', `/v1/cattle/${f.cowId}/timeline`)).json();
+    expect(events.filter((e) => e.episode === concern.id).map((e) => e.kind).sort()).toEqual(['alert_action', 'health']);
+
+    const other = await farmWithCow();
+    const theirs = (await other.call('POST', '/v1/health-records', { id: randomUUID(), cattle_id: other.cowId, reported_on: '2026-10-20' })).json();
+    const expense = { expense_date: '2026-10-21', category: 'veterinary_care', amount: '700', currency: 'ZMW' };
+    const ok = await f.call('POST', '/v1/expenses', { id: randomUUID(), ...expense, care_kind: 'health', care_id: concern.id });
+    expect(ok.json()).toMatchObject({ care_kind: 'health', care_id: concern.id });
+    expect((await f.call('POST', '/v1/expenses', { id: randomUUID(), ...expense, care_kind: 'health', care_id: theirs.id })).json().field).toBe('care_id');
+    expect((await f.call('POST', '/v1/expenses', { id: randomUUID(), ...expense, care_kind: 'health' })).json().field).toBe('care_id');
+  });
+
+  it('words the timeline for the farmer, and leaves out what has not happened yet', async () => {
+    const f = await farmWithCow();
+    await f.call('POST', '/v1/treatments', {
+      id: randomUUID(),
+      cattle_id: f.cowId,
+      medication: 'Oxytetracycline',
+      started_on: '2026-10-01',
+      requires_milk_withdrawal: true,
+      withdrawal_ends_at: '2026-10-10T10:00:00+02:00',
+    });
+    await f.call('POST', '/v1/breeding', { id: randomUUID(), cattle_id: f.cowId, event_type: 'heat_observed', event_at: '2026-09-01T08:00:00Z' });
+    await f.call('POST', '/v1/vaccinations', { id: randomUUID(), cattle_id: f.cowId, vaccine_name: 'FMD', status: 'completed', administered_on: '2026-10-20' });
+    await f.call('POST', '/v1/vaccinations', { id: randomUUID(), cattle_id: f.cowId, vaccine_name: 'Lumpy skin disease', due_on: '2099-01-01' });
+    await f.call('POST', '/v1/pregnancy-checks', { id: randomUUID(), cattle_id: f.cowId, scheduled_on: '2099-01-01' });
+    const events: { title: string; detail: string | null }[] = (await f.call('GET', `/v1/cattle/${f.cowId}/timeline`)).json();
+    const titles = events.map((e) => e.title);
+
+    expect(events.find((e) => e.title === 'Treatment: Oxytetracycline')?.detail).toBe('Milk withdrawal until 10 Oct 2026, 10:00');
+    expect(titles).toContain('Heat seen');
+    expect(titles).toContain('Vaccination: FMD');
+    expect(titles.some((x) => x.includes('Lumpy skin'))).toBe(false);
+    expect(titles.some((x) => x.startsWith('Pregnancy check'))).toBe(false);
+    expect(titles.some((x) => x.includes('cattle.') || x.includes('_'))).toBe(false);
+  });
+
   it('records an action on an alert, needs a follow-up date while watching, and an outcome date to resolve', async () => {
     const f = await farmWithCow();
     const base = { cattle_id: f.cowId, alert_type: 'milk_drop', alert_reason: 'Milk down 39%: 11 L, usually 18 L', action_taken: 'checked_feed_water', action_on: '2026-10-20' };
@@ -237,7 +315,7 @@ describe('health records and common lifecycle', () => {
 
     expect((await f.call('GET', '/v1/sync/pull?entity=alert_actions')).json().rows).toHaveLength(1);
     const titles = (await f.call('GET', `/v1/cattle/${f.cowId}/timeline`)).json().map((e: { title: string }) => e.title);
-    expect(titles).toContain('Action: checked feed water (resolved)');
+    expect(titles).toContain('Milk alert: checked feed and water (resolved)');
     expect((await f.call('DELETE', `/v1/cattle/${f.cowId}`, undefined, { 'if-match': '1' })).json().error).toBe('has_history');
   });
 

@@ -2,20 +2,22 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { displayName } from '../../../animals/model';
 import { findExisting } from '../../../care/existing';
 import { CareForm } from '../../../care/CareForm';
-import { CARE_FORMS } from '../../../care/forms';
+import { CARE_FORMS, latestPregnancy } from '../../../care/forms';
 import { CARE_KINDS, type CareKind } from '../../../care/model';
-import { createCare } from '../../../care/repo';
+import { createCare, getCare, updateCare } from '../../../care/repo';
 import { useCareContext } from '../../../care/useCareContext';
 import { askIfExisting } from '../../../ui/askIfExisting';
 import { FormScreen, Notice } from '../../../ui/form';
 
 export default function NewCareRecord() {
-  const { kind, cattle_id, alert_type, alert_reason, health_record_id } = useLocalSearchParams<{
+  const { kind, cattle_id, alert_type, alert_reason, health_record_id, from_action } = useLocalSearchParams<{
     kind: CareKind;
     cattle_id?: string;
     alert_type?: string;
     alert_reason?: string;
     health_record_id?: string;
+    /** A health concern started from an action on a milk alert: the action is linked to it. */
+    from_action?: string;
   }>();
   const ctx = useCareContext();
   if (!(kind in CARE_KINDS)) return <FormScreen card title="Record"><Notice tone="error">Unknown record type.</Notice></FormScreen>;
@@ -34,6 +36,8 @@ export default function NewCareRecord() {
           ...(kind === 'action' && alert_type ? { alert_type, alert_reason: alert_reason ?? '' } : {}),
           // From a health concern: the treatment or visit is linked to it.
           ...(health_record_id && config.fields.some((f) => f.key === 'health_record_id') ? { health_record_id } : {}),
+          // A calving for a known cow: joined to her latest confirmed pregnancy.
+          ...(kind === 'calving' && cattle_id ? { pregnancy_check_id: latestPregnancy(ctx, cattle_id, ctx.today)?.id ?? '' } : {}),
         }}
         ctx={ctx}
         creating
@@ -41,6 +45,8 @@ export default function NewCareRecord() {
         onSubmit={(body, createOnly) => {
           const save = () => {
             const id = createCare(kind, body, createOnly);
+            const action = kind === 'health' && from_action ? getCare<{ id: string; version: number; deleted_at: string | null }>('action', from_action) : null;
+            if (action) updateCare('action', action, { health_record_id: id });
             router.replace({ pathname: '/care/[kind]/[id]', params: { kind, id } });
           };
           // The same dose, check, concern or event may already be recorded (often from another phone).

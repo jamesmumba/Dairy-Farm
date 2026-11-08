@@ -12,6 +12,7 @@ export const REMINDER_ICON: Record<ReminderKind, IconName> = {
   action_follow_up: 'clipboard-check-outline',
   missing_milk: 'water-alert-outline',
   health_follow_up: 'stethoscope',
+  outbreak: 'alert-octagon-outline',
   unpaid_balance: 'account-cash-outline',
   stock_discrepancy: 'warehouse',
   production_decline: 'chart-line-variant',

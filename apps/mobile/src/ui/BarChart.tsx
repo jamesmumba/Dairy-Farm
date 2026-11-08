@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { minTouch, spacing, useTheme } from './theme';
+import { minTouch, spacing, type, useTheme } from './theme';
 
 export interface Bar {
   key: string;
@@ -45,13 +45,13 @@ export function BarChart({
   return (
     <View style={{ gap: spacing.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
-        <Text style={{ color: t.text, fontSize: 16, fontWeight: '600', flexShrink: 1 }}>{title}</Text>
+        <Text style={{ color: t.text, ...type.cardTitle, flexShrink: 1 }}>{title}</Text>
         {/* Small and out of the way, but still a full-size touch target. */}
         <Pressable accessibilityRole="button" onPress={() => setTable((v) => !v)} hitSlop={12} style={{ minHeight: minTouch - 8, justifyContent: 'center' }}>
-          <Text style={{ color: t.primary, fontSize: 14, fontWeight: '600' }}>{table ? 'Chart' : 'Table'}</Text>
+          <Text style={{ color: t.primary, ...type.secondary, fontWeight: '600' }}>{table ? 'Chart' : 'Table'}</Text>
         </Pressable>
       </View>
-      <Text style={{ color: t.textMuted, fontSize: 15 }} accessibilityLiveRegion="polite">
+      <Text style={{ color: t.textMuted, ...type.bodySmall }} accessibilityLiveRegion="polite">
         {shown ? `${shown.label}: ${shown.missing ? 'no records' : format(shown.value)}${shown === peak && !selected ? ' (highest)' : ''}` : 'No records in this period'}
       </Text>
 
@@ -59,8 +59,8 @@ export function BarChart({
         <View accessibilityRole="list">
           {bars.map((b) => (
             <View key={b.key} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: t.border }}>
-              <Text style={{ color: t.text, fontSize: 15 }}>{b.label}</Text>
-              <Text style={{ color: t.text, fontSize: 15, fontVariant: ['tabular-nums'] }}>{b.missing ? '—' : format(b.value)}</Text>
+              <Text style={{ color: t.text, ...type.bodySmall }}>{b.label}</Text>
+              <Text style={{ color: t.text, ...type.bodySmall, fontVariant: ['tabular-nums'] }}>{b.missing ? '—' : format(b.value)}</Text>
             </View>
           ))}
         </View>
@@ -98,7 +98,7 @@ export function BarChart({
           </View>
           <View style={{ flexDirection: 'row', gap: 2 }}>
             {bars.map((b, i) => (
-              <Text key={b.key} style={{ flex: 1, textAlign: 'center', color: t.textMuted, fontSize: 11 }} numberOfLines={1}>
+              <Text key={b.key} style={{ flex: 1, textAlign: 'center', color: t.textMuted, ...type.micro }} numberOfLines={1}>
                 {i % axisEvery === 0 ? b.short : ''}
               </Text>
             ))}

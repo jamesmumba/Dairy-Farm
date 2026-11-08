@@ -10,7 +10,7 @@ import { Chips } from '../ui/Chips';
 import { DateTimeField } from '../ui/DateField';
 import { Button, FormScreen, Notice, TextField } from '../ui/form';
 import { Card, Figure, FormCard, ListGroup, SectionHeader } from '../ui/kit';
-import { spacing, useTheme } from '../ui/theme';
+import { spacing, type, useTheme } from '../ui/theme';
 
 export default function Prices() {
   const t = useTheme();
@@ -49,7 +49,7 @@ export default function Prices() {
             return <Figure key={c.value} label={`${c.value} per litre now`} value={p ? p.price_per_litre : 'Not set'} />;
           })}
         </View>
-        <Text style={{ color: t.textMuted, fontSize: 13 }}>Changing the price never changes past sales.</Text>
+        <Text style={{ color: t.textMuted, ...type.caption }}>Changing the price never changes past sales.</Text>
       </Card>
       {error ? <Notice tone="error">{error}</Notice> : null}
       <FormCard title="Set a new price">
@@ -69,10 +69,10 @@ export default function Prices() {
               return (
                 <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md }} accessible>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={{ color: t.text, fontSize: 16 }}>From {formatDateTime(p.effective_from)}</Text>
-                    {p.reason || waiting ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{[p.reason, waiting ? 'waiting to sync' : null].filter(Boolean).join(' · ')}</Text> : null}
+                    <Text style={{ color: t.text, ...type.body }}>From {formatDateTime(p.effective_from)}</Text>
+                    {p.reason || waiting ? <Text style={{ color: t.textMuted, ...type.secondary }}>{[p.reason, waiting ? 'waiting to sync' : null].filter(Boolean).join(' · ')}</Text> : null}
                   </View>
-                  <Text style={{ color: t.text, fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                  <Text style={{ color: t.text, ...type.cardTitle, fontVariant: ['tabular-nums'] }}>
                     {p.currency} {p.price_per_litre}
                   </Text>
                 </View>

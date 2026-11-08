@@ -21,7 +21,7 @@ import {
   validate,
 } from '../ui/profileFields';
 import { FormCard } from '../ui/kit';
-import { useTheme } from '../ui/theme';
+import { type, useTheme } from '../ui/theme';
 import { type DeclineRule, DEFAULT_DECLINE_RULE } from '../production/calc';
 import { friendlyError } from '../lib/errors';
 
@@ -159,7 +159,7 @@ export default function Settings() {
           {tab === 'units' ? <UnitsSection form={form} errors={errors} update={update} /> : null}
           {tab === 'reminders' ? <RemindersSection form={form} errors={errors} update={update} /> : null}
           <Button label="Save changes" onPress={() => save()} busy={busy} />
-          <Text style={{ color: t.textMuted, fontSize: 13 }}>Saves profile, farm, units and reminders together. Changes are kept in your account history.</Text>
+          <Text style={{ color: t.textMuted, ...type.caption }}>Saves profile, farm, units and reminders together. Changes are kept in your account history.</Text>
         </FormCard>
       )}
     </FormScreen>
@@ -191,7 +191,7 @@ function BreedingIntervalsSection() {
 
   return (
     <FormCard title="Breeding intervals">
-      <Text style={{ color: t.textMuted, fontSize: 14 }}>
+      <Text style={{ color: t.textMuted, ...type.secondary }}>
         Used to plan a pregnancy check after each mating or insemination, and to suggest a calving date once a pregnancy is confirmed.
         The starting values are commonly used ones: confirm them with your vet.
       </Text>
@@ -231,7 +231,7 @@ function DeclineRuleSection() {
 
   return (
     <FormCard title="Production alerts">
-      <Text style={{ color: t.textMuted, fontSize: 14 }}>
+      <Text style={{ color: t.textMuted, ...type.secondary }}>
         A cow is flagged when her average daily milk over the recent days (up to yesterday) is lower than her average over the days before by at least the percentage below.
       </Text>
       {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}

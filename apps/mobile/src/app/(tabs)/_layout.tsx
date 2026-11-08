@@ -6,7 +6,7 @@ import type { IconName } from '../../ui/kit';
 import { InboxBell } from '../../ui/InboxBell';
 import { screenLayout } from '../../ui/ScreenErrorBoundary';
 import { SyncHeader } from '../../ui/SyncHeader';
-import { useTheme } from '../../ui/theme';
+import { type, useTheme } from '../../ui/theme';
 
 const TABS: { name: string; title: string; icon: IconName; active: IconName; hint: string }[] = [
   { name: 'index', title: 'Home', icon: 'home-variant-outline', active: 'home-variant', hint: 'Today’s summary and urgent items' },
@@ -28,10 +28,10 @@ export default function TabLayout() {
         tabBarActiveTintColor: t.primary,
         tabBarInactiveTintColor: t.textMuted,
         tabBarStyle: { backgroundColor: t.surface, borderTopColor: t.border, height: 64 + bottom, paddingTop: 8, paddingBottom: bottom },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+        tabBarLabelStyle: { ...type.micro, fontWeight: '600', marginTop: 2 },
         headerStyle: { backgroundColor: t.background },
         headerShadowVisible: false,
-        headerTitleStyle: { fontWeight: '600', fontSize: 20 },
+        headerTitleStyle: type.sectionTitle,
         headerTintColor: t.text,
         headerRight: () => (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

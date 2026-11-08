@@ -13,7 +13,7 @@ import { Button, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
 import { MissingRecord } from '../../ui/ProblemView';
 import { SyncBadge } from '../../ui/SyncBadge';
 import { Card, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
-import { spacing, useTheme } from '../../ui/theme';
+import { spacing, type, useTheme } from '../../ui/theme';
 
 export default function CustomerStatement() {
   const t = useTheme();
@@ -53,14 +53,14 @@ export default function CustomerStatement() {
       {!c.active ? <Notice>This customer is marked inactive.</Notice> : null}
 
       <Card gap={2}>
-        <Text style={{ color: t.textMuted, fontSize: 14 }}>Balance</Text>
-        {bal.length === 0 ? <Text style={{ color: t.text, fontSize: 30, fontWeight: '600' }}>Nothing owed</Text> : null}
+        <Text style={{ color: t.textMuted, ...type.secondary }}>Balance</Text>
+        {bal.length === 0 ? <Text style={{ color: t.text, ...type.display }}>Nothing owed</Text> : null}
         {bal.map(([cur, v]) => (
-          <Text key={cur} style={{ color: v > 0 ? t.danger : t.text, fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+          <Text key={cur} style={{ color: v > 0 ? t.danger : t.text, ...type.display, fontVariant: ['tabular-nums'] }}>
             {v > 0 ? `Owes ${money(v, cur)}` : v < 0 ? `In credit ${money(-v, cur)}` : `${cur}: settled`}
           </Text>
         ))}
-        <Text style={{ color: t.textMuted, fontSize: 13 }}>
+        <Text style={{ color: t.textMuted, ...type.caption }}>
           {litres(litresBought)} L in {sales.filter((s) => s.status === 'completed').length} sales · payments clear the oldest sales first
         </Text>
       </Card>
@@ -95,7 +95,7 @@ export default function CustomerStatement() {
           setEditing(true);
         }}
       />
-      {history.length === 0 ? <Text style={{ color: t.textMuted, fontSize: 15 }}>No sales or payments yet.</Text> : null}
+      {history.length === 0 ? <Text style={{ color: t.textMuted, ...type.bodySmall }}>No sales or payments yet.</Text> : null}
       {history.length ? (
         <ListGroup>
           {history.map(({ kind, row }) => {

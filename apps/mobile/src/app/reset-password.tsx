@@ -5,7 +5,7 @@ import { authMessage, MIN_PASSWORD } from '../lib/authErrors';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../state/auth';
 import { Button, FormScreen, Notice, TextField } from '../ui/form';
-import { useTheme } from '../ui/theme';
+import { type, useTheme } from '../ui/theme';
 
 // Two ways in, both outside the sign-in guards so the screen stays open until the password is saved:
 //  - the reset link from the email opens it with ?code=… (PKCE): the code becomes a session on this phone;
@@ -48,7 +48,7 @@ export default function ResetPassword() {
   if (stage === 'opening') {
     return (
       <FormScreen card standalone title="Choose a new password">
-        <Text style={{ color: t.textMuted, fontSize: 15 }}>Checking your reset link…</Text>
+        <Text style={{ color: t.textMuted, ...type.bodySmall }}>Checking your reset link…</Text>
       </FormScreen>
     );
   }

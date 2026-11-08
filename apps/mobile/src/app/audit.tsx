@@ -16,7 +16,7 @@ import { useLocal } from '../sync/store';
 import { Chips } from '../ui/Chips';
 import { Button, Notice, Toggle } from '../ui/form';
 import { Card, IconBadge, SectionHeader } from '../ui/kit';
-import { radius, shadow, spacing, useTheme } from '../ui/theme';
+import { radius, shadow, spacing, type, useTheme } from '../ui/theme';
 
 // What changed in the farm records and why, in plain words: corrections, voids, removals, price changes,
 // stock adjustments, settings and exports. New records can be shown too. Loaded from the account (needs a
@@ -49,16 +49,16 @@ function Entry({ d, at, device }: { d: Described; at: string; device?: string | 
       <IconBadge icon={d.icon} tint={tint} size={36} />
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm }}>
-          <Text style={{ color: t.text, fontSize: 16, fontWeight: '600', flex: 1 }}>{d.title}</Text>
-          <Text style={{ color: t.textMuted, fontSize: 13 }}>{time(at)}</Text>
+          <Text style={{ color: t.text, ...type.cardTitle, flex: 1 }}>{d.title}</Text>
+          <Text style={{ color: t.textMuted, ...type.caption }}>{time(at)}</Text>
         </View>
         {d.lines.map((l) => (
-          <Text key={l} style={{ color: t.textMuted, fontSize: 14 }}>
+          <Text key={l} style={{ color: t.textMuted, ...type.secondary }}>
             {l}
           </Text>
         ))}
-        {d.reason ? <Text style={{ color: t.text, fontSize: 14, fontStyle: 'italic' }}>“{d.reason}”</Text> : null}
-        {device ? <Text style={{ color: t.textMuted, fontSize: 13 }}>On {device}</Text> : null}
+        {d.reason ? <Text style={{ color: t.text, ...type.secondary, fontStyle: 'italic' }}>“{d.reason}”</Text> : null}
+        {device ? <Text style={{ color: t.textMuted, ...type.caption }}>On {device}</Text> : null}
       </View>
       {d.href ? <MaterialCommunityIcons name="chevron-right" size={22} color={t.textMuted} style={{ alignSelf: 'center' }} importantForAccessibility="no" /> : null}
     </View>

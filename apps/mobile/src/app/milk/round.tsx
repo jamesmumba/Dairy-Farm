@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { type ComponentRef, type ReactNode, useRef, useState } from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { displayName } from '../../animals/model';
@@ -17,7 +17,7 @@ import { formatDateTime } from '../../lib/dates';
 import { Chips } from '../../ui/Chips';
 import { DateField, toDateString } from '../../ui/DateField';
 import { Button, FieldError, FormScreen, Notice, Toggle } from '../../ui/form';
-import { minTouch, radius, shadow, spacing, useTheme } from '../../ui/theme';
+import { minTouch, radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 export default function MilkingRound() {
   // Opened from a "not recorded" reminder: that day and milking.
@@ -27,20 +27,23 @@ export default function MilkingRound() {
   const [showAll, setShowAll] = useState(false);
   const [done, setDone] = useState<string | null>(null);
 
+  // A new sheet (and draft) per date and session.
   return (
-    <FormScreen title="Milking round" intro="Type the litres for each cow, then save once. Tap ⋮ beside a cow that was not milked or is dry now. Works offline.">
-      {done ? <Notice>{done}</Notice> : null}
+    <RoundSheet key={`${date}-${session}`} date={date} session={session} showAll={showAll} onSaved={setDone}>
+      {done ? <Notice tone="success">{done}</Notice> : null}
       <DateField label="Date" value={date} onChange={(d) => d && setDate(d)} optional={false} />
       <Chips label="Session" value={session} options={SESSIONS.map((s) => ({ value: s, label: SESSION_LABELS[s] }))} onChange={(s) => s && setSession(s)} allowClear={false} />
       <Toggle label="Show all females" hint="Not only cows marked as in milk" value={showAll} onChange={setShowAll} />
-      {/* A new sheet (and draft) per date and session. */}
-      <RoundSheet key={`${date}-${session}`} date={date} session={session} showAll={showAll} onSaved={setDone} />
-    </FormScreen>
+    </RoundSheet>
   );
 }
 
-function RoundSheet({ date, session, showAll, onSaved }: { date: string; session: Session; showAll: boolean; onSaved: (message: string) => void }) {
+const INTRO = 'Type the litres for each cow, then save once. Tap ⋮ beside a cow that was not milked or is dry now. Works offline.';
+
+function RoundSheet({ date, session, showAll, onSaved, children }: { date: string; session: Session; showAll: boolean; onSaved: (message: string) => void; children: ReactNode }) {
   const t = useTheme();
+  // The litres boxes in list order, so the keyboard's Next key moves down the herd.
+  const inputs = useRef(new Map<string, ComponentRef<typeof TextInput>>());
   const animals = useLocal(listAnimals);
   const milk = useLocal(listMilk);
   const treatments = useLocal(() => loadCareData().treatments);
@@ -102,26 +105,51 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
 
   if (!cows.length) {
     return (
-      <Notice>
-        {showAll ? 'No active female animals.' : 'No cows are marked as in milk. Turn on “Show all females”, or set an animal’s production to “In milk”.'}
-      </Notice>
+      <FormScreen title="Milking round" intro={INTRO}>
+        {children}
+        <Notice>
+          {showAll ? 'No active female animals.' : 'No cows are marked as in milk. Turn on “Show all females”, or set an animal’s production to “In milk”.'}
+        </Notice>
+      </FormScreen>
     );
   }
 
+  const open = cows.filter((c) => !skipped(c.id) && !findSession(milk, { cattle_id: c.id, production_date: date, session })).map((c) => c.id);
+  const next = (id: string) => open[open.indexOf(id) + 1];
+
+  const footer = (
+    <>
+      {Object.keys(errors).length ? <FieldError message={LITRES_HINT} /> : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+        <Text style={{ flex: 1, color: t.text, ...type.input, fontWeight: '600' }} accessibilityLiveRegion="polite">
+          {typed.length} cow{typed.length === 1 ? '' : 's'} · {L(totalCl)}
+        </Text>
+        <View style={{ flex: 1 }}>
+          <Button label="Save round" onPress={save} />
+        </View>
+      </View>
+    </>
+  );
+
   return (
-    <View style={{ gap: spacing.md }}>
+    <FormScreen title="Milking round" intro={INTRO} footer={footer}>
+      {children}
       <View style={{ backgroundColor: t.surface, borderRadius: radius.card, paddingHorizontal: spacing.md, ...shadow }}>
         {cows.map((c, i) => {
           const existing = findSession(milk, { cattle_id: c.id, production_date: date, session });
           const withdrawal = activeWithdrawal(treatments, c.id, sessionAt);
+          const after = next(c.id);
           return (
             <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: minTouch + 12, borderTopWidth: i ? 1 : 0, borderTopColor: t.border, paddingVertical: spacing.sm }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: t.text, fontSize: 17 }}>{displayName(c)}</Text>
+                <Text style={{ color: t.text, ...type.input }}>{displayName(c)}</Text>
                 {withdrawal ? (
-                  <Text style={{ color: t.danger, fontSize: 14 }} accessibilityRole="alert">
-                    ⚠ Withdrawal until {formatDateTime(withdrawal.withdrawal_ends_at)} · not for sale
-                  </Text>
+                  <View style={{ flexDirection: 'row', gap: spacing.xs }} accessible accessibilityRole="alert">
+                    <MaterialCommunityIcons name="alert-outline" size={16} color={t.danger} style={{ marginTop: 1 }} />
+                    <Text style={{ flex: 1, color: t.danger, ...type.secondary }}>
+                      Withdrawal until {formatDateTime(withdrawal.withdrawal_ends_at)} · not for sale
+                    </Text>
+                  </View>
                 ) : null}
               </View>
               {existing ? (
@@ -131,7 +159,10 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
                   onPress={() => router.push({ pathname: '/milk/[id]', params: { id: existing.data.id } })}
                   style={{ minHeight: minTouch, justifyContent: 'center' }}
                 >
-                  <Text style={{ color: t.textMuted, fontSize: 16 }}>✓ {L(toCl(existing.data.quantity))}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                    <MaterialCommunityIcons name="check" size={18} color={t.primary} />
+                    <Text style={{ color: t.textMuted, ...type.body }}>{L(toCl(existing.data.quantity))}</Text>
+                  </View>
                 </Pressable>
               ) : skipped(c.id) ? (
                 <Pressable
@@ -140,7 +171,7 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
                   onPress={() => undoNotMilked(notMilkedKey(date, session, c.id))}
                   style={{ minHeight: minTouch, justifyContent: 'center' }}
                 >
-                  <Text style={{ color: t.textMuted, fontSize: 16 }}>
+                  <Text style={{ color: t.textMuted, ...type.body }}>
                     Not milked · <Text style={{ color: t.primary }}>Undo</Text>
                   </Text>
                 </Pressable>
@@ -158,10 +189,17 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
                   </Pressable>
                   <View style={{ width: 110 }}>
                     <TextInput
+                      ref={(el) => {
+                        if (el) inputs.current.set(c.id, el);
+                        else inputs.current.delete(c.id);
+                      }}
                       accessibilityLabel={`Litres for ${displayName(c)}`}
                       value={values[c.id] ?? ''}
                       onChangeText={(v) => update({ [c.id]: v })}
                       keyboardType="decimal-pad"
+                      returnKeyType={after ? 'next' : 'done'}
+                      submitBehavior={after ? 'submit' : 'blurAndSubmit'}
+                      onSubmitEditing={() => (after ? inputs.current.get(after)?.focus() : undefined)}
                       placeholder="L"
                       placeholderTextColor={t.textMuted}
                       maxLength={6}
@@ -171,7 +209,8 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
                         borderColor: errors[c.id] ? t.danger : t.border,
                         borderRadius: radius.control,
                         paddingHorizontal: spacing.md,
-                        fontSize: 18,
+                        ...type.input,
+                        fontSize: 18, // a little larger: the figure being typed
                         color: t.text,
                         backgroundColor: t.background,
                         textAlign: 'right',
@@ -184,11 +223,6 @@ function RoundSheet({ date, session, showAll, onSaved }: { date: string; session
           );
         })}
       </View>
-      {Object.keys(errors).length ? <FieldError message={LITRES_HINT} /> : null}
-      <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }} accessibilityLiveRegion="polite">
-        {typed.length} cow{typed.length === 1 ? '' : 's'} · {L(totalCl)}
-      </Text>
-      <Button label="Save round" onPress={save} />
-    </View>
+    </FormScreen>
   );
 }

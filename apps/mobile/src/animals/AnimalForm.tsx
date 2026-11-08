@@ -5,7 +5,7 @@ import { useDraft } from '../lib/useDraft';
 import { Chips } from '../ui/Chips';
 import { DateField, toDateString } from '../ui/DateField';
 import { Button, Choice, Notice, TextField, Toggle } from '../ui/form';
-import { useTheme } from '../ui/theme';
+import { type, useTheme } from '../ui/theme';
 import { type Breed, type Cattle, type CattleFields, PRODUCTION_LABELS, type ProductionStatus, REPRODUCTIVE_LABELS } from './model';
 import { ParentPicker } from './ParentPicker';
 
@@ -158,7 +158,7 @@ export function AnimalForm({
     <>
       {Object.keys(errors).length ? <Notice tone="error">Please check the highlighted fields.</Notice> : null}
 
-      <TextField label="Ear tag (optional)" hint="Leave empty if the animal is not tagged yet" value={form.ear_tag} onChangeText={(ear_tag) => update({ ear_tag })} error={errors.ear_tag} autoCapitalize="characters" autoCorrect={false} />
+      <TextField label="Ear tag (optional)" hint="Change it to match the tag on the animal, or clear it if not tagged yet" value={form.ear_tag} onChangeText={(ear_tag) => update({ ear_tag })} error={errors.ear_tag} autoCapitalize="characters" autoCorrect={false} />
       <TextField label="Name (optional)" value={form.name} onChangeText={(name) => update({ name })} />
       <Choice
         label="Sex"
@@ -197,7 +197,7 @@ export function AnimalForm({
             onChange={(r) => r && update({ reproductive_status: r })}
             allowClear={false}
           />
-          <Text style={{ color: t.textMuted, fontSize: 14 }}>Pregnancy is recorded from a pregnancy check, not set here.</Text>
+          <Text style={{ color: t.textMuted, ...type.secondary }}>Pregnancy is recorded from a pregnancy check, not set here.</Text>
         </>
       ) : null}
 

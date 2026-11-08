@@ -6,7 +6,7 @@ import type { FarmerAccount } from '../lib/account';
 import { useAuth } from '../state/auth';
 import { runSync } from '../sync/engine';
 import { Button, FormScreen, Notice, TextField } from '../ui/form';
-import { useTheme } from '../ui/theme';
+import { type, useTheme } from '../ui/theme';
 
 export default function DeleteAccount() {
   const t = useTheme();
@@ -48,11 +48,11 @@ export default function DeleteAccount() {
 
   return (
     <FormScreen card title="Delete account">
-      <Text style={{ color: t.text, fontSize: 16 }}>
+      <Text style={{ color: t.text, ...type.body }}>
         Deleting your account erases all your records, photos and your sign-in from our service. Only an anonymous note that a
         deletion happened is kept, and backups containing your data expire within 30 days.
       </Text>
-      <Text style={{ color: t.text, fontSize: 16 }}>Before you continue, export any records you want to keep (More › Reports and exports).</Text>
+      <Text style={{ color: t.text, ...type.body }}>Before you continue, export any records you want to keep (More › Reports and exports).</Text>
       {error ? <Notice tone="error">{error}</Notice> : null}
       <TextField label="Reason (optional)" value={reason} onChangeText={setReason} multiline />
       <Button label="Request account deletion" variant="danger" onPress={confirm} busy={busy} />

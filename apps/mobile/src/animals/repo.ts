@@ -34,13 +34,23 @@ export function editAnimal(current: Stored<Cattle>, changes: Partial<CattleField
 
 export function changeAnimalStatus(
   current: Stored<Cattle>,
-  change: { status: AnimalStatus; status_date: string | null; status_details: string | null; reason?: string | null },
+  change: {
+    status: AnimalStatus;
+    status_date: string | null;
+    status_details: string | null;
+    status_reason?: string | null;
+    status_health_record_id?: string | null;
+    reason?: string | null;
+  },
 ) {
+  const active = change.status === 'active';
   const next: Cattle = {
     ...current.data,
     status: change.status,
-    status_date: change.status === 'active' ? null : change.status_date,
-    status_details: change.status === 'active' ? null : change.status_details,
+    status_date: active ? null : change.status_date,
+    status_details: active ? null : change.status_details,
+    status_reason: active ? null : (change.status_reason ?? null),
+    status_health_record_id: active ? null : (change.status_health_record_id ?? null),
   };
   saveLocal('cattle', next.id, next, {
     kind: 'status',

@@ -13,7 +13,7 @@ import { useLocal } from '../sync/store';
 import { Notice } from '../ui/form';
 import { ListGroup, SectionHeader } from '../ui/kit';
 import { useSyncRefresh } from '../ui/useSyncRefresh';
-import { spacing, useTheme } from '../ui/theme';
+import { spacing, type, useTheme } from '../ui/theme';
 
 // The in-app notifications inbox. Everything the app has flagged, worked out from the records on this
 // phone: urgent things first, then today, then what is coming up. Opening it marks the items as read.
@@ -99,7 +99,7 @@ export default function Notifications() {
           </View>
         );
       })}
-      <Text style={{ color: t.textMuted, fontSize: 13, marginTop: spacing.sm }}>{statusText}</Text>
+      <Text style={{ color: t.textMuted, ...type.caption, marginTop: spacing.sm }}>{statusText}</Text>
       {quick.sheet}
     </ScrollView>
   );

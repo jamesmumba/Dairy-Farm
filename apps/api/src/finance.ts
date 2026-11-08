@@ -411,7 +411,26 @@ export async function saleStatus(client: Queryable, owner: string, id: string) {
 // ---------------------------------------------------------------------------
 
 export const EXPENSE_COLUMNS = `id, expense_date::text, category, amount::text, currency, payee, payment_method, payment_status, receipt_path, notes,
-  status, void_reason, version, created_at, updated_at`;
+  care_kind, care_id, status, void_reason, version, created_at, updated_at`;
+
+// The care record an expense paid for, by the app's record kind.
+const CARE_TABLES = {
+  health: 'animal_health_records',
+  'vet-visit': 'veterinary_visits',
+  treatment: 'treatments',
+  breeding: 'breeding_records',
+  'pregnancy-check': 'pregnancy_checks',
+  calving: 'calving_records',
+  vaccination: 'vaccination_records',
+} as const;
+
+async function checkCareLink(client: Queryable, owner: string, r: { care_kind?: string | null; care_id?: string | null }) {
+  if (!r.care_kind !== !r.care_id) throw new HttpError(400, 'validation_failed', 'Choose the record this expense was for.', { field: 'care_id' });
+  if (!r.care_kind) return;
+  const table = CARE_TABLES[r.care_kind as keyof typeof CARE_TABLES];
+  const { rows } = await client.query(`select 1 from public.${table} where owner_id = $1 and id = $2 and deleted_at is null`, [owner, r.care_id]);
+  if (!rows[0]) throw new HttpError(400, 'validation_failed', 'The record this expense was for was not found.', { field: 'care_id' });
+}
 
 const expenseFields = {
   expense_date: pastDate,
@@ -422,6 +441,8 @@ const expenseFields = {
   payment_method: z.enum(METHODS).nullable().optional(),
   payment_status: z.enum(['paid', 'unpaid', 'partially_paid']).optional(),
   notes: text(1000),
+  care_kind: z.enum(Object.keys(CARE_TABLES) as [keyof typeof CARE_TABLES]).nullable().optional(),
+  care_id: z.uuid().nullable().optional(),
 };
 export const ExpenseCreate = z.object({ id: z.uuid(), ...expenseFields }).strict();
 export const ExpenseUpdate = z.object(expenseFields).partial().strict();
@@ -435,6 +456,7 @@ export async function getExpense(client: Queryable, owner: string, id: string, f
 export async function createExpense(client: DbClient, owner: string, actor: string, input: z.infer<typeof ExpenseCreate>) {
   const { rows: clash } = await client.query('select 1 from public.farm_expenses where id = $1', [input.id]);
   if (clash[0]) throw new HttpError(409, 'id_taken', 'This record id is already used.');
+  await checkCareLink(client, owner, input);
   const keys = Object.keys(input).filter((k) => input[k as keyof typeof input] !== undefined && k !== 'id');
   const { rows } = await client.query(
     `insert into public.farm_expenses (owner_id, id${keys.map((k) => `, ${k}`).join('')}) values ($1, $2${keys.map((_, i) => `, $${i + 3}`).join('')})
@@ -450,6 +472,9 @@ export async function updateExpense(client: DbClient, owner: string, actor: stri
   const before = await getExpense(client, owner, id, true);
   if (before.version !== version) throw new HttpError(409, 'version_conflict', 'This expense was changed elsewhere. Review the latest version.', { current: before });
   if (before.status === 'voided') throw new HttpError(409, 'voided', 'This expense was voided.');
+  if ('care_kind' in patch || 'care_id' in patch) {
+    await checkCareLink(client, owner, { care_kind: patch.care_kind ?? null, care_id: patch.care_id ?? null });
+  }
   const changed = Object.keys(patch).filter((k) => patch[k as keyof typeof patch] !== undefined && String(patch[k as keyof typeof patch]) !== String(before[k]));
   if (!changed.length) return before;
   const { rows } = await client.query(

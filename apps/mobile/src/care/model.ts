@@ -17,6 +17,8 @@ export interface HealthRecord extends Common {
   suspected_issue: string | null;
   confirmed_diagnosis: string | null;
   condition_status: 'suspected' | 'confirmed' | 'ruled_out';
+  /** What kind of problem, so cases can be counted (see CONDITION_LABELS). */
+  condition?: keyof typeof CONDITION_LABELS | null;
   severity: 'low' | 'moderate' | 'high' | 'critical' | null;
   urgent: boolean;
   responsible_person: string | null;
@@ -76,6 +78,8 @@ export interface PregnancyCheck extends Common {
 export interface CalvingRecord extends Common {
   dam_id: string;
   calf_id: string | null;
+  /** The pregnancy check before this calving (and through it, the mating). */
+  pregnancy_check_id?: string | null;
   calved_on: string;
   outcome: 'live' | 'stillborn' | 'aborted' | 'other';
   complications: string | null;
@@ -122,6 +126,8 @@ export interface AlertAction extends Common {
   follow_up_on: string | null;
   resolved_on: string | null;
   outcome: string | null;
+  /** The health concern this action led to. */
+  health_record_id?: string | null;
 }
 
 /** URL segment and local entity (= table) of each care record type. */
@@ -174,6 +180,19 @@ export const ACTION_LABELS = {
   other: 'Something else',
 } as const;
 export const ALERT_TYPE_LABELS = { milk_drop: 'Sudden milk drop', milk_decline: 'Falling milk', other: 'Other concern' } as const;
+/** Kinds of health problem, from what the farmer or vet found. The app never diagnoses. */
+export const CONDITION_LABELS = {
+  mastitis: 'Mastitis (udder)',
+  lameness: 'Lameness or feet',
+  tick_borne: 'Tick-borne disease (e.g. East Coast fever)',
+  diarrhoea: 'Diarrhoea or scours',
+  respiratory: 'Breathing problems',
+  fertility: 'Fertility problems',
+  metabolic: 'Milk fever or other metabolic',
+  injury: 'Injury',
+  other: 'Other',
+} as const;
+
 export const SEVERITY_LABELS = { low: 'Low', moderate: 'Moderate', high: 'High', critical: 'Critical' } as const;
 export const RECOVERY_LABELS = { ongoing: 'Ongoing', recovering: 'Recovering', recovered: 'Recovered', chronic: 'Chronic', died: 'Died' } as const;
 export const CALVING_OUTCOME_LABELS = { live: 'Live calf', stillborn: 'Stillborn', aborted: 'Aborted', other: 'Other' } as const;

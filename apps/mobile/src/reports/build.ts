@@ -1,15 +1,16 @@
 // Reports built from the records on this phone. Pure functions: every report has a
 // period, filters, generation time, units/currency, definitions, and says what is missing.
 
-import { type Breed, type Cattle, displayName, PRODUCTION_LABELS, REPRODUCTIVE_LABELS, STATUS_LABELS } from '../animals/model';
-import { activeWithdrawal, CALVING_OUTCOME_LABELS, type CareData, EVENT_LABELS, RECOVERY_LABELS, RESULT_LABELS, SEVERITY_LABELS, underTreatment } from '../care/model';
+import { ageInMonths, type Breed, type Cattle, DEATH_CAUSE_LABELS, displayName, PRODUCTION_LABELS, REPRODUCTIVE_LABELS, SALE_REASON_LABELS, STATUS_LABELS } from '../animals/model';
+import { storyOf, withdrawalCovering } from '../care/related';
+import { activeWithdrawal, CALVING_OUTCOME_LABELS, type CareData, CONDITION_LABELS, EVENT_LABELS, RECOVERY_LABELS, RESULT_LABELS, SEVERITY_LABELS, underTreatment } from '../care/model';
 import { balances, money, reconcile, saleDue, summarize as summarizeMoney, toCents } from '../finance/calc';
 import { CATEGORY_LABELS, METHOD_LABELS, type Method, PAYMENT_KIND_LABELS } from '../finance/model';
 import type { FinanceData } from '../finance/repo';
 import { formatDate, formatDateTime } from '../lib/dates';
 import { addDays, dailyTotals, decline, type DeclineRule, highLow, litres, type MilkRow, perAnimal, perBreed, previousRange, summarize } from '../production/calc';
 
-export type ReportId = 'herd' | 'production' | 'health' | 'reproduction' | 'vaccination' | 'finance';
+export type ReportId = 'herd' | 'production' | 'health' | 'herd-health' | 'reproduction' | 'vaccination' | 'finance';
 
 export interface Column {
   key: string;
@@ -670,10 +671,194 @@ export function financeReport(input: ReportInput, f: Filters): Report {
   };
 }
 
+// --- Herd health trends ---------------------------------------------------------------------
+
+/** Below this many animals, a share of the herd says more about chance than about the farm. */
+const RATE_MIN_HERD = 20;
+const CALF_MONTHS = 6;
+const NOT_SET = 'Not set';
+
+const monthOf = (d: string) => d.slice(0, 7);
+const monthLabel = (m: string) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+
+/**
+ * Deaths and their causes, sales and their reasons, health problems by kind and month, cows that keep
+ * getting ill, and what each kind of problem cost in money and in milk. Counts only from what was recorded.
+ */
+export function herdHealthReport(input: ReportInput, f: Filters): Report {
+  const { animal, scopeAnimals, inScope, filters } = context(input, f);
+  const conditionOf = (c: string | null | undefined) => (c ? CONDITION_LABELS[c as keyof typeof CONDITION_LABELS] : NOT_SET);
+  const health = live(input.care.health).filter((h) => inScope.has(h.cattle_id));
+  const cases = health.filter((h) => inRange(h.reported_on, f));
+  const byId = new Map(health.map((h) => [h.id, h]));
+
+  // Deaths and sales in the period.
+  const deaths = scopeAnimals.filter((a) => a.status === 'deceased' && inRange(a.status_date, f));
+  const sales = scopeAnimals.filter((a) => a.status === 'sold' && inRange(a.status_date, f));
+  const ageAt = (a: Cattle) => (a.birth_date && a.status_date ? ageInMonths(a.birth_date, new Date(`${a.status_date}T12:00:00`)) : null);
+  const isCalf = (a: Cattle) => {
+    const m = ageAt(a);
+    return m !== null && m < CALF_MONTHS;
+  };
+  const causeOf = (a: Cattle) => (a.status_reason ? (DEATH_CAUSE_LABELS[a.status_reason as keyof typeof DEATH_CAUSE_LABELS] ?? a.status_reason) : 'Not given');
+  const saleReasonOf = (a: Cattle) => (a.status_reason ? (SALE_REASON_LABELS[a.status_reason as keyof typeof SALE_REASON_LABELS] ?? a.status_reason) : 'Not given');
+  const tally = <T,>(rows: T[], key: (r: T) => string) => {
+    const m = new Map<string, T[]>();
+    for (const r of rows) m.set(key(r), [...(m.get(key(r)) ?? []), r]);
+    return [...m.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+  };
+
+  // Herd size at the start of the period: on the farm then (born or bought by then, not yet gone).
+  const herdAtStart = scopeAnimals.filter(
+    (a) => (a.birth_date ?? a.acquisition_date ?? '0000') <= f.from && (a.status === 'active' || !a.status_date || a.status_date >= f.from),
+  ).length;
+  const rate = (n: number) => (herdAtStart >= RATE_MIN_HERD ? `${Math.round((n / herdAtStart) * 1000) / 10}% of ${herdAtStart} animals` : undefined);
+
+  // Cows that keep getting the same problem (two or more cases in the period).
+  const repeats = tally(cases.filter((h) => h.condition), (h) => `${h.cattle_id}|${h.condition}`).filter(([, rows]) => rows.length >= 2);
+
+  // Costs: expenses recorded against a case or anything in its story (visits, treatments).
+  const expenses = input.finance.expenses.filter((e) => e.status === 'active' && e.currency === f.currency);
+  const caseCost = (h: (typeof cases)[number]) => {
+    const ids = new Set(storyOf('health', h.id, input.care).map((x) => x.id));
+    return expenses.filter((e) => e.care_id && ids.has(e.care_id)).reduce((sum, e) => sum + toCents(e.amount), 0);
+  };
+
+  // Milk held back by withdrawals in the period, traced to the kind of problem that was treated.
+  const treatments = live(input.care.treatments);
+  const heldBack = new Map<string, number>();
+  for (const m of input.milk) {
+    if (!m.restricted || m.status !== 'valid' || !inScope.has(m.cattle_id) || !inRange(m.production_date, f)) continue;
+    const t = withdrawalCovering(treatments, m.cattle_id, m.production_date, m.session);
+    const kind = t?.health_record_id ? conditionOf(byId.get(t.health_record_id)?.condition) : 'Treatment not linked to a concern';
+    heldBack.set(kind, (heldBack.get(kind) ?? 0) + Math.round(Number(m.quantity) * 100));
+  }
+
+  const byCondition = tally(cases, (h) => conditionOf(h.condition));
+  const months = [...new Set(cases.map((h) => monthOf(h.reported_on)))].sort();
+  const shownConditions = byCondition.map(([c]) => c);
+  const unset = cases.filter((h) => !h.condition).length;
+  const noCause = deaths.filter((a) => !a.status_reason).length;
+  const totalHeld = [...heldBack.values()].reduce((a, b) => a + b, 0);
+
+  return {
+    ...base('herd-health', 'Herd health trends', input, f, filters, 'animals and cases'),
+    summary: [
+      { label: 'Deaths', value: String(deaths.length), note: [`${deaths.filter(isCalf).length} calves under ${CALF_MONTHS} months`, rate(deaths.length)].filter(Boolean).join(' · ') },
+      { label: 'Sold', value: String(sales.length), note: rate(sales.length) },
+      { label: 'Health cases', value: String(cases.length), note: `${new Set(cases.map((h) => h.cattle_id)).size} animals` },
+      { label: 'Milk held back', value: L(totalHeld), note: 'Under withdrawal after treatment' },
+    ],
+    tables: [
+      {
+        title: 'Deaths by cause',
+        columns: [
+          { key: 'cause', label: 'Cause' },
+          { key: 'n', label: 'Deaths', numeric: true },
+          { key: 'calves', label: 'Of which calves', numeric: true },
+        ],
+        rows: tally(deaths, causeOf).map(([cause, rows]) => ({ cause, n: String(rows.length), calves: String(rows.filter(isCalf).length) })),
+        empty: 'No deaths in this period.',
+      },
+      {
+        title: 'Each death',
+        columns: [
+          { key: 'date', label: 'Date' },
+          { key: 'animal', label: 'Animal' },
+          { key: 'age', label: 'Age' },
+          { key: 'cause', label: 'Cause' },
+          { key: 'illness', label: 'Illness' },
+        ],
+        rows: deaths
+          .sort((a, b) => (b.status_date ?? '').localeCompare(a.status_date ?? ''))
+          .map((a) => {
+            const m = ageAt(a);
+            const h = a.status_health_record_id ? byId.get(a.status_health_record_id) : undefined;
+            return {
+              date: formatDate(a.status_date),
+              animal: animal(a.id),
+              age: m === null ? 'Unknown' : m < 24 ? `${m} months` : `${Math.floor(m / 12)} years`,
+              cause: causeOf(a),
+              illness: h ? `${h.confirmed_diagnosis ?? h.suspected_issue ?? conditionOf(h.condition)}` : '',
+            };
+          }),
+        empty: 'None.',
+      },
+      {
+        title: 'Sales by reason',
+        columns: [
+          { key: 'reason', label: 'Reason' },
+          { key: 'n', label: 'Animals', numeric: true },
+        ],
+        rows: tally(sales, saleReasonOf).map(([reason, rows]) => ({ reason, n: String(rows.length) })),
+        empty: 'No sales in this period.',
+      },
+      {
+        title: 'Health problems by kind',
+        columns: [
+          { key: 'kind', label: 'Kind of problem' },
+          { key: 'cases', label: 'Cases', numeric: true },
+          { key: 'animals', label: 'Animals', numeric: true },
+          { key: 'died', label: 'Died', numeric: true },
+          { key: 'cost', label: 'Cost', numeric: true },
+        ],
+        rows: byCondition.map(([kind, rows]) => ({
+          kind,
+          cases: String(rows.length),
+          animals: String(new Set(rows.map((h) => h.cattle_id)).size),
+          died: String(rows.filter((h) => h.recovery_status === 'died').length),
+          cost: money(rows.reduce((sum, h) => sum + caseCost(h), 0), f.currency),
+        })),
+        empty: 'No health concerns in this period.',
+      },
+      {
+        title: 'Cases by month',
+        columns: [{ key: 'month', label: 'Month' }, ...shownConditions.map((c) => ({ key: c, label: c, numeric: true }))],
+        rows: months.map((m) => ({
+          month: monthLabel(m),
+          ...Object.fromEntries(shownConditions.map((c) => [c, String(cases.filter((h) => monthOf(h.reported_on) === m && conditionOf(h.condition) === c).length)])),
+        })),
+        empty: 'No health concerns in this period.',
+      },
+      {
+        title: 'Animals with repeat problems',
+        columns: [
+          { key: 'animal', label: 'Animal' },
+          { key: 'kind', label: 'Kind of problem' },
+          { key: 'cases', label: 'Cases', numeric: true },
+        ],
+        rows: repeats.map(([key, rows]) => ({ animal: animal(key.split('|')[0]), kind: conditionOf(rows[0].condition), cases: String(rows.length) })),
+        empty: 'No animal had the same problem twice in this period.',
+      },
+      {
+        title: 'Milk held back by kind of problem',
+        columns: [
+          { key: 'kind', label: 'Kind of problem' },
+          { key: 'litres', label: 'Litres', numeric: true },
+        ],
+        rows: [...heldBack.entries()].sort((a, b) => b[1] - a[1]).map(([kind, cl]) => ({ kind, litres: L(cl) })),
+        empty: 'No milk was held back in this period.',
+      },
+    ],
+    definitions: [
+      `A calf is an animal that died before ${CALF_MONTHS} months of age (from its birth date).`,
+      `Shares of the herd are shown only for herds of ${RATE_MIN_HERD} or more animals at the start of the period; with fewer, one animal changes the figure too much to compare.`,
+      'Kinds of problem are what the farmer or vet recorded on each health concern; the app does not diagnose.',
+      'Cost: expenses recorded against a health concern, its vet visits and treatments.',
+      'Milk held back: milk kept out of stock because a treatment’s withdrawal covered that milking.',
+    ],
+    missing: [
+      ...(unset ? [`${unset} health concern${unset === 1 ? ' has' : 's have'} no kind of problem chosen; they are counted as “${NOT_SET}”.`] : []),
+      ...(noCause ? [`${noCause} death${noCause === 1 ? ' has' : 's have'} no cause recorded.`] : []),
+    ],
+  };
+}
+
 export const REPORTS: { id: ReportId; title: string; build: (input: ReportInput, f: Filters) => Report; filters: ('animal' | 'breed' | 'customer' | 'method' | 'paid' | 'category')[] }[] = [
   { id: 'herd', title: 'Herd', build: herdReport, filters: ['breed'] },
   { id: 'production', title: 'Milk production', build: productionReport, filters: ['animal', 'breed'] },
   { id: 'health', title: 'Animal health', build: healthReport, filters: ['animal', 'breed'] },
+  { id: 'herd-health', title: 'Herd health trends', build: herdHealthReport, filters: ['breed'] },
   { id: 'reproduction', title: 'Reproduction', build: reproductionReport, filters: ['animal', 'breed'] },
   { id: 'vaccination', title: 'Vaccination', build: vaccinationReport, filters: ['animal', 'breed'] },
   { id: 'finance', title: 'Sales, money and stock', build: financeReport, filters: ['customer', 'method', 'paid', 'category'] },

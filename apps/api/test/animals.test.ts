@@ -133,7 +133,7 @@ describe('editing and status', () => {
     expect(reactivated.json()).toMatchObject({ status: 'active', status_date: null });
 
     const events = (await call('GET', `/v1/cattle/${c.id}/timeline`)).json();
-    expect(events.map((e: { title: string }) => e.title)).toEqual(['Status: active', 'Status: sold', 'Registered']);
+    expect(events.map((e: { title: string }) => e.title)).toEqual(['Back to active', 'Sold', 'Registered']);
     expect(events[0].detail).toBe('Sale cancelled');
   });
 });

@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, Text, View } from 'react-native';
 import { runSync, useSyncStatus } from '../sync/engine';
 import type { IconName } from './kit';
-import { minTouch, useTheme } from './theme';
+import { minTouch, type, useTheme } from './theme';
 import { useOpenOrBack } from './useOpenOrBack';
 
 /**
@@ -39,7 +39,7 @@ export function SyncHeader() {
       <MaterialCommunityIcons name={icon} size={20} color={fg} />
       {count > 0 ? (
         <View>
-          <Text maxFontSizeMultiplier={1.3} style={{ color: fg, fontSize: 14, fontWeight: '700' }}>
+          <Text maxFontSizeMultiplier={1.3} style={{ color: fg, ...type.secondary, fontWeight: '700' }}>
             {count}
           </Text>
         </View>

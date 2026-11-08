@@ -44,14 +44,14 @@ export function ProblemView({
           <Text accessibilityRole="header" style={{ color: t.text, ...type.screenTitle, textAlign: 'center' }}>
             {title}
           </Text>
-          <Text style={{ color: t.textMuted, fontSize: 16, textAlign: 'center' }}>{message}</Text>
+          <Text style={{ color: t.textMuted, ...type.body, textAlign: 'center' }}>{message}</Text>
         </View>
         <View style={{ gap: spacing.sm, marginTop: spacing.md }}>{children}</View>
         {details ? (
           <>
             <Button label={showDetails ? 'Hide details' : 'Show details'} variant="link" onPress={() => setShowDetails(!showDetails)} />
             {showDetails ? (
-              <Text selectable style={{ color: t.textMuted, fontSize: 13, fontFamily: 'monospace' }}>
+              <Text selectable style={{ color: t.textMuted, ...type.caption, fontFamily: 'monospace' }}>
                 {details}
               </Text>
             ) : null}

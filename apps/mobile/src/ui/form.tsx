@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { minTouch, OnCard, radius, shadow, spacing, type, useFieldFill, useTheme } from './theme';
+import { isAndroid, minTouch, OnCard, radius, shadow, spacing, type, useFieldFill, useTheme } from './theme';
 
 /** The app's mark: a cow in a deep green rounded square. Used where there is no navigation header. */
 export function BrandMark({ size = 64 }: { size?: number }) {
@@ -36,6 +36,7 @@ export function FormScreen({
   children,
   standalone = false,
   card = false,
+  footer,
 }: {
   title: string;
   intro?: string;
@@ -43,6 +44,8 @@ export function FormScreen({
   standalone?: boolean;
   /** Put the form in one white card, so it reads as a single sheet on the milk-white page. */
   card?: boolean;
+  /** Pinned under the scrolling form (a running total and the save button), so it never scrolls away. */
+  footer?: ReactNode;
 }) {
   const t = useTheme();
   const navigation = useNavigation();
@@ -61,7 +64,7 @@ export function FormScreen({
               </Text>
             </View>
           ) : null}
-          {intro ? <Text style={{ color: t.textMuted, fontSize: 15 }}>{intro}</Text> : null}
+          {intro ? <Text style={{ color: t.textMuted, ...type.bodySmall }}>{intro}</Text> : null}
           {card ? (
             <View style={{ backgroundColor: t.surface, borderRadius: radius.card, padding: spacing.md, gap: spacing.md, ...shadow }}>
               <OnCard.Provider value>{children}</OnCard.Provider>
@@ -70,6 +73,9 @@ export function FormScreen({
             children
           )}
         </ScrollView>
+        {footer ? (
+          <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm, backgroundColor: t.surface, borderTopWidth: 1, borderTopColor: t.border }}>{footer}</View>
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -85,8 +91,8 @@ export function TextField({
   const fill = useFieldFill();
   return (
     <View style={{ gap: spacing.xs }}>
-      <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{label}</Text>
-      {hint ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{hint}</Text> : null}
+      <Text style={{ color: t.text, ...type.cardTitle }}>{label}</Text>
+      {hint ? <Text style={{ color: t.textMuted, ...type.secondary }}>{hint}</Text> : null}
       <TextInput
         accessibilityLabel={label}
         accessibilityHint={hint}
@@ -97,7 +103,7 @@ export function TextField({
           borderColor: error ? t.danger : t.border,
           borderRadius: radius.control,
           paddingHorizontal: spacing.md,
-          fontSize: 17,
+          ...type.input,
           color: t.text,
           backgroundColor: fill,
         }}
@@ -111,17 +117,18 @@ export function TextField({
 export function FieldError({ message }: { message: string }) {
   const t = useTheme();
   return (
-    <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: t.danger, fontSize: 15 }}>
-      ⚠ {message}
-    </Text>
+    <View accessible accessibilityRole="alert" accessibilityLiveRegion="polite" accessibilityLabel={message} style={{ flexDirection: 'row', gap: spacing.xs }}>
+      <MaterialCommunityIcons name="alert-outline" size={18} color={t.danger} style={{ marginTop: 1 }} />
+      <Text style={{ flex: 1, color: t.danger, ...type.bodySmall }}>{message}</Text>
+    </View>
   );
 }
 
 const NOTICE = {
-  info: { icon: 'ℹ', fg: 'info', bg: 'infoSoft' },
-  success: { icon: '✓', fg: 'primary', bg: 'primarySoft' },
-  attention: { icon: '!', fg: 'attention', bg: 'attentionSoft' },
-  error: { icon: '⚠', fg: 'danger', bg: 'dangerSoft' },
+  info: { icon: 'information-outline', fg: 'info', bg: 'infoSoft' },
+  success: { icon: 'check-circle-outline', fg: 'primary', bg: 'primarySoft' },
+  attention: { icon: 'alert-circle-outline', fg: 'attention', bg: 'attentionSoft' },
+  error: { icon: 'alert-outline', fg: 'danger', bg: 'dangerSoft' },
 } as const;
 
 /** Inline message with an icon, a coloured edge and soft background; the words carry the meaning. */
@@ -134,12 +141,11 @@ export function Notice({ tone = 'info', title, children }: { tone?: keyof typeof
       accessibilityLiveRegion="polite"
       style={{ flexDirection: 'row', gap: spacing.sm, borderLeftWidth: 4, borderLeftColor: t[n.fg], backgroundColor: t[n.bg], padding: spacing.md, borderRadius: radius.control }}
     >
-      <Text style={{ color: t[n.fg], fontSize: 16, fontWeight: '600' }} importantForAccessibility="no" accessibilityElementsHidden>
-        {n.icon}
-      </Text>
+      <MaterialCommunityIcons name={n.icon} size={20} color={t[n.fg]} importantForAccessibility="no" accessibilityElementsHidden />
+
       <View style={{ flex: 1, gap: 2 }}>
         {title ? <Text style={{ color: t.text, ...type.cardTitle }}>{title}</Text> : null}
-        <Text style={{ color: t.text, fontSize: 15 }}>{children}</Text>
+        <Text style={{ color: t.text, ...type.bodySmall }}>{children}</Text>
       </View>
     </View>
   );
@@ -173,22 +179,24 @@ export function Button({
       accessibilityState={{ disabled: inactive, busy }}
       disabled={inactive}
       onPress={onPress}
+      android_ripple={{ color: filled ? t.rippleOnFilled : t.ripple }}
       style={({ pressed }) => ({
         minHeight: minTouch,
         borderRadius: radius.control,
+        overflow: 'hidden',
         paddingHorizontal: spacing.md,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: bg,
         borderWidth: variant === 'secondary' ? 1 : 0,
         borderColor: t.primary,
-        opacity: inactive ? 0.5 : pressed ? 0.8 : 1,
+        opacity: inactive ? 0.5 : pressed && !isAndroid ? 0.8 : 1,
       })}
     >
       {busy ? (
         <ActivityIndicator color={fg} />
       ) : (
-        <Text style={{ color: fg, fontSize: 17, fontWeight: '600', textDecorationLine: variant === 'link' ? 'underline' : 'none' }}>
+        <Text style={{ color: fg, ...type.input, fontWeight: '600', textDecorationLine: variant === 'link' ? 'underline' : 'none' }}>
           {label}
         </Text>
       )}
@@ -212,7 +220,7 @@ export function Choice<V extends string>({
   const fill = useFieldFill();
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ gap: spacing.xs }}>
-      <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{label}</Text>
+      <Text style={{ color: t.text, ...type.cardTitle }}>{label}</Text>
       {options.map((o) => {
         const selected = o.value === value;
         return (
@@ -222,8 +230,10 @@ export function Choice<V extends string>({
             accessibilityState={{ checked: selected }}
             accessibilityLabel={o.label}
             onPress={() => onChange(o.value)}
+            android_ripple={{ color: t.ripple }}
             style={{
               minHeight: minTouch,
+              overflow: 'hidden',
               flexDirection: 'row',
               alignItems: 'center',
               gap: spacing.sm,
@@ -234,8 +244,8 @@ export function Choice<V extends string>({
               backgroundColor: selected ? t.primarySoft : fill,
             }}
           >
-            <Text style={{ color: selected ? t.primary : t.textMuted, fontSize: 18 }}>{selected ? '◉' : '○'}</Text>
-            <Text style={{ color: t.text, fontSize: 16 }}>{o.label}</Text>
+            <MaterialCommunityIcons name={selected ? 'radiobox-marked' : 'radiobox-blank'} size={22} color={selected ? t.primary : t.textMuted} />
+            <Text style={{ color: t.text, ...type.body }}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -248,8 +258,8 @@ export function Toggle({ label, value, onChange, hint }: { label: string; value:
   return (
     <View style={{ minHeight: minTouch, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: t.text, fontSize: 16 }}>{label}</Text>
-        {hint ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{hint}</Text> : null}
+        <Text style={{ color: t.text, ...type.body }}>{label}</Text>
+        {hint ? <Text style={{ color: t.textMuted, ...type.secondary }}>{hint}</Text> : null}
       </View>
       <Switch accessibilityLabel={label} accessibilityHint={hint} value={value} onValueChange={onChange} />
     </View>

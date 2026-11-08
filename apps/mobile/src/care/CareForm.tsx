@@ -6,7 +6,7 @@ import { useDraft } from '../lib/useDraft';
 import { Chips } from '../ui/Chips';
 import { DateField, DateTimeField } from '../ui/DateField';
 import { Button, FieldError, Notice, TextField, Toggle } from '../ui/form';
-import { useTheme } from '../ui/theme';
+import { type, useTheme } from '../ui/theme';
 import { CARE_FORMS, type FieldDef, type FormContext, type FormValues, toBody, validate } from './forms';
 import type { CareKind } from './model';
 
@@ -89,7 +89,7 @@ export function CareForm({
 
   return (
     <>
-      {config.intro ? <Text style={{ color: t.textMuted, fontSize: 15 }}>{config.intro}</Text> : null}
+      {config.intro ? <Text style={{ color: t.textMuted, ...type.bodySmall }}>{config.intro}</Text> : null}
       {error ? <Notice tone="error">{error[1]}</Notice> : null}
       {visible.map(field)}
       <Button label={submitLabel} onPress={submit} />
@@ -100,7 +100,15 @@ export function CareForm({
 function linkOptions(kind: CareKind, ctx: FormContext, cattleId: string) {
   const summary = CARE_FORMS[kind].summary;
   const rows: { id: string; cattle_id?: string; active?: boolean }[] =
-    kind === 'health' ? ctx.care.health : kind === 'breeding' ? ctx.care.breeding.filter((b) => b.event_type !== 'heat_observed') : kind === 'schedule' ? ctx.care.schedules : [];
+    kind === 'health'
+      ? ctx.care.health
+      : kind === 'breeding'
+        ? ctx.care.breeding.filter((b) => b.event_type !== 'heat_observed')
+        : kind === 'pregnancy-check'
+          ? ctx.care.checks.filter((c) => c.result === 'pregnant')
+          : kind === 'schedule'
+            ? ctx.care.schedules
+            : [];
   return rows
     .filter((r) => (kind === 'schedule' ? r.active !== false : r.cattle_id === cattleId))
     .slice(0, 8)

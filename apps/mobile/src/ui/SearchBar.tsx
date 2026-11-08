@@ -3,7 +3,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { BottomSheet } from './BottomSheet';
 import { Button } from './form';
-import { minTouch, radius, spacing, useFieldFill, useTheme } from './theme';
+import { minTouch, radius, spacing, type, useFieldFill, useTheme } from './theme';
 
 /**
  * A search box with, when the list has filters, a filter button beside it. The button shows how many
@@ -52,7 +52,7 @@ export function SearchBar({
           autoCorrect={false}
           autoCapitalize="none"
           returnKeyType="search"
-          style={{ flex: 1, minHeight: minTouch, fontSize: 17, color: t.text }}
+          style={{ flex: 1, minHeight: minTouch, ...type.input, color: t.text }}
         />
         {value ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => onChangeText('')} hitSlop={8}>
@@ -105,7 +105,7 @@ export function FilterButton({ activeFilters, onPress }: { activeFilters: number
             borderColor: t.primary,
           }}
         >
-          <Text style={{ color: t.primary, fontSize: 12, fontWeight: '700' }}>{activeFilters}</Text>
+          <Text style={{ color: t.primary, ...type.micro, fontWeight: '700' }}>{activeFilters}</Text>
         </View>
       ) : null}
     </Pressable>

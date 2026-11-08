@@ -1,7 +1,7 @@
 // Reminders derived from saved records. Pure: no I/O, no clock (callers pass `now`).
 
 import { formatDateTime } from '../lib/dates';
-import { ACTION_LABELS, ALERT_TYPE_LABELS, type CareData, type CareKind } from './model';
+import { ACTION_LABELS, ALERT_TYPE_LABELS, type CareData, type CareKind, CONDITION_LABELS } from './model';
 
 export type ReminderKind =
   | 'withdrawal'
@@ -11,6 +11,7 @@ export type ReminderKind =
   | 'expected_calving'
   | 'heat_watch'
   | 'health_follow_up'
+  | 'outbreak'
   | 'action_follow_up'
   | 'missing_milk'
   | 'unpaid_balance'
@@ -50,6 +51,9 @@ const CLEARANCE_DAYS = 7; // ask to confirm clearance for a week after a withdra
 // A cow that did not conceive usually comes on heat again about 21 days after mating; watch from day 18 to 24.
 const HEAT_RETURN_DAYS = 21;
 const HEAT_WATCH_WINDOW = 3;
+// A possible outbreak: the same kind of problem in this many animals within this many days.
+export const OUTBREAK_ANIMALS = 2;
+export const OUTBREAK_DAYS = 30;
 
 const addDays = (date: string, days: number) => {
   const d = new Date(`${date}T00:00:00Z`);
@@ -229,6 +233,30 @@ export function computeReminders(data: CareData, activeCattle: Set<string>, now:
       detail: h.confirmed_diagnosis ?? h.suspected_issue ?? 'Health concern',
       record: { kind: 'health', id: h.id },
       notifyOffsets: [0],
+    });
+  }
+
+  // The same kind of problem in several animals at once may be spreading: say so, farm-wide.
+  const recent = live(data.health).filter((h) => {
+    const ago = daysUntil(h.reported_on, today);
+    return h.condition && h.condition !== 'other' && ago >= 0 && ago < OUTBREAK_DAYS;
+  });
+  for (const condition of new Set(recent.map((h) => h.condition!))) {
+    const cases = recent.filter((h) => h.condition === condition);
+    const animals = new Set(cases.map((h) => h.cattle_id));
+    if (animals.size < OUTBREAK_ANIMALS) continue;
+    const since = cases.map((h) => h.reported_on).sort()[0];
+    out.push({
+      key: `outbreak:${condition}`,
+      kind: 'outbreak',
+      urgency: 'active',
+      due: today,
+      cattleId: '',
+      title: `Possible outbreak: ${CONDITION_LABELS[condition].toLowerCase()}`,
+      detail: `${animals.size} animals since ${since}. Consider calling the vet, and keep sick animals apart if you can.`,
+      href: '/reports/herd-health',
+      notifyOffsets: [],
+      alert: 'next_reminder',
     });
   }
 

@@ -8,7 +8,7 @@ import {
   type ProfilePatch,
 } from '../lib/account';
 import { Choice, TextField, Toggle } from './form';
-import { useTheme } from './theme';
+import { type, useTheme } from './theme';
 
 export interface ProfileForm {
   display_name: string;
@@ -75,7 +75,7 @@ export function patchFor(form: ProfileForm, sections: readonly Section[]): Profi
 
 function Why({ children }: { children: string }) {
   const t = useTheme();
-  return <Text style={{ color: t.textMuted, fontSize: 15 }}>{children}</Text>;
+  return <Text style={{ color: t.textMuted, ...type.bodySmall }}>{children}</Text>;
 }
 
 type SectionProps = { form: ProfileForm; errors: ProfileErrors; update: (patch: Partial<ProfileForm>) => void };

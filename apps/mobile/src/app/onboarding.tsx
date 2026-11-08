@@ -18,7 +18,7 @@ import {
   UnitsSection,
   validate,
 } from '../ui/profileFields';
-import { spacing, useTheme } from '../ui/theme';
+import { spacing, type, useTheme } from '../ui/theme';
 import { friendlyError } from '../lib/errors';
 
 const TITLES: Record<OnboardingStep, string> = {
@@ -90,7 +90,7 @@ export default function Onboarding() {
 
   return (
     <FormScreen card standalone title={TITLES[step]}>
-      <Text style={{ color: t.textMuted, fontSize: 15 }} accessibilityLabel={`Step ${index + 1} of ${ONBOARDING_STEPS.length}`}>
+      <Text style={{ color: t.textMuted, ...type.bodySmall }} accessibilityLabel={`Step ${index + 1} of ${ONBOARDING_STEPS.length}`}>
         Step {index + 1} of {ONBOARDING_STEPS.length}
       </Text>
       {message ? <Notice tone="error">{message}</Notice> : null}
@@ -99,7 +99,7 @@ export default function Onboarding() {
 
       {step === 'lock' ? (
         <>
-          <Text style={{ color: t.textMuted, fontSize: 15 }}>
+          <Text style={{ color: t.textMuted, ...type.bodySmall }}>
             Optional. Ask for your fingerprint, face or phone screen lock when opening the app. This protects your records if someone else uses this phone. You can change it later in Security.
           </Text>
           <Toggle label="Lock the app with this phone’s screen lock" value={lock.enabled} onChange={toggleLock} />
@@ -108,7 +108,7 @@ export default function Onboarding() {
 
       {step === 'first_task' ? (
         <View style={{ gap: spacing.md }}>
-          <Text style={{ color: t.text, fontSize: 16 }}>
+          <Text style={{ color: t.text, ...type.body }}>
             Setup is done. A good first step is to register an animal; milk, health and breeding records are all linked to it.
           </Text>
           <Button label="Register my first animal" onPress={() => finish('/animals')} busy={busy} />

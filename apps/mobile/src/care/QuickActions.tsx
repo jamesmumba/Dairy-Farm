@@ -10,7 +10,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { DateField } from '../ui/DateField';
 import { Button, Notice, TextField } from '../ui/form';
 import { ListRow } from '../ui/kit';
-import { minTouch, radius, spacing, useTheme } from '../ui/theme';
+import { minTouch, radius, spacing, type, useTheme } from '../ui/theme';
 import { hideReminder } from './hiddenReminders';
 import type { CareKind } from './model';
 import { type GroupDose, NO_SHEET, QUICK_LABELS, type QuickAction, quickChange, type SheetValues, sheetDefaults, sheetSpec } from './quick';
@@ -58,7 +58,7 @@ export function QuickButtons({ actions, onPick, label }: { actions: QuickAction[
             })}
           >
             {main ? <MaterialCommunityIcons name="check" size={18} color={t.onPrimary} importantForAccessibility="no" /> : null}
-            <Text style={{ color: main ? t.onPrimary : t.primary, fontSize: 15, fontWeight: '600' }}>{QUICK_LABELS[a]}</Text>
+            <Text style={{ color: main ? t.onPrimary : t.primary, ...type.link }}>{QUICK_LABELS[a]}</Text>
           </Pressable>
         );
       })}
@@ -120,7 +120,7 @@ function Picks({ days, today, value, onPick }: { days: number[]; today: string; 
             onPress={() => onPick(d)}
             style={{ minHeight: minTouch - 12, paddingHorizontal: spacing.md, justifyContent: 'center', borderRadius: radius.chip, borderWidth: 1, borderColor: on ? t.primary : t.border, backgroundColor: on ? t.primarySoft : t.surface }}
           >
-            <Text style={{ color: t.text, fontSize: 14 }}>{label(n)}</Text>
+            <Text style={{ color: t.text, ...type.secondary }}>{label(n)}</Text>
           </Pressable>
         );
       })}
@@ -165,7 +165,7 @@ function QuickSheet({ action, target, onClose }: { action: QuickAction; target: 
 
 function SheetHint({ text }: { text: string }) {
   const t = useTheme();
-  return <Text style={{ color: t.textMuted, fontSize: 14, marginTop: -spacing.xs }}>{text}</Text>;
+  return <Text style={{ color: t.textMuted, ...type.secondary, marginTop: -spacing.xs }}>{text}</Text>;
 }
 
 /** A dose given to a group together: everyone ticked; untick a cow that missed it and choose her new date. */
@@ -217,8 +217,8 @@ function GroupSheet({ group, onClose }: { group: GroupDose; onClose: () => void 
     >
       {error ? <Notice tone="error">{error}</Notice> : null}
       <View style={{ gap: spacing.xs }}>
-        <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>Given to</Text>
-        <Text style={{ color: t.textMuted, fontSize: 14 }}>Untick any cow that did not get it.</Text>
+        <Text style={{ color: t.text, ...type.cardTitle }}>Given to</Text>
+        <Text style={{ color: t.textMuted, ...type.secondary }}>Untick any cow that did not get it.</Text>
         {group.ids.map((id, i) => {
           const on = given.has(id);
           const name = names.get(group.cattleIds[i]) ?? 'Animal';
@@ -232,7 +232,7 @@ function GroupSheet({ group, onClose }: { group: GroupDose; onClose: () => void 
               style={{ minHeight: minTouch, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}
             >
               <MaterialCommunityIcons name={on ? 'checkbox-marked' : 'checkbox-blank-outline'} size={26} color={on ? t.primary : t.textMuted} />
-              <Text style={{ color: t.text, fontSize: 16 }}>{name}</Text>
+              <Text style={{ color: t.text, ...type.body }}>{name}</Text>
             </Pressable>
           );
         })}

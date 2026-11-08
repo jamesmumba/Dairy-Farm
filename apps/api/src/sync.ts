@@ -45,7 +45,9 @@ export interface PullPage {
  */
 export async function pull(db: Db, ownerId: string, q: z.infer<typeof PullQuery>): Promise<PullPage> {
   const { table, columns } = ENTITIES[q.entity];
-  const cursor = q.after ? 'and (updated_at, id) > ($2::timestamptz, $3::uuid)' : '';
+  // The cursor goes in as text and is cast in SQL: typed as a timestamp, postgres.js would round it to the
+  // millisecond, and rows saved in one transaction (same microsecond) would come back on every page.
+  const cursor = q.after ? 'and (updated_at, id) > ($2::text::timestamptz, $3::text::uuid)' : '';
   const params = q.after ? [ownerId, q.after, q.after_id ?? '00000000-0000-0000-0000-000000000000'] : [ownerId];
   const { rows } = await db.query<Record<string, unknown> & { _cursor: string }>(
     `select ${columns}, updated_at::text as _cursor from public.${table}

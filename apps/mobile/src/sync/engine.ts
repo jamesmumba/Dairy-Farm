@@ -239,11 +239,13 @@ async function pull() {
         `/v1/sync/pull?${q}`,
       );
       db.withTransactionSync(() => page.rows.forEach((row) => applyServerRow(entity, row)));
+      // A page that does not move the cursor would be fetched forever: stop and try again next sync.
+      const stuck = !page.next || (page.next.after === cursor?.after && page.next.after_id === cursor?.after_id);
       if (page.next) {
         cursor = page.next;
         setJson(`cursor.${entity}`, cursor);
       }
-      if (!page.has_more) break;
+      if (!page.has_more || stuck) break;
     }
   }
   notify();

@@ -23,6 +23,7 @@ const PREF: Record<ReminderKind, keyof NotificationPrefs> = {
   action_follow_up: 'health',
   missing_milk: 'health', // shown in the app only (no phone notification)
   health_follow_up: 'health',
+  outbreak: 'health',
   unpaid_balance: 'finance',
   stock_discrepancy: 'finance',
   production_decline: 'health',

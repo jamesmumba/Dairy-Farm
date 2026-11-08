@@ -15,7 +15,7 @@ import { useLocal } from '../../sync/store';
 import { Button, FormScreen, Notice } from '../../ui/form';
 import { ListGroup, ListRow, SectionHeader } from '../../ui/kit';
 import { MissingRecord } from '../../ui/ProblemView';
-import { spacing, useTheme } from '../../ui/theme';
+import { spacing, type, useTheme } from '../../ui/theme';
 import { useOpenOrBack } from '../../ui/useOpenOrBack';
 
 // One cow's early-warning alert: what triggered it, what to check, and what has been done so far.
@@ -51,7 +51,7 @@ export default function AlertScreen() {
           <SectionHeader title="What to check" />
           <View style={{ gap: spacing.sm }}>
             {alert.steps.map((s, i) => (
-              <Text key={s} style={{ color: t.text, fontSize: 16 }}>
+              <Text key={s} style={{ color: t.text, ...type.body }}>
                 {i + 1}. {s}
               </Text>
             ))}
@@ -91,7 +91,7 @@ export default function AlertScreen() {
           </ListGroup>
         </>
       ) : null}
-      <Text style={{ color: t.textMuted, fontSize: 13 }}>
+      <Text style={{ color: t.textMuted, ...type.caption }}>
         Alerts compare her records with her own usual milk. They do not diagnose: when in doubt, ask your vet.
       </Text>
     </FormScreen>

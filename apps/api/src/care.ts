@@ -21,11 +21,13 @@ interface Ctx {
 
 interface Link {
   field: string;
-  table: 'cattle' | 'animal_health_records' | 'breeding_records' | 'vaccination_schedules';
+  table: 'cattle' | 'animal_health_records' | 'breeding_records' | 'pregnancy_checks' | 'vaccination_schedules';
   label: string;
   female?: boolean;
   /** The linked record must be about the same animal. */
   sameCattle?: boolean;
+  /** Where this record names its animal, when not cattle_id (a calving names the mother). */
+  animalField?: string;
 }
 
 export interface CareEntity {
@@ -116,7 +118,7 @@ const health: CareEntity = {
   path: 'health-records',
   label: 'Health record',
   columns: `id, cattle_id, first_symptoms_on::text, reported_on::text, observations, suspected_issue, confirmed_diagnosis,
-    condition_status, severity, urgent, responsible_person, follow_up_on::text, recovery_status, notes, ${COMMON}`,
+    condition_status, condition, severity, urgent, responsible_person, follow_up_on::text, recovery_status, notes, ${COMMON}`,
   fields: {
     cattle_id: z.uuid(),
     first_symptoms_on: opt(pastDate),
@@ -130,6 +132,8 @@ const health: CareEntity = {
     responsible_person: text(120),
     follow_up_on: opt(isoDate),
     recovery_status: z.enum(['ongoing', 'recovering', 'recovered', 'chronic', 'died']).optional(),
+    // What kind of problem, from a short list, so cases can be counted: what the farmer or vet found.
+    condition: opt(z.enum(['mastitis', 'lameness', 'tick_borne', 'diarrhoea', 'respiratory', 'fertility', 'metabolic', 'injury', 'other'])),
     notes: text(2000),
   },
   links: [{ field: 'cattle_id', table: 'cattle', label: 'Animal' }],
@@ -292,10 +296,11 @@ const calving: CareEntity = {
   table: 'calving_records',
   path: 'calvings',
   label: 'Calving record',
-  columns: `id, dam_id, calf_id, calved_on::text, outcome, complications, dry_off_on::text, observations, ${COMMON}`,
+  columns: `id, dam_id, calf_id, pregnancy_check_id, calved_on::text, outcome, complications, dry_off_on::text, observations, ${COMMON}`,
   fields: {
     dam_id: z.uuid(),
     calf_id: opt(z.uuid()),
+    pregnancy_check_id: opt(z.uuid()),
     calved_on: pastDate,
     outcome: z.enum(['live', 'stillborn', 'aborted', 'other']),
     complications: text(1000),
@@ -306,9 +311,25 @@ const calving: CareEntity = {
   links: [
     { field: 'dam_id', table: 'cattle', label: 'Mother', female: true },
     { field: 'calf_id', table: 'cattle', label: 'Calf' },
+    { field: 'pregnancy_check_id', table: 'pregnancy_checks', label: 'Pregnancy check', sameCattle: true, animalField: 'dam_id' },
   ],
   check: (r) => (r.calf_id && r.calf_id === r.dam_id ? ['calf_id', 'The calf cannot be its own mother'] : null),
   async afterWrite(ctx, before, after, extra) {
+    if (!before && !after.pregnancy_check_id) {
+      // Joins the breeding story: the latest confirmed pregnancy before this calving, not already used.
+      const { rows } = await ctx.client.query<{ id: string }>(
+        `select p.id from public.pregnancy_checks p
+         where p.owner_id = $1 and p.cattle_id = $2 and p.deleted_at is null and p.result = 'pregnant'
+           and p.examined_on <= $3::date and p.examined_on > $3::date - 365
+           and not exists (select 1 from public.calving_records c where c.pregnancy_check_id = p.id and c.deleted_at is null)
+         order by p.examined_on desc limit 1`,
+        [ctx.owner, after.dam_id, after.calved_on],
+      );
+      if (rows[0]) {
+        await ctx.client.query('update public.calving_records set pregnancy_check_id = $2 where id = $1', [after.id, rows[0].id]);
+        after.pregnancy_check_id = rows[0].id;
+      }
+    }
     if (!before && extra.calf) {
       if (after.outcome !== 'live') throw new HttpError(400, 'validation_failed', 'A calf can be registered only for a live birth.', { field: 'calf' });
       const { rows: bull } = await ctx.client.query<{ bull_or_semen_id: string | null }>(
@@ -414,7 +435,7 @@ const alertAction: CareEntity = {
   path: 'alert-actions',
   label: 'Alert action',
   columns: `id, cattle_id, alert_type, alert_reason, action_taken, action_on::text, notes, status, follow_up_on::text, resolved_on::text,
-    outcome, ${COMMON}`,
+    outcome, health_record_id, ${COMMON}`,
   fields: {
     cattle_id: z.uuid(),
     alert_type: z.enum(['milk_drop', 'milk_decline', 'other']),
@@ -426,8 +447,12 @@ const alertAction: CareEntity = {
     follow_up_on: opt(isoDate),
     resolved_on: opt(pastDate),
     outcome: text(1000),
+    health_record_id: opt(z.uuid()),
   },
-  links: [{ field: 'cattle_id', table: 'cattle', label: 'Animal' }],
+  links: [
+    { field: 'cattle_id', table: 'cattle', label: 'Animal' },
+    { field: 'health_record_id', table: 'animal_health_records', label: 'Health concern', sameCattle: true },
+  ],
   check: (r) =>
     r.status !== 'resolved' && !r.follow_up_on
       ? ['follow_up_on', 'Choose when to check on her again']
@@ -476,7 +501,7 @@ async function checkLinks(ctx: Ctx, e: CareEntity, r: Record<string, unknown>) {
     const found = rows[0];
     if (!found) throw new HttpError(400, 'validation_failed', `${link.label} not found.`, { field: link.field });
     if (link.female && found.sex !== 'female') throw new HttpError(400, 'validation_failed', `${link.label} must be female.`, { field: link.field });
-    if (link.sameCattle && found.cattle_id !== r.cattle_id) {
+    if (link.sameCattle && found.cattle_id !== r[link.animalField ?? 'cattle_id']) {
       throw new HttpError(400, 'validation_failed', `${link.label} is about a different animal.`, { field: link.field });
     }
   }

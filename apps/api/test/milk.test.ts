@@ -195,6 +195,6 @@ describe('owner isolation and sync', () => {
     await f.call('POST', '/v1/milk-production', entry(f.cowId, { quantity: '12' }));
     await f.call('POST', '/v1/milk-production', entry(f.cowId, { session: 'afternoon', quantity: '8' }));
     const events = (await f.call('GET', `/v1/cattle/${f.cowId}/timeline`)).json();
-    expect(events.find((e: { kind: string }) => e.kind === 'milk')).toMatchObject({ title: 'Milk 20.00 L', detail: 'afternoon, morning' });
+    expect(events.find((e: { kind: string }) => e.kind === 'milk')).toMatchObject({ title: 'Milk 20 L', detail: 'Morning, afternoon' });
   });
 });

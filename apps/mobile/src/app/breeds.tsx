@@ -6,7 +6,7 @@ import { getRecord, listRecords, useLocal } from '../sync/store';
 import { Button, FormScreen, Notice, TextField, Toggle } from '../ui/form';
 import { SyncBadge } from '../ui/SyncBadge';
 import { FormCard, ListGroup } from '../ui/kit';
-import { spacing, useTheme } from '../ui/theme';
+import { spacing, type, useTheme } from '../ui/theme';
 
 export default function Breeds() {
   const t = useTheme();
@@ -40,7 +40,7 @@ export default function Breeds() {
           ))}
         </ListGroup>
       ) : null}
-      <Text style={{ color: t.textMuted, fontSize: 13 }}>Turn a breed off to hide it from new registrations. Breeds are never deleted, so past records stay readable.</Text>
+      <Text style={{ color: t.textMuted, ...type.caption }}>Turn a breed off to hide it from new registrations. Breeds are never deleted, so past records stay readable.</Text>
     </FormScreen>
   );
 }

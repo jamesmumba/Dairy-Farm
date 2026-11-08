@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Modal, Platform, Pressable, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FieldError } from './form';
-import { minTouch, radius, spacing, useFieldFill, useTheme } from './theme';
+import { minTouch, radius, spacing, type, useFieldFill, useTheme } from './theme';
 import { formatDate, formatDateTime, fromDateString, toDateString } from '../lib/dates';
 
 export { formatDate, formatDateTime, fromDateString, toDateString };
@@ -32,7 +32,7 @@ function IosPickerSheet({
   const [draft, setDraft] = useState(initial);
   const action = (label: string, onPress: () => void, strong = false) => (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8} style={{ minHeight: minTouch, minWidth: minTouch, justifyContent: 'center', paddingHorizontal: spacing.sm }}>
-      <Text style={{ color: t.primary, fontSize: 17, fontWeight: strong ? '700' : '500' }}>{label}</Text>
+      <Text style={{ color: t.primary, ...type.input, fontWeight: strong ? '700' : '500' }}>{label}</Text>
     </Pressable>
   );
   return (
@@ -99,7 +99,7 @@ export function DateField({
 
   return (
     <View style={{ gap: spacing.xs }}>
-      <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{label}</Text>
+      <Text style={{ color: t.text, ...type.cardTitle }}>{label}</Text>
       <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
         <Pressable
           accessibilityRole="button"
@@ -117,11 +117,11 @@ export function DateField({
             backgroundColor: fill,
           }}
         >
-          <Text style={{ color: value ? t.text : t.textMuted, fontSize: 17 }}>{value ? formatDate(value) : 'Choose a date'}</Text>
+          <Text style={{ color: value ? t.text : t.textMuted, ...type.input }}>{value ? formatDate(value) : 'Choose a date'}</Text>
         </Pressable>
         {optional && value ? (
           <Pressable accessibilityRole="button" accessibilityLabel={`Clear ${label}`} onPress={() => onChange(null)} style={{ minHeight: minTouch, minWidth: minTouch, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: t.primary, fontSize: 16 }}>Clear</Text>
+            <Text style={{ color: t.primary, ...type.body }}>Clear</Text>
           </Pressable>
         ) : null}
       </View>
@@ -194,8 +194,8 @@ export function DateTimeField({
 
   return (
     <View style={{ gap: spacing.xs }}>
-      <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{label}</Text>
-      {hint ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{hint}</Text> : null}
+      <Text style={{ color: t.text, ...type.cardTitle }}>{label}</Text>
+      {hint ? <Text style={{ color: t.textMuted, ...type.secondary }}>{hint}</Text> : null}
       <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
         <Pressable
           accessibilityRole="button"
@@ -213,11 +213,11 @@ export function DateTimeField({
             backgroundColor: fill,
           }}
         >
-          <Text style={{ color: value ? t.text : t.textMuted, fontSize: 17 }}>{value ? formatDateTime(value) : 'Choose date and time'}</Text>
+          <Text style={{ color: value ? t.text : t.textMuted, ...type.input }}>{value ? formatDateTime(value) : 'Choose date and time'}</Text>
         </Pressable>
         {optional && value ? (
           <Pressable accessibilityRole="button" accessibilityLabel={`Clear ${label}`} onPress={() => onChange(null)} style={{ minHeight: minTouch, minWidth: minTouch, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: t.primary, fontSize: 16 }}>Clear</Text>
+            <Text style={{ color: t.primary, ...type.body }}>Clear</Text>
           </Pressable>
         ) : null}
       </View>

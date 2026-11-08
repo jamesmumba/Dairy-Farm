@@ -1,12 +1,12 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { summarize } from '../../production/calc';
 import { L } from '../../production/format';
 import { listMilk } from '../../production/repo';
 import { useLocal } from '../../sync/store';
 import { toDateString } from '../../ui/DateField';
-import { IconBadge, ListGroup, ListRow, SectionHeader } from '../../ui/kit';
-import { radius, shadow, spacing, useTheme } from '../../ui/theme';
+import { IconBadge, ListGroup, ListRow, PressableCard, SectionHeader } from '../../ui/kit';
+import { radius, spacing, type, useTheme } from '../../ui/theme';
 
 const care = (kind: string) => ({ pathname: '/care/[kind]/new', params: { kind } }) as const;
 
@@ -19,19 +19,20 @@ export default function Records() {
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={{ padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl }}>
       {/* The most frequent job on a dairy farm gets the biggest target. */}
-      <Pressable
+      <PressableCard
         accessibilityRole="button"
         accessibilityLabel={`Milking round. Today so far ${L(todaySummary.totalCl)}`}
         accessibilityHint="Enter litres for every cow in one session"
         onPress={() => router.push('/milk/round')}
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.card + 4, backgroundColor: t.hero, opacity: pressed ? 0.9 : 1, ...shadow })}
+        android_ripple={{ color: t.rippleOnFilled }}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.card + 4, backgroundColor: t.hero }}
       >
         <IconBadge icon="water-outline" size={48} />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ color: t.onHero, fontSize: 20, fontWeight: '600' }}>Milking round</Text>
-          <Text style={{ color: t.heroMuted, fontSize: 14 }}>Today so far: {L(todaySummary.totalCl)}</Text>
+          <Text style={{ color: t.onHero, ...type.sectionTitle }}>Milking round</Text>
+          <Text style={{ color: t.heroMuted, ...type.secondary }}>Today so far: {L(todaySummary.totalCl)}</Text>
         </View>
-      </Pressable>
+      </PressableCard>
       <ListGroup>
         <ListRow icon="water-plus-outline" title="One milk entry" href="/milk/new" />
         <ListRow icon="chart-line" title="Production" subtitle="Totals and trends" href="/production" />

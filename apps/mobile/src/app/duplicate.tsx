@@ -14,7 +14,7 @@ import { listMilk } from '../production/repo';
 import { getRecord, useLocal } from '../sync/store';
 import { Button, FormScreen, Notice } from '../ui/form';
 import { Details, ListGroup, ListRow } from '../ui/kit';
-import { spacing, useTheme } from '../ui/theme';
+import { spacing, type, useTheme } from '../ui/theme';
 
 // Two records that look like the same customer or animal, usually because two phones added it while offline.
 // Nothing is merged automatically: sales, payments and milk history stay exactly as recorded. The farmer
@@ -107,7 +107,7 @@ export default function Duplicate() {
         </Notice>
         {card(a)}
         {card(b)}
-        <Text style={{ color: t.textMuted, fontSize: 14 }}>
+        <Text style={{ color: t.textMuted, ...type.secondary }}>
           If they are the same person, tap Keep this one on the customer with more sales. Record new sales and payments on the one you keep.
         </Text>
         <Button label="They are different people: keep both" variant="secondary" onPress={keepBoth} />
@@ -145,7 +145,7 @@ export default function Duplicate() {
       </Notice>
       {card(a)}
       {card(b)}
-      <Text style={{ color: t.textMuted, fontSize: 14 }}>
+      <Text style={{ color: t.textMuted, ...type.secondary }}>
         If they are the same animal, tap Keep this one on the one with records; the other is deleted (offered only while it has no records). If both have records, keep both and give each an ear tag.
       </Text>
       <Button label="They are different animals: keep both" variant="secondary" onPress={keepBoth} />
