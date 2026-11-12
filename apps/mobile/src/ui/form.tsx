@@ -1,5 +1,5 @@
 import { useNavigation } from 'expo-router';
-import { type ReactNode, useLayoutEffect } from 'react';
+import { type ComponentProps, type ReactNode, useLayoutEffect } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -158,10 +158,14 @@ export function Button({
   busy = false,
   disabled = false,
   hint,
+  icon,
 }: {
   label: string;
+  /** A leading icon. Answer buttons use one each so neither looks already chosen. */
+  icon?: Icon;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'link' | 'danger';
+  /** `text` is a quiet button with no box (Cancel, Back, sign-in links); `dangerText` is the same in red, for discarding. */
+  variant?: 'primary' | 'secondary' | 'text' | 'danger' | 'dangerText';
   busy?: boolean;
   disabled?: boolean;
   hint?: string;
@@ -170,7 +174,7 @@ export function Button({
   const inactive = disabled || busy;
   const filled = variant === 'primary' || variant === 'danger';
   const bg = variant === 'primary' ? t.primary : variant === 'danger' ? t.danger : 'transparent';
-  const fg = variant === 'danger' ? t.onDanger : filled ? t.onPrimary : t.primary;
+  const fg = variant === 'danger' ? t.onDanger : filled ? t.onPrimary : variant === 'dangerText' ? t.danger : t.primary;
   return (
     <Pressable
       accessibilityRole="button"
@@ -196,10 +200,72 @@ export function Button({
       {busy ? (
         <ActivityIndicator color={fg} />
       ) : (
-        <Text style={{ color: fg, ...type.input, fontWeight: '600', textDecorationLine: variant === 'link' ? 'underline' : 'none' }}>
-          {label}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          {icon ? <MaterialCommunityIcons name={icon} size={20} color={fg} importantForAccessibility="no" /> : null}
+          <Text style={{ color: fg, ...type.input, fontWeight: '600', flexShrink: 1, textAlign: 'center' }}>{label}</Text>
+        </View>
       )}
+    </Pressable>
+  );
+}
+
+type Icon = ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+/** A full-width row that shows or hides more below it. The arrow shows which way it will go. */
+export function Expander({ label, open, onToggle, icon = 'information-outline' }: { label: string; open: boolean; onToggle: () => void; icon?: Icon }) {
+  const t = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ expanded: open }}
+      onPress={onToggle}
+      android_ripple={{ color: t.ripple }}
+      style={({ pressed }) => ({
+        minHeight: minTouch,
+        overflow: 'hidden',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderRadius: radius.control,
+        borderWidth: 1,
+        borderColor: t.border,
+        backgroundColor: pressed && !isAndroid ? t.primarySoft : 'transparent',
+      })}
+    >
+      <MaterialCommunityIcons name={icon} size={20} color={t.primary} importantForAccessibility="no" />
+      <Text style={{ flex: 1, color: t.text, ...type.link }}>{label}</Text>
+      <MaterialCommunityIcons name={open ? 'chevron-up' : 'chevron-down'} size={22} color={t.textMuted} importantForAccessibility="no" />
+    </Pressable>
+  );
+}
+
+/** A small rounded shortcut that fills in a value, placed next to the field it fills. */
+export function ChipButton({ label, onPress, icon }: { label: string; onPress: () => void; icon?: Icon }) {
+  const t = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      hitSlop={4}
+      android_ripple={{ color: t.ripple }}
+      style={({ pressed }) => ({
+        alignSelf: 'flex-start',
+        minHeight: 40,
+        overflow: 'hidden',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        paddingHorizontal: spacing.md,
+        borderRadius: 999,
+        backgroundColor: t.primarySoft,
+        opacity: pressed && !isAndroid ? 0.8 : 1,
+      })}
+    >
+      {icon ? <MaterialCommunityIcons name={icon} size={18} color={t.primary} importantForAccessibility="no" /> : null}
+      <Text style={{ color: t.primary, ...type.link }}>{label}</Text>
     </Pressable>
   );
 }

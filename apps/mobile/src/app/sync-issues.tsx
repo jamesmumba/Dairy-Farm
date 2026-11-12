@@ -11,6 +11,7 @@ import { runSync } from '../sync/engine';
 import { applyServerRow, discardChanges, failedOps, getRecord, type Op, removeRecord, requeue, useLocal } from '../sync/store';
 import type { Customer } from '../finance/model';
 import { Button, Notice } from '../ui/form';
+import { IconLine } from '../ui/kit';
 import { radius, shadow, spacing, type, useTheme } from '../ui/theme';
 
 const KIND_LABELS: Record<Op['kind'], string> = {
@@ -124,7 +125,9 @@ function Issue({ op }: { op: Op }) {
       <Text style={{ color: t.text, ...type.input, fontWeight: '600' }}>
         {KIND_LABELS[op.kind]}: {recordName(op)}
       </Text>
-      <Text style={{ color: t.danger, ...type.bodySmall }}>⚠ {op.error_message}</Text>
+      <IconLine icon="alert-circle-outline" color={t.danger} textStyle={type.bodySmall}>
+        {op.error_message}
+      </IconLine>
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {existing ? (
@@ -133,8 +136,10 @@ function Issue({ op }: { op: Op }) {
             This session was already recorded (perhaps on another phone) as {litres(toCl(existing.quantity))} L. This phone has{' '}
             {mine.quantity ? `${litres(toCl(String(mine.quantity)))} L` : 'a different value'}.
           </Text>
-          <Button label="Keep the saved value" onPress={() => discardChanges(op.entity, op.record_id, null)} />
+          <Text style={{ color: t.text, ...type.cardTitle }}>Which value should stay?</Text>
+          <Button icon="cloud-check-outline" label="Keep the saved value" variant="secondary" onPress={() => discardChanges(op.entity, op.record_id, null)} />
           <Button
+            icon="cellphone"
             label="Replace it with this phone’s value"
             variant="secondary"
             onPress={() => {
@@ -149,14 +154,17 @@ function Issue({ op }: { op: Op }) {
         <>
           <Text style={{ color: t.textMuted, ...type.bodySmall }}>This record was changed on another device. Choose which version to keep.</Text>
           <Differences mine={mine} saved={body.current!} />
+          <Text style={{ color: t.text, ...type.cardTitle }}>Which version should stay?</Text>
           <Button
+            icon="cellphone"
+            variant="secondary"
             label="Keep my version"
             onPress={() => {
               requeue(op, body.current!.version);
               void runSync();
             }}
           />
-          <Button label="Use the saved version" variant="secondary" onPress={discard} />
+          <Button icon="cloud-check-outline" label="Use the saved version" variant="secondary" onPress={discard} />
         </>
       ) : (
         <>
@@ -185,7 +193,7 @@ function Issue({ op }: { op: Op }) {
               void runSync();
             }}
           />
-          <Button label={op.kind === 'create' ? 'Delete this unsaved record' : 'Discard my change'} variant="link" onPress={discard} />
+          <Button label={op.kind === 'create' ? 'Delete this unsaved record' : 'Discard my change'} variant="dangerText" onPress={discard} />
         </>
       )}
     </View>

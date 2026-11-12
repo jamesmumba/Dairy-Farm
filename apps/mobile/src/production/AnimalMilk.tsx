@@ -5,7 +5,7 @@ import { useLocal } from '../sync/store';
 import { BarChart } from '../ui/BarChart';
 import { toDateString } from '../ui/DateField';
 import { Button } from '../ui/form';
-import { Card, Figure, ListGroup, ListRow } from '../ui/kit';
+import { Card, Figure, IconLine, ListGroup, ListRow } from '../ui/kit';
 import { spacing, type, useTheme } from '../ui/theme';
 import { addDays, dailyTotals, decline, DEFAULT_DECLINE_RULE, periodRange, summarize, toCl } from './calc';
 import { dayLabel, L, SESSION_LABELS } from './format';
@@ -31,9 +31,9 @@ export function AnimalMilk({ cattleId, canRecord }: { cattleId: string; canRecor
           <Figure label="This month" value={L(month.totalCl)} />
         </View>
         {d.state === 'decline' ? (
-          <Text style={{ color: t.danger, ...type.secondary }} accessibilityRole="alert">
-            ⚠ Down {Math.abs(d.changePct)}%: {L(d.recentAvgCl)} a day, was {L(d.baselineAvgCl)}
-          </Text>
+          <IconLine icon="trending-down" color={t.danger} alert>
+            Down {Math.abs(d.changePct)}%: {L(d.recentAvgCl)} a day, was {L(d.baselineAvgCl)}
+          </IconLine>
         ) : d.state === 'ok' ? (
           <Text style={{ color: t.textMuted, ...type.secondary }}>
             {d.changePct >= 0 ? '▲' : '▼'} {Math.abs(d.changePct)}% on the period before

@@ -11,7 +11,7 @@ import { formatDateTime } from '../../lib/dates';
 import { litres } from '../../production/calc';
 import { Chips } from '../../ui/Chips';
 import { DateTimeField } from '../../ui/DateField';
-import { Button, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
+import { Button, Expander, FormScreen, Notice, TextField, Toggle } from '../../ui/form';
 import { radius, shadow, spacing, type, useTheme } from '../../ui/theme';
 
 const QUICK = ['1', '2', '5', '10', '20'];
@@ -118,13 +118,13 @@ export default function NewSale() {
       {customer ? (
         <View style={{ gap: spacing.xs }}>
           <Text style={{ color: t.text, ...type.figure }}>{customer.name}</Text>
-          <Button label="Change customer" variant="link" onPress={() => setCustomerId(null)} />
+          <Button label="Change customer" variant="text" onPress={() => setCustomerId(null)} />
         </View>
       ) : (
         <>
           <TextField label="Customer" value={search} onChangeText={setSearch} placeholder="Search by name" autoCorrect={false} />
           <Chips label="Choose" value={null} options={matches.map((c) => ({ value: c.id, label: c.name }))} onChange={(v) => v && setCustomerId(v)} />
-          <Button label="Add a new customer" variant="link" onPress={() => router.push({ pathname: '/customers/new', params: { for: 'sale' } })} />
+          <Button label="Add a new customer" variant="text" onPress={() => router.push({ pathname: '/customers/new', params: { for: 'sale' } })} />
         </>
       )}
 
@@ -147,7 +147,7 @@ export default function NewSale() {
         <Chips label="Paid by" value={method} options={(Object.keys(METHOD_LABELS) as Method[]).filter((m) => m !== 'credit').map((m) => ({ value: m, label: METHOD_LABELS[m] }))} onChange={setMethod} />
       ) : null}
       {/* Rarely changed: hidden until asked for, so an ordinary sale is three choices and Save. */}
-      <Button label={more ? 'Fewer options' : 'Change date, price or add a note'} variant="link" onPress={() => setMore((m) => !m)} />
+      <Expander icon="tune-variant" label="Change date, price or add a note" open={more} onToggle={() => setMore((m) => !m)} />
       {more || !listed ? (
         <View style={{ gap: spacing.md }}>
           <DateTimeField label="Sold at" value={saleAt} onChange={(v) => v && setSaleAt(v)} optional={false} />

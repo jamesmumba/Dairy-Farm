@@ -63,7 +63,7 @@ export default function PaymentScreen() {
         <FormCard title="Void this payment">
           <TextField label="Why?" value={reason} onChangeText={setReason} />
           <Button label="Void payment" variant="danger" onPress={doVoid} />
-          <Button label="Cancel" variant="link" onPress={() => setVoiding(false)} />
+          <Button label="Cancel" variant="text" onPress={() => setVoiding(false)} />
         </FormCard>
       )}
     </FormScreen>

@@ -413,3 +413,13 @@ export function StatementLine({ label, value, tone, first }: { label: string; va
     </View>
   );
 }
+
+/** A drawn icon before a line of text, in the text's colour. Used instead of symbol characters like warning signs. */
+export function IconLine({ icon, color, children, textStyle, alert }: { icon: IconName; color: string; children: ReactNode; textStyle?: object; alert?: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} accessibilityRole={alert ? 'alert' : undefined}>
+      <MaterialCommunityIcons name={icon} size={16} color={color} importantForAccessibility="no" />
+      <Text style={{ flex: 1, color, ...type.secondary, ...textStyle }}>{children}</Text>
+    </View>
+  );
+}

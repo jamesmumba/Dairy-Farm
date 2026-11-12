@@ -96,13 +96,13 @@ export default function MilkEntryScreen() {
           <Chips label="Session" value={session} options={SESSIONS.map((s) => ({ value: s, label: SESSION_LABELS[s] }))} onChange={(s) => s && setSession(s)} allowClear={false} />
           <TextField label="Reason" hint="Kept in the history with the old value" value={reason} onChangeText={setReason} />
           <Button label="Save correction" onPress={saveCorrection} />
-          <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
+          <Button label="Cancel" variant="text" onPress={() => setMode('view')} />
         </FormCard>
       ) : mode === 'void' ? (
         <FormCard title="Void this entry">
           <TextField label="Why is it a mistake?" value={reason} onChangeText={setReason} />
           <Button label="Void entry" variant="danger" onPress={saveVoid} />
-          <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
+          <Button label="Cancel" variant="text" onPress={() => setMode('view')} />
         </FormCard>
       ) : (
         <ListGroup>

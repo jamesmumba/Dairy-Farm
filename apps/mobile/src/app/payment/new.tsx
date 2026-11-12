@@ -10,7 +10,7 @@ import { useFinance } from '../../finance/useFinance';
 import { CURRENCIES } from '../../lib/account';
 import { Chips } from '../../ui/Chips';
 import { DateTimeField } from '../../ui/DateField';
-import { Button, FormScreen, Notice, TextField } from '../../ui/form';
+import { Button, ChipButton, FormScreen, Notice, TextField } from '../../ui/form';
 import { type, useTheme } from '../../ui/theme';
 
 const KINDS = PAYMENT_KIND_LABELS;
@@ -84,7 +84,7 @@ export default function NewPayment() {
       <Chips label="Type" value={kind} options={Object.entries(KINDS).map(([value, label]) => ({ value: value as Payment['kind'], label }))} onChange={(v) => v && setKind(v)} allowClear={false} />
       <TextField label={`Amount (${currency})`} value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
       {kind === 'payment' && balance > 0 && amount !== fromCents(balance) ? (
-        <Button label={`Pay all owed: ${money(balance, currency)}`} variant="link" onPress={() => setAmount(fromCents(balance))} />
+        <ChipButton icon="cash-check" label={`Pay all owed: ${money(balance, currency)}`} onPress={() => setAmount(fromCents(balance))} />
       ) : null}
       {CURRENCIES.length > 1 ? <Chips label="Currency" value={currency} options={CURRENCIES} onChange={(v) => v && setCurrency(v)} allowClear={false} /> : null}
       {kind !== 'adjustment' ? (

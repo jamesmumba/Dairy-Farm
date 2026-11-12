@@ -213,12 +213,24 @@ actions), `StatCard` (icon, label, large figure, note), `Avatar` (initials), `Pi
 
 `Card` and `Figure` hold small groups of numbers.
 
+No underlined text. Each secondary action is styled by its job (`src/ui/form.tsx` and `kit.tsx`):
+
+| Job | Component | Examples |
+|---|---|---|
+| Show or hide more | `Expander`: bordered row, icon, label, arrow that points the way it will go | How these figures are calculated, Show all rows, Change date, price or add a note, Technical details |
+| Cancel, back, sign-in shortcuts | `Button variant="text"`: primary-coloured words, no box, no underline | Cancel, Back, Forgot password?, I already have an account |
+| Go to another record | `ListRow` in a `ListGroup`, with a chevron | Review sync problem, Open the corrected sale |
+| Fill in a value | `ChipButton`: rounded soft-green pill next to its field | Pay all owed |
+| Throw away a change | `Button variant="dangerText"`: red words | Discard my change, Delete this unsaved record |
+
+**Solid green means "do this", never "chosen".** A selected chip or choice is soft green with a green outline and a tick, so it can't be mistaken for a filled action button. When a screen asks a question with two answers (keep my version or the saved one), both answers are outlined buttons of equal weight, each with its own icon, under the question in words. A filled button is only used when there is one main action.
+
 ### Keeping screens calm
 
 Added after farmer feedback that screens felt cluttered:
 * **One job per screen, at most four blocks.** Detail lives one tap away ("Details", "All", a section choice).
 * **Show one section at a time** where a screen has several (the animal profile: Overview, Care, Milk, History).
-* **Hide the rare.** Options most records never change (sale date, currency, special price, note) sit behind one link.
+* **Hide the rare.** Options most records never change (sale date, currency, special price, note) sit behind one expandable row.
 * **One colour for icons.** Icons are pasture green; red and straw appear only for a status that needs attention.
 * **No borders on cards.** White on milk-white with a soft shadow; borders only for an alert.
 * **One label per list row.** An animal shows its single most important status (gone, withdrawal, pregnant, in milk).

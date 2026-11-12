@@ -117,7 +117,7 @@ export default function Onboarding() {
       ) : (
         <Button label={step === 'lock' ? 'Continue' : 'Save and continue'} onPress={next} busy={busy} />
       )}
-      {index > 0 ? <Button label="Back" variant="link" onPress={() => setStep(ONBOARDING_STEPS[index - 1])} /> : null}
+      {index > 0 ? <Button label="Back" variant="text" onPress={() => setStep(ONBOARDING_STEPS[index - 1])} /> : null}
     </FormScreen>
   );
 }

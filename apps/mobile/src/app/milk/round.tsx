@@ -38,7 +38,7 @@ export default function MilkingRound() {
   );
 }
 
-const INTRO = 'Type the litres for each cow, then save once. Tap ⋮ beside a cow that was not milked or is dry now. Works offline.';
+const INTRO = 'Type the litres for each cow, then save once. Tap the three-dot button beside a cow that was not milked or is dry now. Works offline.';
 
 function RoundSheet({ date, session, showAll, onSaved, children }: { date: string; session: Session; showAll: boolean; onSaved: (message: string) => void; children: ReactNode }) {
   const t = useTheme();

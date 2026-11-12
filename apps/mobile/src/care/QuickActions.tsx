@@ -10,7 +10,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { DateField } from '../ui/DateField';
 import { Button, Notice, TextField } from '../ui/form';
 import { ListRow } from '../ui/kit';
-import { minTouch, radius, spacing, type, useTheme } from '../ui/theme';
+import { isAndroid, minTouch, radius, spacing, type, useTheme } from '../ui/theme';
 import { hideReminder } from './hiddenReminders';
 import type { CareKind } from './model';
 import { type GroupDose, NO_SHEET, QUICK_LABELS, type QuickAction, quickChange, type SheetValues, sheetDefaults, sheetSpec } from './quick';
@@ -31,37 +31,57 @@ const addDays = (date: string, days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-/** The answers as buttons: the first (the usual answer) filled, the others outlined. */
+/** Each answer's own icon, so no answer looks already chosen and they read as separate buttons. */
+const QUICK_ICONS: Record<QuickAction, ComponentProps<typeof MaterialCommunityIcons>['name']> = {
+  given: 'needle',
+  missed: 'calendar-remove-outline',
+  course_finished: 'flag-checkered',
+  milk_cleared: 'water-check-outline',
+  pregnant: 'heart-outline',
+  not_pregnant: 'heart-off-outline',
+  unclear: 'help-circle-outline',
+  saw_heat: 'eye-outline',
+  no_heat: 'eye-off-outline',
+  record_calving: 'baby-bottle-outline',
+  recovered: 'emoticon-happy-outline',
+  resolved: 'check-circle-outline',
+  not_yet: 'clock-outline',
+  record_payment: 'cash-plus',
+  adjust_stock: 'scale-balance',
+};
+
+/**
+ * The answers as buttons of equal weight. None is filled: a filled first answer looked as if it had
+ * already been picked. Square-ish corners keep them apart from chips, which are choices, not actions.
+ */
 export function QuickButtons({ actions, onPick, label }: { actions: QuickAction[]; onPick: (a: QuickAction) => void; label?: string }) {
   const t = useTheme();
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-      {actions.map((a, i) => {
-        const main = i === 0;
-        return (
-          <Pressable
-            key={a}
-            accessibilityRole="button"
-            accessibilityLabel={label ? `${QUICK_LABELS[a]}: ${label}` : QUICK_LABELS[a]}
-            onPress={() => onPick(a)}
-            style={({ pressed }) => ({
-              minHeight: minTouch - 8,
-              paddingHorizontal: spacing.md,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: spacing.xs,
-              borderRadius: radius.chip,
-              borderWidth: 1,
-              borderColor: t.primary,
-              backgroundColor: main ? t.primary : pressed ? t.primarySoft : 'transparent',
-              opacity: pressed && main ? 0.85 : 1,
-            })}
-          >
-            {main ? <MaterialCommunityIcons name="check" size={18} color={t.onPrimary} importantForAccessibility="no" /> : null}
-            <Text style={{ color: main ? t.onPrimary : t.primary, ...type.link }}>{QUICK_LABELS[a]}</Text>
-          </Pressable>
-        );
-      })}
+      {actions.map((a) => (
+        <Pressable
+          key={a}
+          accessibilityRole="button"
+          accessibilityLabel={label ? `${QUICK_LABELS[a]}: ${label}` : QUICK_LABELS[a]}
+          onPress={() => onPick(a)}
+          android_ripple={{ color: t.ripple }}
+          style={({ pressed }) => ({
+            minHeight: minTouch - 8,
+            overflow: 'hidden',
+            paddingHorizontal: spacing.md,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.xs,
+            borderRadius: radius.control,
+            borderWidth: 1,
+            borderColor: t.primary,
+            backgroundColor: pressed && !isAndroid ? t.primarySoft : t.surface,
+          })}
+        >
+          <MaterialCommunityIcons name={QUICK_ICONS[a]} size={18} color={t.primary} importantForAccessibility="no" />
+          <Text style={{ color: t.primary, ...type.link }}>{QUICK_LABELS[a]}</Text>
+        </Pressable>
+      ))}
     </View>
   );
 }

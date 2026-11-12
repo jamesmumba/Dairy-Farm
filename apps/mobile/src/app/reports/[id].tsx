@@ -15,7 +15,7 @@ import { useAuth } from '../../state/auth';
 import { useSyncStatus } from '../../sync/engine';
 import { Chips } from '../../ui/Chips';
 import { DateField } from '../../ui/DateField';
-import { Button, Notice } from '../../ui/form';
+import { Expander, Notice } from '../../ui/form';
 import { MissingRecord } from '../../ui/ProblemView';
 import { Card } from '../../ui/kit';
 import { FilterButton, FilterSheet } from '../../ui/SearchBar';
@@ -92,7 +92,7 @@ function ReportTable({ table }: { table: Table }) {
       )}
       {cut ? (
         <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
-          <Button label={`Show all ${table.rows.length} rows${table.daily ? ` (showing the last ${limit} days)` : ''}`} variant="link" onPress={() => setAll(true)} />
+          <Expander icon="table-row" label={`Show all ${table.rows.length} rows${table.daily ? ` (showing the last ${limit} days)` : ''}`} open={false} onToggle={() => setAll(true)} />
         </View>
       ) : null}
     </View>
@@ -264,7 +264,7 @@ export default function ReportScreen() {
             <Text style={{ color: t.textMuted, ...type.secondary }}>Nothing recorded for: {empty.map((x) => x.title.toLowerCase()).join(', ')}.</Text>
           ) : null}
 
-          <Button label={showHow ? 'Hide how these are calculated' : 'How these figures are calculated'} variant="link" onPress={() => setShowHow((v) => !v)} />
+          <Expander icon="calculator-variant-outline" label="How these figures are calculated" open={showHow} onToggle={() => setShowHow((v) => !v)} />
           {showHow ? (
             <Card gap={spacing.sm}>
               {report.definitions.map((d) => (

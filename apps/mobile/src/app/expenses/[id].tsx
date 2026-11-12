@@ -91,7 +91,7 @@ export default function ExpenseScreen() {
             setMode('view');
           }}
         />
-        <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
+        <Button label="Cancel" variant="text" onPress={() => setMode('view')} />
       </FormScreen>
     );
   }
@@ -140,7 +140,7 @@ export default function ExpenseScreen() {
         <FormCard title="Void this expense">
           <TextField label="Why?" value={reason} onChangeText={setReason} />
           <Button label="Void expense" variant="danger" onPress={doVoid} />
-          <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
+          <Button label="Cancel" variant="text" onPress={() => setMode('view')} />
         </FormCard>
       ) : null}
       {mode === 'pay' ? <MarkPaidSheet initialMethod={e.payment_method} notBefore={e.expense_date} onClose={() => setMode('view')} onSave={markPaid} /> : null}

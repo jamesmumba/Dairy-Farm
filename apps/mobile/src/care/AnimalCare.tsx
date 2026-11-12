@@ -68,7 +68,7 @@ export function AnimalCare({ animal, care, showAdd = true }: { animal: Cattle; c
   const lines: { text: string; tone?: 'danger' }[] = [];
   if (underTreatment(care.treatments, id, today)) lines.push({ text: 'Under treatment', tone: 'danger' });
   for (const h of openHealth) {
-    lines.push({ text: `${h.urgent ? '⚠ Urgent: ' : ''}${h.confirmed_diagnosis ?? h.suspected_issue ?? 'Health concern'} (${h.recovery_status})`, tone: h.urgent ? 'danger' : undefined });
+    lines.push({ text: `${h.urgent ? 'Urgent: ' : ''}${h.confirmed_diagnosis ?? h.suspected_issue ?? 'Health concern'} (${h.recovery_status})`, tone: h.urgent ? 'danger' : undefined });
   }
   if (female && pendingCheck) lines.push({ text: `Pregnancy check ${pendingCheck.scheduled_on && pendingCheck.scheduled_on < today ? 'overdue since' : 'due'} ${formatDate(pendingCheck.scheduled_on)}` });
   if (female && lastPregnant?.expected_calving_on) lines.push({ text: `Pregnant · calving expected ${formatDate(lastPregnant.expected_calving_on)}` });

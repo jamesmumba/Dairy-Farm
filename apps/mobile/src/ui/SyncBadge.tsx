@@ -1,5 +1,5 @@
-import { Text } from 'react-native';
 import type { SyncState } from '../sync/store';
+import { IconLine } from './kit';
 import { type, useTheme } from './theme';
 
 /** Per-record save state, in words (never colour alone). Nothing is shown once synced. */
@@ -7,8 +7,12 @@ export function SyncBadge({ state }: { state: SyncState }) {
   const t = useTheme();
   if (state === 'synced') return null;
   return state === 'pending' ? (
-    <Text style={{ color: t.textMuted, ...type.caption }}>↻ Saved on this phone · waiting to sync</Text>
+    <IconLine icon="sync" color={t.textMuted} textStyle={type.caption}>
+      Saved on this phone · waiting to sync
+    </IconLine>
   ) : (
-    <Text style={{ color: t.danger, ...type.caption }}>⚠ Not saved to your account · needs attention</Text>
+    <IconLine icon="alert-circle-outline" color={t.danger} textStyle={type.caption}>
+      Not saved to your account · needs attention
+    </IconLine>
   );
 }

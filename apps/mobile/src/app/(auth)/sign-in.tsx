@@ -35,7 +35,7 @@ export default function SignIn() {
       <TextField label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
       <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" onSubmitEditing={submit} />
       <Button label="Sign in" onPress={submit} busy={busy} />
-      <Button label="Forgot password?" variant="link" onPress={() => router.push('/forgot-password')} />
+      <Button label="Forgot password?" variant="text" onPress={() => router.push('/forgot-password')} />
       <Button label="Create an account" variant="secondary" onPress={() => router.push('/sign-up')} />
     </FormScreen>
   );

@@ -36,7 +36,7 @@ export default function SignUp() {
       <TextField label="Password" hint={`At least ${MIN_PASSWORD} characters`} value={password} onChangeText={setPassword} error={errors.password} secureTextEntry autoComplete="new-password" textContentType="newPassword" />
       <TextField label="Confirm password" value={confirm} onChangeText={setConfirm} error={errors.confirm} secureTextEntry autoComplete="new-password" textContentType="newPassword" />
       <Button label="Create account" onPress={submit} busy={busy} />
-      <Button label="I already have an account" variant="link" onPress={() => router.back()} />
+      <Button label="I already have an account" variant="text" onPress={() => router.back()} />
     </FormScreen>
   );
 }

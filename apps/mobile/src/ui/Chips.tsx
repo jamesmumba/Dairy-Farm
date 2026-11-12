@@ -30,21 +30,21 @@ export function Chips<V extends string>({
               accessibilityState={{ checked: selected }}
               accessibilityLabel={`${label}: ${o.label}`}
               onPress={() => onChange(selected && allowClear ? null : o.value)}
-              android_ripple={{ color: selected ? t.rippleOnFilled : t.ripple }}
+              android_ripple={{ color: t.ripple }}
               style={{
                 minHeight: minTouch - 8,
                 overflow: 'hidden',
-                paddingHorizontal: spacing.md,
                 justifyContent: 'center',
                 borderRadius: radius.chip,
-                borderWidth: 1,
+                borderWidth: selected ? 2 : 1,
+                paddingHorizontal: selected ? spacing.md - 1 : spacing.md,
                 borderColor: selected ? t.primary : t.border,
-                backgroundColor: selected ? t.primary : t.surface,
+                backgroundColor: selected ? t.primarySoft : t.surface,
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                {selected ? <MaterialCommunityIcons name="check" size={16} color={t.onPrimary} /> : null}
-                <Text style={{ color: selected ? t.onPrimary : t.text, ...type.bodySmall }}>{o.label}</Text>
+                {selected ? <MaterialCommunityIcons name="check-circle" size={16} color={t.primary} /> : null}
+                <Text style={{ color: t.text, ...type.bodySmall, fontWeight: selected ? '600' : '400' }}>{o.label}</Text>
               </View>
             </Pressable>
           );

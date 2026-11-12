@@ -105,7 +105,7 @@ function LockScreen({ onUnlocked, onSignOut }: { onUnlocked: () => void; onSignO
         <Text style={{ color: t.textMuted, ...type.body }}>Use your phone’s fingerprint, face or screen lock to continue.</Text>
         {error ? <Notice tone="error">{error}</Notice> : null}
         <Button label="Unlock" onPress={unlock} />
-        <Button label="Sign out instead" variant="link" onPress={onSignOut} hint="You will need your email and password to sign in again" />
+        <Button label="Sign out instead" variant="text" onPress={onSignOut} hint="You will need your email and password to sign in again" />
       </View>
     </SafeAreaView>
   );

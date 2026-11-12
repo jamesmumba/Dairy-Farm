@@ -1,4 +1,5 @@
-import { Pressable, Text } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Pressable, Text, View } from 'react-native';
 import { formatDate, toDateString } from '../lib/dates';
 import { runSync, useSyncStatus } from '../sync/engine';
 import { minTouch, radius, shadow, spacing, type, useTheme } from './theme';
@@ -22,12 +23,12 @@ export function SyncStatus() {
 
   const { icon, text, color } =
     s.failed > 0 || s.state === 'attention'
-      ? { icon: '⚠', text: s.message ?? 'Sync needs attention', color: t.danger }
+      ? { icon: 'alert-circle-outline' as const, text: s.message ?? 'Sync needs attention', color: t.danger }
       : s.state === 'syncing'
-        ? { icon: '↻', text: s.photo ? `Uploading photo ${Math.round(s.photo.fraction * 100)}%` : 'Syncing…', color: t.textMuted }
+        ? { icon: 'sync' as const, text: s.photo ? `Uploading photo ${Math.round(s.photo.fraction * 100)}%` : 'Syncing…', color: t.textMuted }
         : s.state === 'offline'
-          ? { icon: '○', text: `Offline · showing data saved on this phone · ${last}${waiting}`, color: t.textMuted }
-          : { icon: s.pending ? '↻' : '✓', text: `${s.pending ? 'Waiting to sync' : 'Synced'} · ${last}${waiting}`, color: s.pending ? t.textMuted : t.primary };
+          ? { icon: 'cloud-off-outline' as const, text: `Offline · showing data saved on this phone · ${last}${waiting}`, color: t.textMuted }
+          : { icon: s.pending ? ('sync' as const) : ('check-circle-outline' as const), text: `${s.pending ? 'Waiting to sync' : 'Synced'} · ${last}${waiting}`, color: s.pending ? t.textMuted : t.primary };
 
   const reviewing = s.failed > 0;
   return (
@@ -38,9 +39,10 @@ export function SyncStatus() {
       onPress={() => (reviewing ? open('/sync-issues') : void runSync())}
       style={{ minHeight: minTouch, justifyContent: 'center', paddingHorizontal: spacing.md, backgroundColor: t.surface, borderRadius: radius.card, ...shadow }}
     >
-      <Text style={{ color, ...type.bodySmall }}>
-        {icon} {text}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+        <MaterialCommunityIcons name={icon} size={18} color={color} importantForAccessibility="no" />
+        <Text style={{ flex: 1, color, ...type.bodySmall }}>{text}</Text>
+      </View>
     </Pressable>
   );
 }

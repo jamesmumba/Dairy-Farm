@@ -143,7 +143,7 @@ export default function CareRecord() {
             <FormCard title="Remove this record">
               <TextField label="Why?" hint="For records entered by mistake" value={reason} onChangeText={setReason} />
               <Button label="Remove record" variant="danger" onPress={remove} />
-              <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
+              <Button label="Cancel" variant="text" onPress={() => setMode('view')} />
             </FormCard>
           ) : (
             <ListGroup>

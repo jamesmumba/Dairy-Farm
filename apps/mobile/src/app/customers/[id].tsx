@@ -83,7 +83,7 @@ export default function CustomerStatement() {
           <TextField label="Notes" value={form.notes ?? ''} onChangeText={(notes) => setForm((x) => ({ ...x, notes: notes || null }))} multiline />
           <Toggle label="Active customer" value={form.active ?? c.active} onChange={(active) => setForm((x) => ({ ...x, active }))} />
           <Button label="Save" onPress={save} />
-          <Button label="Cancel" variant="link" onPress={() => setEditing(false)} />
+          <Button label="Cancel" variant="text" onPress={() => setEditing(false)} />
         </Card>
       ) : null}
 

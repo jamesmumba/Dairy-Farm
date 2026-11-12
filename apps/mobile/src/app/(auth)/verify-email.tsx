@@ -37,8 +37,8 @@ export default function VerifyEmail() {
       {error ? <Notice tone="error">{error}</Notice> : null}
       {info ? <Notice>{info}</Notice> : null}
       <Button label="I've confirmed my email" onPress={continueAfterLink} busy={busy} />
-      <Button label="Send the email again" variant="link" onPress={resend} />
-      <Button label="Back to sign in" variant="link" onPress={() => router.replace('/sign-in')} />
+      <Button label="Send the email again" variant="text" onPress={resend} />
+      <Button label="Back to sign in" variant="text" onPress={() => router.replace('/sign-in')} />
     </FormScreen>
   );
 }

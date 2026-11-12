@@ -39,7 +39,7 @@ export function ParentPicker({
         <View style={{ flex: 1 }}>
           <Button label={selected ? displayName(selected) : 'Choose from herd'} variant="secondary" onPress={() => setOpen(true)} hint={`Choose the ${label.toLowerCase()} from your herd`} />
         </View>
-        {selected ? <Button label="Clear" variant="link" onPress={() => onChange(null)} /> : null}
+        {selected ? <Button label="Clear" variant="text" onPress={() => onChange(null)} /> : null}
       </View>
 
       <BottomSheet visible={open} title={`Choose ${label.toLowerCase().replace(' (optional)', '')}`} onClose={() => setOpen(false)} footer={<Button label="Cancel" variant="secondary" onPress={() => setOpen(false)} />}>

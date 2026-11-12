@@ -76,7 +76,11 @@ export default function SaleScreen() {
       />
       <SyncBadge state={stored.sync_state} />
       {s.status === 'voided' && s.void_reason ? <Notice>Voided: {s.void_reason}</Notice> : null}
-      {correctedBy ? <Button label="Open the corrected sale" variant="link" onPress={() => router.replace({ pathname: '/sale/[id]', params: { id: correctedBy.id } })} /> : null}
+      {correctedBy ? (
+        <ListGroup>
+          <ListRow icon="file-replace-outline" tint="sky" title="Open the corrected sale" subtitle="This sale was voided and replaced" onPress={() => router.replace({ pathname: '/sale/[id]', params: { id: correctedBy.id } })} />
+        </ListGroup>
+      ) : null}
       <Details
         rows={[
           ['Litres', `${s.quantity} L`],
@@ -113,14 +117,14 @@ export default function SaleScreen() {
           <TextField label={`Price per litre (${s.currency})`} value={price} onChangeText={setPrice} keyboardType="decimal-pad" />
           <TextField label="Reason" hint="Kept with the original and corrected values" value={reason} onChangeText={setReason} />
           <Button label="Save correction" onPress={doCorrect} />
-          <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
+          <Button label="Cancel" variant="text" onPress={() => setMode('view')} />
         </FormCard>
       ) : null}
       {mode === 'void' ? (
         <FormCard title="Void this sale">
           <TextField label="Why?" value={reason} onChangeText={setReason} />
           <Button label="Void sale" variant="danger" onPress={doVoid} />
-          <Button label="Cancel" variant="link" onPress={() => setMode('view')} />
+          <Button label="Cancel" variant="text" onPress={() => setMode('view')} />
         </FormCard>
       ) : null}
     </FormScreen>

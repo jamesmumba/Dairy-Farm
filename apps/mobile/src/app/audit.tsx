@@ -181,7 +181,7 @@ export default function AuditHistory() {
           </View>
         </View>
       ))}
-      {more && entries.length && !offline ? <Button label="Load older" variant="link" onPress={() => load(entries[entries.length - 1].id)} /> : null}
+      {more && entries.length && !offline ? <Button label="Load older" variant="text" onPress={() => load(entries[entries.length - 1].id)} /> : null}
     </ScrollView>
   );
 }

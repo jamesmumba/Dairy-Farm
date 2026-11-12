@@ -41,7 +41,7 @@ export const QUICK_LABELS: Record<QuickAction, string> = {
   adjust_stock: 'Correct the stock',
 };
 
-/** What a reminder asks for. The first answer is the usual one and is shown as the main button. */
+/** What a reminder asks for, usual answer first. All answers are shown with equal weight. */
 export function reminderActions(r: Pick<Reminder, 'kind'>): QuickAction[] {
   switch (r.kind) {
     case 'vaccination':

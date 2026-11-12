@@ -295,7 +295,11 @@ export default function AnimalProfile() {
       </View>
 
       <SyncBadge state={animal.sync_state} />
-      {animal.sync_state === 'attention' ? <Button label="Review sync problem" variant="link" onPress={() => open('/sync-issues')} /> : null}
+      {animal.sync_state === 'attention' ? (
+        <ListGroup>
+          <ListRow icon="cloud-alert-outline" tint="straw" title="Review sync problem" subtitle="This animal's latest change didn't reach the server" onPress={() => open('/sync-issues')} />
+        </ListGroup>
+      ) : null}
       <WithdrawalBanner care={care} cattleId={a.id} />
       {a.status === 'active' && female ? <MilkAlertBanner animal={a} /> : null}
       {a.status !== 'active' && a.status_details ? <Notice>{a.status_details}</Notice> : null}

@@ -11,7 +11,7 @@ export default function Connecting() {
       {sync.state === 'offline' ? <Notice tone="error">No connection. Connect to mobile data or Wi-Fi, then try again.</Notice> : null}
       {sync.state === 'attention' && sync.message ? <Notice tone="error">{sync.message}</Notice> : null}
       <Button label="Try again" onPress={() => void runSync()} busy={sync.state === 'syncing'} />
-      <Button label="Sign out" variant="link" onPress={() => signOut()} />
+      <Button label="Sign out" variant="text" onPress={() => signOut()} />
     </FormScreen>
   );
 }

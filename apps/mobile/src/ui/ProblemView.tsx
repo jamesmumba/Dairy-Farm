@@ -3,7 +3,7 @@ import { type ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { runSync } from '../sync/engine';
-import { Button } from './form';
+import { Button, Expander } from './form';
 import { IconBadge, type IconName, type Tint } from './kit';
 import { spacing, type, useTheme } from './theme';
 
@@ -49,7 +49,7 @@ export function ProblemView({
         <View style={{ gap: spacing.sm, marginTop: spacing.md }}>{children}</View>
         {details ? (
           <>
-            <Button label={showDetails ? 'Hide details' : 'Show details'} variant="link" onPress={() => setShowDetails(!showDetails)} />
+            <Expander icon="code-tags" label="Technical details" open={showDetails} onToggle={() => setShowDetails(!showDetails)} />
             {showDetails ? (
               <Text selectable style={{ color: t.textMuted, ...type.caption, fontFamily: 'monospace' }}>
                 {details}

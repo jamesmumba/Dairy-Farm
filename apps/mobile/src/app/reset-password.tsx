@@ -58,7 +58,7 @@ export default function ResetPassword() {
       <FormScreen card standalone title="Choose a new password">
         <Notice tone="error">{error ?? 'Open the reset link from your email on this phone.'}</Notice>
         <Button label="Ask for a new link" onPress={() => router.replace('/forgot-password')} />
-        <Button label="Back to sign in" variant="link" onPress={() => router.replace('/sign-in')} />
+        <Button label="Back to sign in" variant="text" onPress={() => router.replace('/sign-in')} />
       </FormScreen>
     );
   }
@@ -69,7 +69,7 @@ export default function ResetPassword() {
       <TextField label="New password" hint={`At least ${MIN_PASSWORD} characters`} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" textContentType="newPassword" />
       <TextField label="Confirm new password" value={confirm} onChangeText={setConfirm} secureTextEntry autoComplete="new-password" textContentType="newPassword" onSubmitEditing={submit} />
       <Button label="Save new password" onPress={submit} busy={busy} />
-      <Button label="Cancel" variant="link" onPress={() => router.replace('/')} />
+      <Button label="Cancel" variant="text" onPress={() => router.replace('/')} />
     </FormScreen>
   );
 }
